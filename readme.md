@@ -1,6 +1,6 @@
-# 用于直接体渲染(Direct Volume Rendering)的工具
+# Tools for Direct Volume Rendering
 
-本仓库下的每个子目录都是独立的工程，作为不同的体渲染工具集。
+Each subdirectory in this repository is an independent project, serving as a different set of volume rendering tools.
 
 
 
