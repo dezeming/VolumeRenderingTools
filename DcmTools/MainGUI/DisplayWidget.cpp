@@ -32,7 +32,7 @@ void DisplayWidget::startRenderThread() {
 		//connect(rThread, SIGNAL(PrintDataI(char* s, int data)), this, SLOT(PrintDataI(char* s, int data)));
 		connect(rThread, SIGNAL(PaintBuffer(DcmTools::Uchar*, int, int, int)), &m_IMAGraphicsView, SLOT(PaintBuffer(DcmTools::Uchar*, int, int, int)));
 
-		// 暂时不启用线程渲染
+		// Temporarily disable thread
 		//rThread->start();
 	}
 

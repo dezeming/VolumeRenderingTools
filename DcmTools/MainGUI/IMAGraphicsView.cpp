@@ -5,10 +5,10 @@
 IMAGraphicsView::IMAGraphicsView(QGraphicsView * parent) {
 	setFrameShadow(Sunken);
 	setFrameShape(NoFrame);
-	//设置View的最小显示区
+	//Set the minimum display area for View
 	setMinimumHeight(400);
 	setMinimumWidth(300);
-	//设置渲染区域抗锯齿
+	//Set rendering area anti aliasing
 	setRenderHint(QPainter::Antialiasing);
 
 	getMap("Icons/background.png");
@@ -33,17 +33,17 @@ void IMAGraphicsView::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void IMAGraphicsView::mousePressEvent(QMouseEvent *event) {
-	//QGraphicsView 坐标
+	//QGraphicsView Pos
 	QPoint viewPoint = event->pos();
-	//QGraphicsScene 坐标
+	//QGraphicsScene Pos
 	QPointF scenePoint = mapToScene(viewPoint);
 	//DebugText::getDebugText()->addContents(QString::number(scenePoint.x())+" "+ QString::number(scenePoint.y()));
 }
 
 void IMAGraphicsView::mouseReleaseEvent(QMouseEvent *event) {
-	//QGraphicsView 坐标
+	//QGraphicsView Pos
 	QPoint viewPoint = event->pos();
-	//QGraphicsScene 坐标
+	//QGraphicsScene Pos
 	QPointF scenePoint = mapToScene(viewPoint);
 	//DebugText::getDebugText()->addContents(QString::number(scenePoint.x()) + " " + QString::number(scenePoint.y()));
 }

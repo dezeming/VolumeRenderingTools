@@ -85,7 +85,7 @@ void MainWindow::setDock(void) {
 void MainWindow::setRendering() {
 
 	if (!m_DisplayWidget.renderFlag) {
-		// Æô¶¯äÖÈ¾
+		// start rendering
 		m_InteractionDockWidget.renderButton->setText("Processing");
 		m_DisplayWidget.startRenderThread();
 	}
