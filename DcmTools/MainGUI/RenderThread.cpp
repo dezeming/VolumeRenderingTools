@@ -1,14 +1,33 @@
+/*
+	Copyright (C) <2023>  <Dezeming>  <feimos@mail.ustc.edu.cn>
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or any
+	later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+	Github site: <https://github.com/dezeming/Crystal>
+*/
+
 #include "RenderThread.h"
 #include "DebugText.hpp"
 #include <QTime>
 
-// DCMTK库
+// DCMTK
 #include "dcmdata/dcfilefo.h"
 #include "config/osconfig.h"
 #include "dcmdata/dctk.h"
 #include "dcmimage/diargimg.h"
 
-// GDCM库
+// GDCM
 #include "gdcmReader.h"
 #include "gdcmWriter.h"
 #include "gdcmSorter.h"
@@ -40,16 +59,13 @@ VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2);
 #include <vtkDataArray.h>
 #include <vtkImageImport.h>
 
-
-
-// Qt功能
+// Qt
 #include <QDir>
 #include <QStringList>
-// STL库
+// STL
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-
 
 
 RenderThread::RenderThread() {
@@ -76,13 +92,49 @@ void RenderThread::process() {
 			"./Output", 
 			"sample");
 	}
-	if (1) {
+	if (0) {
 		emit PrintString("Convert .dcm files into VTK' .mdh-.raw format using GDCM lib.");
 		DcmMakeMHDFile_GDCM(
-			"D:/Datasets/DicomImages/Heart/",
+			"E:/Datasets/MaxinData/3D_AX+C_Series0010/",
 			"./Output", 
-			"sample");
+			"PT096");
 	}
+
+	if (0) {
+
+		for (int i = 1; i < 486; i++) {
+			QString inputfolderPath = "S:/CT-DicomDatasets/Cerebral_aneurysm/AIneurysm/R"
+				+ QString::number(i / 100) + QString::number(i % 100 / 10) +QString::number(i % 10) + "/";
+
+			QString outputfolderPath = "S:/CT-DicomDatasets/GeneratedMhdData/R"
+				+ QString::number(i / 100) + QString::number(i % 100 / 10) + QString::number(i % 10) + "/";
+
+			QDir dir;
+			if (!dir.exists(outputfolderPath)) {
+				if (dir.mkpath(outputfolderPath)) {
+					emit PrintString("Folder created successfully."); 
+				}
+				else {
+					emit PrintString("Folder creation failed.");
+					continue;
+				}
+			}
+			else {
+				emit PrintString("Folder already exists.");
+			}
+
+			DcmMakeMHDFile_GDCM(
+				inputfolderPath,
+				outputfolderPath,
+				"R" + QString::number(i / 100) + QString::number(i % 100 / 10) + QString::number(i % 10));
+
+		}
+
+
+
+
+	}
+
 
 	// 降采样
 	if (0) {
@@ -153,9 +205,11 @@ void RenderThread::process() {
 			}
 		}
 
-		emit PaintBuffer(p_framebuffer->getUCbuffer(), 800, 600, 4);
+		//emit PaintBuffer(p_framebuffer->getUCbuffer(), 800, 600, 4);
 	}
-	
+
+
+	emit PrintString("Process finished");
 }
 
 void RenderThread::run() {
@@ -319,7 +373,7 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 	for (int i = 0; i < file_count; i++) {
 		QTime t;
 		t.start();
-		emit PrintDataD("dcmFileVec : ", dcmFileVec[i].position); 
+		// emit PrintDataD("dcmFileVec : ", dcmFileVec[i].position); 
 		while (t.elapsed() < 20);
 	}
 

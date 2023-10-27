@@ -13,9 +13,7 @@ set(CMAKE_BUILD_TYPE  "Release")
 
 ########### Manual settings required #############
 set(QT_PATH "D:/DevTools/Qt/5.9/msvc2017_64/" CACHE PATH "qt5 cmake dir")
-
 set(CMAKE_PREFIX_PATH ${QT_PATH})
-
 find_package(Qt5 COMPONENTS 
 	Widgets 
 	Gui 
@@ -74,7 +72,10 @@ set(MainGUI
 	MainGUI/InteractionDockWidget.h
 	MainGUI/InteractionDockWidget.cpp
 	MainGUI/DicomUtility.h
-	MainGUI/DicomUtility.cpp)
+	MainGUI/DicomUtility.cpp
+	MainGUI/QSliderDoubleRange.hpp
+	MainGUI/QSliderDoubleRange.cpp
+	)
 # Make the MainGUI group
 SOURCE_GROUP("MainGUI" FILES ${MainGUI})
 
@@ -126,6 +127,9 @@ target_link_directories(DcmTools PUBLIC
 	${VTK_BIN_DIR}
 	${GDCM_BIN_DIR}
 )
+
+set_target_properties(DcmTools PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:CONSOLE")
+set_target_properties(DcmTools PROPERTIES COMPILE_DEFINITIONS_RELEASE "_CONSOLE")
 
 # 设置 DcmTools 为启动工程
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT DcmTools)

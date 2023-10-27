@@ -1,3 +1,22 @@
+/*
+	Copyright (C) <2023>  <Dezeming>  <feimos@mail.ustc.edu.cn>
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or any
+	later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+	Github site: <https://github.com/dezeming/Crystal>
+*/
+
 #include "DisplayWidget.h"
 
 DisplayWidget::DisplayWidget(QGroupBox * parent) {
@@ -20,7 +39,7 @@ void DisplayWidget::closeEvent(QCloseEvent *event) {
 	killRenderThread();
 }
 
-void DisplayWidget::startRenderThread() {
+void DisplayWidget::startRenderThread(int index) {
 	if (!rThread) {
 		rThread = new RenderThread;
 		//renderFlag = true;
@@ -36,7 +55,34 @@ void DisplayWidget::startRenderThread() {
 		//rThread->start();
 	}
 
-	rThread->process();
+	if (0 == index)
+		rThread->process();
+	if (1 == index) {
+		rThread->DcmMakeMHDFile_DCMTK(InputFolder, OutputFolder, OutputFileName);
+	}
+	if (2 == index) {
+		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+	}
+	if (3 == index) {
+		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+	}
+	if (4 == index) {
+		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+	}
+	if (5 == index) {
+		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+	}
+	if (6 == index) {
+		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+	}
+	if (7 == index) {
+		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+	}
+	if (8 == index) {
+		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+	}
+
+
 
 	//renderFlag = true;
 }

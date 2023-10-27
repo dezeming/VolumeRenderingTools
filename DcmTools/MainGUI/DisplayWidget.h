@@ -1,3 +1,22 @@
+/*
+	Copyright (C) <2023>  <Dezeming>  <feimos@mail.ustc.edu.cn>
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or any
+	later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+	Github site: <https://github.com/dezeming/Crystal>
+*/
+
 #pragma once
 #ifndef __DisplayWidget_h__
 #define __DisplayWidget_h__
@@ -19,15 +38,27 @@ public:
 	DisplayWidget(QGroupBox * parent = Q_NULLPTR);
 	~DisplayWidget();
 
-	void startRenderThread();
+	void startRenderThread(int index = 0);
 	void killRenderThread();
 
 public:
 	bool renderFlag;
 	RenderThread * rThread;
+
+	QString InputFolder;
+	QString OutputFolder;
+	QString OutputFileName;
+	QString InputFilePath;
+	int permute[3];
+	int flip[3];
+	double clipCenter[3], clipBound[3];
+	double clipLower[3], clipUpper[3];
+	int interval;
+
 	FrameBuffer framebuffer;
 
 private:
+
 	QGridLayout displayWidgetLayout;
 
 	IMAGraphicsView m_IMAGraphicsView;

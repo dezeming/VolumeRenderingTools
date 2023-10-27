@@ -1,0 +1,46 @@
+交互界面设计：
+
+圆形按钮用于选择一个功能：
+
+DCM To MHD-RAW(DCMTK)
+
+DCM To MHD-RAW(GDCM)
+
+MHD Rotate Axis
+	permute[3]
+
+MHD Flip Axis
+	flip[3]
+
+MHD Clip
+	x[0-1]
+	y[0-1]
+	z[0-1]
+
+Resize MHD Using Interval Sampling
+	Interval
+
+MHD To Feimos Format
+	
+MHD To Pbrt Format
+
+
+输入：
+Input Folder
+Input File Path
+
+输出：
+Output Folder
+Output File Name
+
+
+
+
+
+
+
+
+
+
+
+
