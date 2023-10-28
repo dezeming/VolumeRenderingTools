@@ -158,13 +158,13 @@ void RenderThread::process() {
 	}
 
 	// 测试例子3：MHD根据轴来旋转
-	if (0) {
+	if (1) {
 		emit PrintString("Permute axis of .mhd-.raw file.");
 		int permute[3] = {0,2,1};
 		MHDRotateAxis(
-			"D:/DataSets/OpenScientificVisData/Bunny/bunny.mhd", 
+			"E:/DataSets/DcmToolsTest/ssas/mhd_abdomen.mhd", 
+			"E:/DataSets/DcmToolsTest/dddd/",
 			"bunny_r", 
-			"./Output", 
 			permute);
 	}
 
@@ -173,9 +173,9 @@ void RenderThread::process() {
 		emit PrintString("Flip axis of .mhd-.raw file.");
 		int flip[3] = { 0,1,0 };
 		MHDFlipAxis(
-			"C:/Developer/1_DataSet/MhdVolumeData/mhd_Heart2/sample.mhd", 
+			"E:/DataSets/DcmToolsTest/mhd_abdomen.mhd", 
+			"E:/DataSets/DcmToolsTest/dddd/",
 			"sample", 
-			"./Output", 
 			flip);
 	}
 
@@ -1003,7 +1003,7 @@ void RenderThread::MHDGenerateFeimosData(const QString& filePath, const QString&
 		file.write((char*)((short *)data_m + i * width * height), sizeof(short) * width * height);
 	}
 	file.close();
-
+	emit PrintDataD("Write Finished! ", 0);
 	delete[] data_m;
 
 }
@@ -1015,9 +1015,10 @@ void RenderThread::MHDGenerateFeimosData(const QString& filePath, const QString&
 */
 void RenderThread::MHDGeneratePbrtVolume(const QString& filePath, const QString& outputDir, const QString& outName) {
 
-
+	emit PrintString("Error: This function has not been implemented yet.");
+	return;
 	
-
+	emit PrintDataD("Write Finished! ", -1);
 }
 
 

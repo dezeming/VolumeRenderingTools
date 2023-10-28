@@ -36,7 +36,7 @@
 #include <QSpinBox>
 
 #include "QSliderDoubleRange.hpp"
-
+#include "DebugText.hpp"
 
 class QDcmToMhd_DCMTK_Frame : public QGroupBox {
 	Q_OBJECT
@@ -149,6 +149,25 @@ public:
 	}
 	~QMhdRotateAxis_Frame() { }
 
+	bool getRotateAxis(int permute[3]) {
+
+		QString permu = permuteEdit->text();
+		QStringList splitList = permu.split(",");
+		if (splitList.size() != 3) {
+			TextDinodonS("Incorrect input format.");
+			return false;
+		}
+
+		bool isOk = true;
+		for (int i = 0; i < splitList.size(); ++i) {
+			bool ok;
+			permute[i] = splitList[i].toInt(&ok);
+			isOk = isOk && ok;
+		}
+
+		return isOk;
+	}
+
 	QLabel * permuteLabel;
 	QLabel * permuteExampleLabel;
 	QLineEdit * permuteEdit;
@@ -197,6 +216,18 @@ public:
 		MhdFlipAxis_Layoput->addWidget(MhdFlipAxis_processButton);
 	}
 	~QMhdFlipAxis_Frame() { }
+
+	bool getFlipAxis(int flip[3]) {
+
+		if (MhdFlipAxis_Radio_X->isChecked()) flip[0] = 1;
+		else  flip[0] = 0;
+		if (MhdFlipAxis_Radio_Y->isChecked()) flip[1] = 1;
+		else  flip[1] = 0;
+		if (MhdFlipAxis_Radio_Z->isChecked()) flip[2] = 1;
+		else  flip[2] = 0;
+
+		return true;
+	}
 
 	QRadioButton *MhdFlipAxis_Radio_X, *MhdFlipAxis_Radio_Y, *MhdFlipAxis_Radio_Z;
 	QLabel *MhdFlipAxis_Label_X, *MhdFlipAxis_Label_Y, *MhdFlipAxis_Label_Z;

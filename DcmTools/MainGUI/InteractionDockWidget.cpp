@@ -79,11 +79,12 @@ void InteractionDockWidget::setupInputOutput() {
 	FolderLayout->addWidget(InputFilePathButton, 1, 0);
 	InputFilePathButton->setText("Input File Path");
 	FolderLayout->addWidget(InputFilePathEdit, 1, 1);
+	InputFilePathEdit->setText("E:/Datasets/DcmToolsTest/Sample.mhd");
 
 	FolderLayout->addWidget(OutputFolderButton, 2, 0);
 	OutputFolderButton->setText("Output Folder");
 	FolderLayout->addWidget(OutputFolderEdit, 2, 1);
-	OutputFolderEdit->setText("E:/Datasets/DcmToolsTest/");
+	OutputFolderEdit->setText("E:/Datasets/DcmToolsTest/Output/");
 
 	FolderLayout->addWidget(OutputFileNameButton, 3, 0);
 	OutputFileNameButton->setText("Output Folder");

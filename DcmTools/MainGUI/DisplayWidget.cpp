@@ -64,22 +64,22 @@ void DisplayWidget::startRenderThread(int index) {
 		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
 	}
 	if (3 == index) {
-		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+		rThread->MHDGenerateFeimosData(InputFolder, OutputFolder, OutputFileName);
 	}
 	if (4 == index) {
-		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+		rThread->MHDGeneratePbrtVolume(InputFolder, OutputFolder, OutputFileName);
 	}
 	if (5 == index) {
-		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+		rThread->MHDRotateAxis(InputFilePath, OutputFolder, OutputFileName, permute);
 	}
 	if (6 == index) {
-		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+		rThread->MHDFlipAxis(InputFilePath, OutputFolder, OutputFileName, flip);
 	}
 	if (7 == index) {
-		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+		rThread->MHDClip(InputFilePath, OutputFolder, OutputFileName, clipCenter, clipBound);
 	}
 	if (8 == index) {
-		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+		rThread->ResizeMHD_IntervalSampling(InputFilePath, OutputFolder, OutputFileName, interval);
 	}
 
 

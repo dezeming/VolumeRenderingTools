@@ -278,6 +278,15 @@ void MainWindow::process_MhdToFeimos() {
 	}
 
 
+	if (!m_DisplayWidget->renderFlag) {
+
+		m_DisplayWidget->InputFilePath = inputfile;
+		m_DisplayWidget->OutputFolder = outputDir;
+		m_DisplayWidget->OutputFileName = outputFileName;
+
+		m_DisplayWidget->startRenderThread(3);
+	}
+
 }
 void MainWindow::process_MhdToPbrt() {
 	TextDinodonS("Convert .mhd-.raw file into Pbrt file format.");
@@ -320,7 +329,14 @@ void MainWindow::process_MhdToPbrt() {
 		return;
 	}
 
+	if (!m_DisplayWidget->renderFlag) {
 
+		m_DisplayWidget->InputFilePath = inputfile;
+		m_DisplayWidget->OutputFolder = outputDir;
+		m_DisplayWidget->OutputFileName = outputFileName;
+
+		m_DisplayWidget->startRenderThread(4);
+	}
 }
 void MainWindow::process_MhdRotateAxis() {
 	TextDinodonS("Permute axis of .mhd-.raw file.");
@@ -363,7 +379,17 @@ void MainWindow::process_MhdRotateAxis() {
 		return;
 	}
 
+	if (!m_DisplayWidget->renderFlag) {
 
+		bool ok = m_InteractionDockWidget->MhdRotateAxis_Frame->getRotateAxis(m_DisplayWidget->permute);
+		if (!ok) return;
+
+		m_DisplayWidget->InputFilePath = inputfile;
+		m_DisplayWidget->OutputFolder = outputDir;
+		m_DisplayWidget->OutputFileName = outputFileName;
+
+		m_DisplayWidget->startRenderThread(5);
+	}
 }
 void MainWindow::process_MhdFlipAxis() {
 	TextDinodonS("Flip axis of .mhd-.raw file.");
@@ -407,7 +433,17 @@ void MainWindow::process_MhdFlipAxis() {
 	}
 
 
+	if (!m_DisplayWidget->renderFlag) {
 
+		bool ok = m_InteractionDockWidget->MhdFlipAxis_Frame->getFlipAxis(m_DisplayWidget->flip);
+		if (!ok) return;
+
+		m_DisplayWidget->InputFilePath = inputfile;
+		m_DisplayWidget->OutputFolder = outputDir;
+		m_DisplayWidget->OutputFileName = outputFileName;
+
+		m_DisplayWidget->startRenderThread(6);
+	}
 }
 void MainWindow::process_MhdClip() {
 	TextDinodonS("Clip.mhd - .raw file.");
@@ -450,7 +486,14 @@ void MainWindow::process_MhdClip() {
 		return;
 	}
 
+	if (!m_DisplayWidget->renderFlag) {
 
+		m_DisplayWidget->InputFilePath = inputfile;
+		m_DisplayWidget->OutputFolder = outputDir;
+		m_DisplayWidget->OutputFileName = outputFileName;
+
+		m_DisplayWidget->startRenderThread(7);
+	}
 
 }
 void MainWindow::process_MhdResize() {
@@ -495,7 +538,14 @@ void MainWindow::process_MhdResize() {
 	}
 
 
+	if (!m_DisplayWidget->renderFlag) {
 
+		m_DisplayWidget->InputFilePath = inputfile;
+		m_DisplayWidget->OutputFolder = outputDir;
+		m_DisplayWidget->OutputFileName = outputFileName;
+
+		m_DisplayWidget->startRenderThread(4);
+	}
 
 }
 
