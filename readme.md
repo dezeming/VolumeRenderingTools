@@ -4,5 +4,5 @@ Each subdirectory in this repository is an independent project, serving as a dif
 
 ## DcmTools
 
-<img src="Images/DcmTools-Software.png" width="390" >
+<img src="Images/DcmTools-Software.png" width="550" >
 
