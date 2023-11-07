@@ -64,10 +64,10 @@ void DisplayWidget::startRenderThread(int index) {
 		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
 	}
 	if (3 == index) {
-		rThread->MHDGenerateFeimosData(InputFolder, OutputFolder, OutputFileName);
+		rThread->MHDGenerateFeimosData(InputFilePath, OutputFolder, OutputFileName);
 	}
 	if (4 == index) {
-		rThread->MHDGeneratePbrtVolume(InputFolder, OutputFolder, OutputFileName);
+		rThread->MHDGeneratePbrtVolume(InputFilePath, OutputFolder, OutputFileName);
 	}
 	if (5 == index) {
 		rThread->MHDRotateAxis(InputFilePath, OutputFolder, OutputFileName, permute);

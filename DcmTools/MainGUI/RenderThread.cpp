@@ -517,7 +517,7 @@ void RenderThread::DcmMakeMHDFile_GDCM(const QString& dirPath, const QString& ou
 		gdcm::Attribute<0x0018, 0x0050>::ArrayType v_Spacing_slices = at_Spacing_slices.GetValue();
 		pixelSpacing_Z = v_Spacing_slices;
 
-		// Spacing between slices
+		// Spacing between slices  Unit:mm
 		gdcm::Attribute<0x0028, 0x0030> at_Pixel_Spacing;
 		at_Pixel_Spacing.SetFromDataSet(ds);
 		gdcm::Attribute<0x0028, 0x0030>::ArrayType vv_Pixel_Spacing = at_Pixel_Spacing.GetValue();
@@ -884,7 +884,6 @@ void RenderThread::MHDClip(const QString& filePath, const QString& outputDir, co
 	emit PrintDataD("Write Finished! ", 0);
 	delete[] data_aim;
 	delete[] data_m;
-
 }
 
 
