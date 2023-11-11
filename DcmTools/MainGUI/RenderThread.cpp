@@ -42,7 +42,7 @@
 #include "gdcmStringFilter.h"
 #include "gdcmImageReader.h"
 
-// VTK库
+// VTK lib
 #include <vtkAutoInit.h>
 VTK_MODULE_INIT(vtkRenderingOpenGL2)
 VTK_MODULE_INIT(vtkInteractionStyle);
@@ -84,8 +84,9 @@ void RenderThread::process() {
 	// GDCM_Test();
 
 
-	// 测试例子1：Dicom转MHD-RAW文件
+	// Dicom to MHD-RAW
 	if (0) {
+		emit PrintString("........................  New Task   ................................");
 		emit PrintString("Convert .dcm files into VTK' .mdh-.raw format using DCMTK lib.");
 		DcmMakeMHDFile_DCMTK(
 			"D:/Datasets/DicomImages/Heart/", 
@@ -93,6 +94,7 @@ void RenderThread::process() {
 			"sample");
 	}
 	if (0) {
+		emit PrintString("........................  New Task   ................................");
 		emit PrintString("Convert .dcm files into VTK' .mdh-.raw format using GDCM lib.");
 		DcmMakeMHDFile_GDCM(
 			"E:/Datasets/MaxinData/3D_AX+C_Series0010/",
@@ -100,8 +102,8 @@ void RenderThread::process() {
 			"PT096");
 	}
 
+	// some test
 	if (0) {
-
 		for (int i = 1; i < 486; i++) {
 			QString inputfolderPath = "S:/CT-DicomDatasets/Cerebral_aneurysm/AIneurysm/R"
 				+ QString::number(i / 100) + QString::number(i % 100 / 10) +QString::number(i % 10) + "/";
@@ -130,14 +132,12 @@ void RenderThread::process() {
 
 		}
 
-
-
-
 	}
 
 
-	// 降采样
+	// down sampling
 	if (0) {
+		emit PrintString("........................  New Task   ................................");
 		emit PrintString("Resize .mhd-.raw file.");
 		ResizeMHD_IntervalSampling(
 			"D:/DataSets/OpenScientificVisData-Origin/synthetic_truss_with_five_defects/synthetic_truss.mhd", 
@@ -145,8 +145,9 @@ void RenderThread::process() {
 			"synthetic_truss_small", 2);
 	}
 
-	// 测试例子2：MHD文件剪裁
+	// MHD clipping
 	if (0) {
+		emit PrintString("........................  New Task   ................................");
 		emit PrintString("Clip .mhd-.raw file.");
 		double center[3] = { 0.0, 0, 0.0 };
 		double bound[3] = { 0.212, 0.5, 0.5 };
@@ -157,8 +158,9 @@ void RenderThread::process() {
 			center, bound);
 	}
 
-	// 测试例子3：MHD根据轴来旋转
-	if (1) {
+	// MHD Rotate according to axis
+	if (0) {
+		emit PrintString("........................  New Task   ................................");
 		emit PrintString("Permute axis of .mhd-.raw file.");
 		int permute[3] = {0,2,1};
 		MHDRotateAxis(
@@ -168,8 +170,9 @@ void RenderThread::process() {
 			permute);
 	}
 
-	// 测试例子4：MHD根据选择的轴上下/左右颠倒
+	// MHD flips up, down, left, and right based on the selected axis
 	if (0) {
+		emit PrintString("........................  New Task   ................................");
 		emit PrintString("Flip axis of .mhd-.raw file.");
 		int flip[3] = { 0,1,0 };
 		MHDFlipAxis(
@@ -179,21 +182,20 @@ void RenderThread::process() {
 			flip);
 	}
 
-	// 测试例子4：MHD生成我的数据格式
+	// MHD to Feimos format
 	if (0) {
-		emit PrintString("Convert .mhd-.raw file into Feimos file format.");
+		emit PrintString("........................  New Task   ................................");
+		emit PrintString("Convert (.mhd)-(.raw) file into Feimos file format.");
 		MHDGenerateFeimosData(
 			"sample.mhd", 
 			"./Output", 
 			"sample");
 	}
 
-	// 开始执行处理
+	// Start processing, currently not engaged in actual tasks
 	{
 		QTime t;
 		t.start();
-		
-		// 目前并不做实际任务
 
 		for (int i = 0; i < 800; i++) {
 			for(int j = 0; j < 600; j++) {
@@ -204,12 +206,10 @@ void RenderThread::process() {
 				p_framebuffer->set_uc(i, j, 3, 255);
 			}
 		}
-
 		//emit PaintBuffer(p_framebuffer->getUCbuffer(), 800, 600, 4);
 	}
 
-
-	emit PrintString("Process finished");
+	emit PrintString(".................  Process finished   ....................");
 }
 
 void RenderThread::run() {
@@ -219,43 +219,40 @@ void RenderThread::run() {
 
 
 struct DcmFile {
-	Uint16 *pixData16;
-	float position;
+	Uint16 *pixData16 = nullptr;
+	float position = 0.0f;
 };
 bool DateUpSort(const DcmFile &f1, const DcmFile &f2) {
 	if (f1.position < f2.position) return true;
 	else return false;
 }
-/** 将Dicom生成MHD文件 DCMTK版
-* 需要保证所有dcm文件的宽高一致
-* dirPath: 存放dicom文件的路径
-* 将输出结果存放到Output文件夹内
-*/ 
 void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& outputDir, const QString& outName) {
+
 	QDir dir(dirPath);
 	if (!dir.exists()) {
-		emit PrintDataD("(!dir.exists()) : ", 0);
+		emit PrintError("Dir does not exist!");
 		return;
 	}
 		
 	QStringList filters;
 	filters << "*.dcm";
-	//设置类型过滤器，只为文件格式，不要符号链接
+	//Set type filters only for file formats, do not use symbolic links
 	dir.setFilter(QDir::Files | QDir::NoSymLinks);
-	//设置文件名称过滤器，filters格式
+	//Set file name filters, filters format
 	dir.setNameFilters(filters);
-	// 记录文件数量
+	//Number of record files
 	int file_count = dir.count();
-	emit PrintDataD("file_count : ", file_count);
-	//TextDinodonN("file_count: ", file_count);
-	if (file_count <= 0)
+	if (file_count <= 1) {
+		emit PrintError("file count less than 2");
 		return;
+	}
+	emit PrintDataD("file count", file_count);
 	QString _DirPath = dirPath;
 	if (dirPath[dirPath.size() - 1] != '/') _DirPath = _DirPath + "/";
 	
 	int width = 0, height = 0, imageNum = file_count;
 	double pixelSpacing_X, pixelSpacing_Y, pixelSpacing_Z;
-	// 获取宽高信息
+	// Obtain width and height information
 	for(int i = 0;i < file_count;i++)
 	{
 		
@@ -266,7 +263,7 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 
 		if (!Metalnfo) {
 			imageNum--;
-			emit PrintDataD("No Metalnfo in File : ", i);
+			emit PrintError(("No Metalnfo in File " + file_Path).toStdString().c_str());
 			continue;
 		}
 
@@ -277,7 +274,7 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 
 		if (!data) {
 			imageNum--;
-			emit PrintDataD("No data in File : ", i);
+			emit PrintError(("No data in File " + file_Path).toStdString().c_str());
 			continue;
 		}
 
@@ -286,14 +283,14 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 
 		OFString ImageWidth;
 		data->findAndGetOFString(DCM_Columns, ImageWidth);
-		if (width != 0 && width != atoi(ImageWidth.data())) {
-			emit PrintDataD("The width of the image sequence is inconsistent.", i);
+		if (i != 0 && width != atoi(ImageWidth.data())) {
+			emit PrintError(("The width of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
 			return;
 		}else width = atoi(ImageWidth.data());
 		OFString ImageHeight;
 		data->findAndGetOFString(DCM_Rows, ImageHeight);
-		if (height != 0 && height != atoi(ImageHeight.data())) {
-			emit PrintDataD("The height of the image sequence is inconsistent.", i);
+		if (i != 0 && height != atoi(ImageHeight.data())) {
+			emit PrintError(("The height of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
 			return;
 		}
 		else height = atoi(ImageHeight.data());
@@ -301,11 +298,25 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 
 		OFString PixelSpacing;
 		data->findAndGetOFString(DCM_PixelSpacing, PixelSpacing);
-		pixelSpacing_X = atof(PixelSpacing.data());
-		pixelSpacing_Y = pixelSpacing_X;
+		if (i != 0 && pixelSpacing_X != atof(PixelSpacing.data())) {
+			emit PrintError(("The pixelSpacing of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+			return;
+		}
+		else if (i == 0) {
+			pixelSpacing_X = atof(PixelSpacing.data());
+			pixelSpacing_Y = pixelSpacing_X;
+		}
+
 		OFString SliceThickness;
 		data->findAndGetOFString(DCM_SliceThickness, SliceThickness);
-		pixelSpacing_Z = atof(SliceThickness.data());
+		if (i != 0 && pixelSpacing_Z != atof(SliceThickness.data())) {
+			emit PrintError(("The SliceThickness of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+			return;
+		}
+		else if (i == 0) {
+			pixelSpacing_Z = atof(SliceThickness.data());
+		}
+		
 
 		{
 			//emit PrintDataD("width : ", width);
@@ -318,22 +329,22 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 	
 	Uint16 * m_data = new Uint16[width * height * imageNum];
 	if (!m_data) {
-		emit PrintDataD("m_data is null ", 0);
+		emit PrintError("Unable to request sufficient amount of memory!");
 		return;
 	}
 
-	// 开始处理每幅图像
+	// Start processing each image
 	std::vector<DcmFile> dcmFileVec;
 	for (int i = 0; i < file_count; i++) {
-		// 文件路径
+		// File Path
 		QString file_Path = _DirPath + dir[i];
 
-		// DcmFileFormat 会自动释放内存
+		// DcmFileFormat will automatically release memory
 		DcmFileFormat dfile;
 		dfile.loadFile(file_Path.toStdString().c_str());
 		DcmMetaInfo *Metalnfo = dfile.getMetaInfo();
 		if (!Metalnfo) {
-			emit PrintDataD("No Metalnfo in File : ", i);
+			emit PrintError(("No Metalnfo in File " + file_Path).toStdString().c_str());
 			continue;
 		}
 		DcmTag Tag;
@@ -341,7 +352,7 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 		Uint16 G_tag = Tag.getGTag();
 		DcmDataset *data = dfile.getDataset();
 		if (!data) {
-			emit PrintDataD("No data in File : ", i);
+			emit PrintError(("No data in File " + file_Path).toStdString().c_str());
 			continue;
 		}
 		DcmElement *element = NULL;
@@ -370,17 +381,11 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 
 	std::sort(dcmFileVec.begin(), dcmFileVec.end(), DateUpSort);
 
-	for (int i = 0; i < file_count; i++) {
-		QTime t;
-		t.start();
-		// emit PrintDataD("dcmFileVec : ", dcmFileVec[i].position); 
-		while (t.elapsed() < 20);
-	}
 
 	int shape1[3] = { width, height, imageNum };
 	int stride1[3] = { 1, width, width * height };
 
-	// 以前写的代码，现在使用VTK生成压缩版本的数据
+	// Previously written code, now using VTK to generate compressed versions of data
 	{
 		//std::ofstream file("sample.raw", std::ios::binary);
 		//for (int i = 0; i < imageNum; i++) file.write((char*)dcmFileVec[i].pixData16, width * height * sizeof(Uint16));
@@ -393,22 +398,25 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 
 	Uint16 * aim_data = new Uint16[width * height * imageNum];
 	if (!aim_data) {
-		emit PrintDataD("aim_data is null ", 0);
+		emit PrintError("Unable to request sufficient amount of memory!");
 		return;
 	}
-	bool flag = false;
+	bool flag = true;
 	for (int i = 0; i < imageNum; i++) {
 		if (dcmFileVec[i].pixData16 == nullptr) {
-			emit PrintDataD("(dcmFileVec[i].pixData16 == nullptr) ", i);
-			flag = true;
+			emit PrintError("(dcmFileVec[i].pixData16 == nullptr) ");
+			flag = false;
 		}
 	}
 
+	if (flag) {
+
+	}
 	for (int i = 0; i < imageNum; i++) {
 		memcpy((Uint16*)aim_data + i * width * height, dcmFileVec[i].pixData16, width * height * sizeof(Uint16));
 	}
 
-	// 以前写的代码，现在使用VTK生成压缩版本的数据
+	// Previously written code, now using VTK to generate compressed versions of data
 	{
 		//std::ofstream file("sample.raw", std::ios::binary);
 		//file.write((char*)aim_data, width * height * imageNum * sizeof(Uint16));
@@ -422,7 +430,7 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 	imageImport->SetWholeExtent(0, width - 1, 0, height - 1, 0, imageNum - 1);
 	imageImport->SetDataExtentToWholeExtent();
 	imageImport->SetDataScalarTypeToShort();
-	imageImport->SetNumberOfScalarComponents(1); // 通道
+	imageImport->SetNumberOfScalarComponents(1); 
 	imageImport->SetImportVoidPointer(aim_data);
 	imageImport->Update();
 
@@ -437,9 +445,7 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 	delete[] aim_data;
 }
 
-// ********************************** //
-// **** 将Dicom生成MHD文件 GDCM版 *** //
-// ********************************** //
+
 bool compareInstance(gdcm::DataSet const & ds1, gdcm::DataSet const & ds2)
 {
 	// Study Instance UID
@@ -449,29 +455,27 @@ bool compareInstance(gdcm::DataSet const & ds1, gdcm::DataSet const & ds2)
 	at2.Set(ds2);
 	return at1 < at2;
 }
-/** 将Dicom生成MHD文件 GDCM版
-* dirPath: 存放dicom文件的路径
-* 将输出结果存放到Output文件夹内
-*/
 void RenderThread::DcmMakeMHDFile_GDCM(const QString& dirPath, const QString& outputDir, const QString& outName) {
 	QDir dir(dirPath);
 	if (!dir.exists()) {
-		emit PrintDataD("(!dir.exists()) : ", 0);
+		emit PrintError("Dir does not exist!");
 		return;
 	}
 
 	QStringList filters;
 	filters << "*.dcm";
-	//设置类型过滤器，只为文件格式，不要符号链接
+	//Set type filters only for file formats, do not use symbolic links
 	dir.setFilter(QDir::Files | QDir::NoSymLinks);
-	//设置文件名称过滤器，filters格式
+	//Set file name filters, filters format
 	dir.setNameFilters(filters);
-	// 记录文件数量
+	//Number of record files
 	int file_count = dir.count();
-	emit PrintDataD("file_count : ", file_count);
-	//TextDinodonN("file_count: ", file_count);
-	if (file_count <= 0)
+	if (file_count <= 1) {
+		emit PrintError("file count less than 2");
 		return;
+	}
+	emit PrintDataD("file_count : ", file_count);
+
 	QString _DirPath = dirPath;
 	if (dirPath[dirPath.size() - 1] != '/') _DirPath = _DirPath + "/";
 
@@ -523,7 +527,7 @@ void RenderThread::DcmMakeMHDFile_GDCM(const QString& dirPath, const QString& ou
 		gdcm::Attribute<0x0028, 0x0030>::ArrayType vv_Pixel_Spacing = at_Pixel_Spacing.GetValue();
 		pixelSpacing_X = pixelSpacing_Y = vv_Pixel_Spacing;
 
-		// 像素位数
+		// bits per pixel
 		gdcm::Attribute<0x0028, 0x0100> at_bit;
 		at_bit.SetFromDataSet(ds);
 		gdcm::Attribute<0x0028, 0x0100>::ArrayType v_bit = at_bit.GetValue();
@@ -551,7 +555,7 @@ void RenderThread::DcmMakeMHDFile_GDCM(const QString& dirPath, const QString& ou
 
 	Uint16 * m_data = new Uint16[width * height * imageNum];
 	if (!m_data) {
-		emit PrintDataD("m_data is null ", 0);
+		emit PrintError("Unable to request sufficient amount of memory!");
 		return;
 	}
 	for (int i = 0; i < file_count; i++) {
@@ -588,13 +592,13 @@ void RenderThread::DcmMakeMHDFile_GDCM(const QString& dirPath, const QString& ou
 
 	Uint16 * aim_data = new Uint16[width * height * imageNum];
 	if (!aim_data) {
-		emit PrintDataD("aim_data is null ", 0);
+		emit PrintError("Unable to request sufficient amount of memory!");
 		return;
 	}
 	bool flag = false;
 	for (int i = 0; i < imageNum; i++) {
 		if (dcmFileVec[i].pixData16 == nullptr) {
-			emit PrintDataD("(dcmFileVec[i].pixData16 == nullptr) ", i);
+			emit PrintError("(dcmFileVec[i].pixData16 == nullptr) ");
 			flag = true;
 		}
 	}
@@ -616,7 +620,7 @@ void RenderThread::DcmMakeMHDFile_GDCM(const QString& dirPath, const QString& ou
 	imageImport->SetWholeExtent(0, width - 1, 0, height - 1, 0, imageNum - 1);
 	imageImport->SetDataExtentToWholeExtent();
 	imageImport->SetDataScalarTypeToShort();
-	imageImport->SetNumberOfScalarComponents(1); // 通道
+	imageImport->SetNumberOfScalarComponents(1); // channel
 	imageImport->SetImportVoidPointer(aim_data);
 	imageImport->Update();
 
@@ -633,21 +637,16 @@ void RenderThread::DcmMakeMHDFile_GDCM(const QString& dirPath, const QString& ou
 }
 
 
-/** 将MHD格式的体数据根据 permute设定的轴进行旋转
-* 将0,1,2填充到数组内
-* filePath：mhd文件路径
-** 将输出结果存放到Output文件夹内
-*/ 
 void RenderThread::MHDRotateAxis(const QString& filePath, const QString& outputDir, const QString& outName, int permute[3]) {
 
 	if (permute[0] == permute[1] || permute[0] == permute[2] || permute[2] == permute[1]) {
-		emit PrintString("Error in MHDRotateAxis: (permute[0] == permute[1] || permute[0] == permute[2] || permute[2] == flip[1])");
+		emit PrintError("Error in MHDRotateAxis: (permute[0] == permute[1] || permute[0] == permute[2] || permute[2] == flip[1])");
 		return;
 	}
 
 	for (int i = 0; i < 3; i++) {
 		if (permute[i] > 2 || permute[i] < 0) {
-			emit PrintString("Error in MHDRotateAxis: (permute[i] > 2 || permute[i] < 0)");
+			emit PrintError("Error in MHDRotateAxis: (permute[i] > 2 || permute[i] < 0)");
 			return;
 		}
 	}
@@ -676,7 +675,7 @@ void RenderThread::MHDRotateAxis(const QString& filePath, const QString& outputD
 		memcpy(data_m + i * width * height, (short*)ImageCast->GetOutput()->GetScalarPointer() + i * width * height, width * height * sizeof(short));
 	}
 
-	// 维度置换
+	// Dimensional permutation
 	int dimM_new[3];
 	double PixelSpace_new[3];
 	for (int i = 0; i < 3; i++) {
@@ -704,7 +703,7 @@ void RenderThread::MHDRotateAxis(const QString& filePath, const QString& outputD
 	imageImport->SetWholeExtent(0, dimM_new[0] - 1, 0, dimM_new[1] - 1, 0, dimM_new[2] - 1);
 	imageImport->SetDataExtentToWholeExtent();
 	imageImport->SetDataScalarTypeToShort();
-	imageImport->SetNumberOfScalarComponents(1); // 通道
+	imageImport->SetNumberOfScalarComponents(1); // channel
 	imageImport->SetImportVoidPointer(data_aim);
 	imageImport->Update();
 	vtkSmartPointer<vtkMetaImageWriter> writer =
@@ -719,10 +718,6 @@ void RenderThread::MHDRotateAxis(const QString& filePath, const QString& outputD
 }
 
 
-/** MHD根据选择的轴上下/左右翻转 flip[i]不为0的轴都会进行翻转
-* dirPath: 存放dicom文件的路径
-* 将输出结果存放到Output文件夹内
-*/
 void RenderThread::MHDFlipAxis(const QString& filePath, const QString& outputDir, const QString& outName, int flip[3]) {
 
 	vtkSmartPointer<vtkMetaImageReader> reader =
@@ -795,7 +790,7 @@ void RenderThread::MHDFlipAxis(const QString& filePath, const QString& outputDir
 	imageImport->SetWholeExtent(0, dimM[0] - 1, 0, dimM[1] - 1, 0, dimM[2] - 1);
 	imageImport->SetDataExtentToWholeExtent();
 	imageImport->SetDataScalarTypeToShort();
-	imageImport->SetNumberOfScalarComponents(1); // 通道
+	imageImport->SetNumberOfScalarComponents(1); // channel
 	imageImport->SetImportVoidPointer(data_m);
 	imageImport->Update();
 	vtkSmartPointer<vtkMetaImageWriter> writer =
@@ -809,7 +804,6 @@ void RenderThread::MHDFlipAxis(const QString& filePath, const QString& outputDir
 }
 
 
-
 inline void set_shortArray(short* data, short dat, int dim[3], int pos[3]) {
 	int offset = pos[0] + dim[0] * pos[1] + dim[0] * dim[1] * pos[2];
 	data[offset] = dat;
@@ -818,12 +812,6 @@ inline short At_shortArray(short* data, int dim[3], int pos[3]) {
 	int offset = pos[0] + dim[0] * pos[1] + dim[0] * dim[1] * pos[2];
 	return data[offset];
 }
-/** 将MHD文件根据本人的VolumeRender的边界格式来裁剪体数据
-* filePath: 输入的.mhd文件路径
-* outName: 输出的文件名
-* 原始边界三轴都是 [-bound,bound]=[-0.5,0.5]，中心为[center]=[0]。
-* 裁剪需要保证每个轴范围在 [center-bound, center+bound]在[-0.5,0.5]以内
-*/
 void RenderThread::MHDClip(const QString& filePath, const QString& outputDir, const QString& outName, double center[3], double bound[3]) {
 	vtkSmartPointer<vtkMetaImageReader> reader =
 		vtkSmartPointer<vtkMetaImageReader>::New();
@@ -871,7 +859,7 @@ void RenderThread::MHDClip(const QString& filePath, const QString& outputDir, co
 	imageImport->SetWholeExtent(0, dimLength[0] - 1, 0, dimLength[1] - 1, 0, dimLength[2] - 1);
 	imageImport->SetDataExtentToWholeExtent();
 	imageImport->SetDataScalarTypeToShort();
-	imageImport->SetNumberOfScalarComponents(1); // 通道
+	imageImport->SetNumberOfScalarComponents(1); // channel
 	imageImport->SetImportVoidPointer(data_aim);
 	imageImport->Update();
 	vtkSmartPointer<vtkMetaImageWriter> writer =
@@ -886,12 +874,6 @@ void RenderThread::MHDClip(const QString& filePath, const QString& outputDir, co
 	delete[] data_m;
 }
 
-
-/** 将MHD文件resize
-* filePath: 输入的.mhd文件路径
-* outName: 输出的文件名
-* Interval: 降采样间隔，相当于分辨率降低Interval倍，只支持整数。
-*/
 void RenderThread::ResizeMHD_IntervalSampling(const QString& filePath, const QString& outputDir, const QString& outName, int Interval) {
 
 	vtkSmartPointer<vtkMetaImageReader> reader =
@@ -937,7 +919,7 @@ void RenderThread::ResizeMHD_IntervalSampling(const QString& filePath, const QSt
 	imageImport->SetWholeExtent(0, dimLength[0] - 1, 0, dimLength[1] - 1, 0, dimLength[2] - 1);
 	imageImport->SetDataExtentToWholeExtent();
 	imageImport->SetDataScalarTypeToShort();
-	imageImport->SetNumberOfScalarComponents(1); // 通道
+	imageImport->SetNumberOfScalarComponents(1); // channel
 	imageImport->SetImportVoidPointer(data_aim);
 	imageImport->Update();
 	vtkSmartPointer<vtkMetaImageWriter> writer =
@@ -954,10 +936,6 @@ void RenderThread::ResizeMHD_IntervalSampling(const QString& filePath, const QSt
 }
 
 
-/** 将MHD文件生成我的易读的体数据格式（二进制无压缩）
-* filePath: 输入的.mhd文件路径
-* outName: 输出的文件名
-*/
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -1007,23 +985,15 @@ void RenderThread::MHDGenerateFeimosData(const QString& filePath, const QString&
 
 }
 
-
-/** 将MHD文件生成PBRT体数据格式（无压缩）
-* filePath: 输入的.mhd文件路径
-* outName: 输出的文件名
-*/
 void RenderThread::MHDGeneratePbrtVolume(const QString& filePath, const QString& outputDir, const QString& outName) {
 
-	emit PrintString("Error: This function has not been implemented yet.");
-	return;
-	
-	emit PrintDataD("Write Finished! ", -1);
+	emit PrintError("This function has not been implemented yet.");
 }
 
 
 
 // **********************************************//
-// *** 一些简单的测试代码 *** //
+// *** Some simple test code *** //
 // **********************************************//
 void RenderThread::DCMTK_Test() {
 
@@ -1033,7 +1003,7 @@ void RenderThread::DCMTK_Test() {
 	DcmTag Tag;
 	Tag = Metalnfo->getTag();
 	Uint16 G_tag = Tag.getGTag();
-	TextDinodonN("G_tag: ", G_tag);
+	DebugTextPrintNum("G_tag: ", G_tag);
 	DcmDataset *data = dfile.getDataset();
 
 	DcmElement *element = NULL;
@@ -1041,41 +1011,41 @@ void RenderThread::DCMTK_Test() {
 
 	double data_len = data->getLength();
 	double element_len = element->getLength();
-	TextDinodonN("data_len: ", data_len);
-	TextDinodonN("element_len: ", element_len);
+	DebugTextPrintNum("data_len: ", data_len);
+	DebugTextPrintNum("element_len: ", element_len);
 
 
 	OFString patientName;
 	data->findAndGetOFString(DCM_PatientName, patientName);
-	TextDinodonS("patientName: " + QString(patientName.data()));
+	DebugTextPrintString("patientName: " + QString(patientName.data()));
 
 	OFString patientId;
 	data->findAndGetOFString(DCM_PatientID, patientId);
-	TextDinodonS("patientId: " + QString(patientId.data()));
+	DebugTextPrintString("patientId: " + QString(patientId.data()));
 
 	OFString patientAge;
 	data->findAndGetOFString(DCM_PatientAge, patientAge);
-	TextDinodonS("patientAge: " + QString(patientAge.data()));
+	DebugTextPrintString("patientAge: " + QString(patientAge.data()));
 
 	OFString PatientPosition;
 	data->findAndGetOFString(DCM_PatientPosition, PatientPosition);
-	TextDinodonS("PatientPosition: " + QString(PatientPosition.data()));
+	DebugTextPrintString("PatientPosition: " + QString(PatientPosition.data()));
 
 	OFString ImagePositionPatient;
 	data->findAndGetOFString(DCM_ImagePositionPatient, ImagePositionPatient);
 
 	OFString PixelSpacing;
 	data->findAndGetOFString(DCM_PixelSpacing, PixelSpacing);
-	TextDinodonS("PixelSpacing: " + QString(PixelSpacing.data()));
+	DebugTextPrintString("PixelSpacing: " + QString(PixelSpacing.data()));
 
 	OFString ImageWidth;
 	data->findAndGetOFString(DCM_Columns, ImageWidth);
-	TextDinodonS("ImageWidth: " + QString(ImageWidth.data()));
+	DebugTextPrintString("ImageWidth: " + QString(ImageWidth.data()));
 	OFString ImageHeight;
 	data->findAndGetOFString(DCM_Rows, ImageHeight);
-	TextDinodonS("ImageHeight: " + QString(ImageHeight.data()));
+	DebugTextPrintString("ImageHeight: " + QString(ImageHeight.data()));
 
-	// 图像数据
+	// image data
 	Uint16 *pixData16;
 	element->getUint16Array(pixData16);*/
 

@@ -43,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(m_InteractionDockWidget->renderButton, SIGNAL(clicked()), this, SLOT(setRendering()));
 
 	
-	/*TextDinodonS("Let's start !");
+	/*DebugTextPrintString("Let's start !");
 
 	DcmTools::Vector4f vec(2.0, 1.0, 3.0, 2.0);
 	TextDinVector("vec", vec);
@@ -57,10 +57,10 @@ MainWindow::MainWindow(QWidget *parent)
 	n = DcmTools::normalize(n);
 	TextDinNormal("n", n);
 
-	TextDinodonS("Let's end !");*/
+	DebugTextPrintString("Let's end !");*/
 	
 	
-	/*TextDinodonS("Matrix Test start !");
+	/*DebugTextPrintString("Matrix Test start !");
 
 	DcmTools::Vector4f vec1(1.0, 2.0, 3.0, 1.0);
 	DcmTools::Vector4f vec2(2.0, 1.0, 1.0, 3.0);
@@ -69,13 +69,13 @@ MainWindow::MainWindow(QWidget *parent)
 	DcmTools::Matrix4x4 m(vec1, vec2, vec3, vec4);
 	DcmTools::Matrix4x4 m_ivt;
 	bool success = m.invert(m_ivt);
-	if (!success) TextDinodonS("EError Unable to invert singular matrix");
+	if (!success) DebugTextPrintString("EError Unable to invert singular matrix");
 	else TextDinMatrix("m_ivt", m_ivt);
 
 	DcmTools::Matrix4x4 I = m * m_ivt;
 	TextDinMatrix("I", I);
 
-	TextDinodonS("Matrix Test end !");*/
+	DebugTextPrintString("Matrix Test end !");*/
 
 
 }
@@ -135,43 +135,49 @@ void MainWindow::setRendering() {
 #include <QDir>
 
 void MainWindow::process_DcmToMhd_DCMTK() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
 
-	TextDinodonS("Convert .dcm files into VTK's .mdh-.raw format using DCMTK lib.");
+	DebugTextPrintString("Convert .dcm files into VTK's .mdh-.raw format using DCMTK lib.");
 
 	QString inputDir = m_InteractionDockWidget->getInputFolder();
-	TextDinodonS("inputDir: " + inputDir);
+	DebugTextPrintString("inputDir: " + inputDir);
 	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	TextDinodonS("outputDir: " + outputDir);
+	DebugTextPrintString("outputDir: " + outputDir);
 
 	QDir dir;
 	if (!dir.exists(inputDir)) {
-		TextDinodonS("Error: Input Folder does not exist.");
+		DebugTextPrintString("Error: Input Folder does not exist.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 	if (!dir.exists(outputDir)) {
 		if (dir.mkpath(outputDir)) {
-			TextDinodonS("Folder created successfully.");
+			DebugTextPrintString("Folder created successfully.");
 		}
 		else {
-			TextDinodonS("Error: Folder creation failed.");
+			DebugTextPrintString("Error: Folder creation failed.");
+			DebugTextPrintString(".................  Process finished   ....................");
 			return;
 		}
 	}
 	else {
-		TextDinodonS("Folder already exists.");
+		DebugTextPrintString("Folder already exists.");
 	}
 
 	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	TextDinodonS("outputFileName: " + outputFileName);
+	DebugTextPrintString("outputFileName: " + outputFileName);
 
 	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
 	if (file_mhd.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
 	if (file_raw.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 
@@ -183,46 +189,52 @@ void MainWindow::process_DcmToMhd_DCMTK() {
 
 		m_DisplayWidget->startRenderThread(1);
 	}
-
+	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_DcmToMhd_GDCM() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
 
-	TextDinodonS("Convert .dcm files into VTK's .mdh-.raw format using GDCM lib.");
+	DebugTextPrintString("Convert .dcm files into VTK's .mdh-.raw format using GDCM lib.");
 
 	QString inputDir = m_InteractionDockWidget->getInputFolder();
-	TextDinodonS("inputDir: " + inputDir);
+	DebugTextPrintString("inputDir: " + inputDir);
 	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	TextDinodonS("outputDir: " + outputDir);
+	DebugTextPrintString("outputDir: " + outputDir);
 
 	QDir dir;
 	if (!dir.exists(inputDir)) {
-		TextDinodonS("Error: Input Folder does not exist.");
+		DebugTextPrintString("Error: Input Folder does not exist.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 	if (!dir.exists(outputDir)) {
 		if (dir.mkpath(outputDir)) {
-			TextDinodonS("Folder created successfully.");
+			DebugTextPrintString("Folder created successfully.");
 		}
 		else {
-			TextDinodonS("Error: Folder creation failed.");
+			DebugTextPrintString("Error: Folder creation failed.");
+			DebugTextPrintString(".................  Process finished   ....................");
 			return;
 		}
 	}
 	else {
-		TextDinodonS("Folder already exists.");
+		DebugTextPrintString("Folder already exists.");
 	}
 
 	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	TextDinodonS("outputFileName: " + outputFileName);
+	DebugTextPrintString("outputFileName: " + outputFileName);
 
 	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
 	if (file_mhd.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
 	if (file_raw.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 
@@ -234,46 +246,53 @@ void MainWindow::process_DcmToMhd_GDCM() {
 
 		m_DisplayWidget->startRenderThread(2);
 	}
-
+	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_MhdToFeimos() {
-	TextDinodonS("Convert .mhd-.raw file into Feimos file format.");
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Convert .mhd-.raw file into Feimos file format.");
 
 	QString inputfile = m_InteractionDockWidget->getInputFilePath();
-	TextDinodonS("inputfile: " + inputfile);
+	DebugTextPrintString("inputfile: " + inputfile);
 	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	TextDinodonS("outputDir: " + outputDir);
+	DebugTextPrintString("outputDir: " + outputDir);
 
 	QFile file_input(inputfile);
 	if (!file_input.exists()) {
-		TextDinodonS("Error: The input file does not exist.");
+		DebugTextPrintString("Error: The input file does not exist.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
-
+	 
 	QDir dir;
 	if (!dir.exists(outputDir)) {
 		if (dir.mkpath(outputDir)) {
-			TextDinodonS("Folder created successfully.");
+			DebugTextPrintString("Folder created successfully.");
 		}
 		else {
-			TextDinodonS("Error: Folder creation failed.");
+			DebugTextPrintString("Error: Folder creation failed.");
+			DebugTextPrintString(".................  Process finished   ....................");
 			return;
 		}
 	}
 	else {
-		TextDinodonS("Folder already exists.");
+		DebugTextPrintString("Folder already exists.");
 	}
 
 	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	TextDinodonS("outputFileName: " + outputFileName);
+	DebugTextPrintString("outputFileName: " + outputFileName);
 	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
 	if (file_mhd.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
 	if (file_raw.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 
@@ -286,46 +305,53 @@ void MainWindow::process_MhdToFeimos() {
 
 		m_DisplayWidget->startRenderThread(3);
 	}
-
+	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_MhdToPbrt() {
-	TextDinodonS("Convert .mhd-.raw file into Pbrt file format.");
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Convert .mhd-.raw file into Pbrt file format.");
 
 	QString inputfile = m_InteractionDockWidget->getInputFilePath();
-	TextDinodonS("inputfile: " + inputfile);
+	DebugTextPrintString("inputfile: " + inputfile);
 	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	TextDinodonS("outputDir: " + outputDir);
+	DebugTextPrintString("outputDir: " + outputDir);
 
 	QFile file_input(inputfile);
 	if (!file_input.exists()) {
-		TextDinodonS("Error: The input file does not exist.");
+		DebugTextPrintString("Error: The input file does not exist.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 
 	QDir dir;
 	if (!dir.exists(outputDir)) {
 		if (dir.mkpath(outputDir)) {
-			TextDinodonS("Folder created successfully.");
+			DebugTextPrintString("Folder created successfully.");
 		}
 		else {
-			TextDinodonS("Error: Folder creation failed.");
+			DebugTextPrintString("Error: Folder creation failed.");
+			DebugTextPrintString(".................  Process finished   ....................");
 			return;
 		}
 	}
 	else {
-		TextDinodonS("Folder already exists.");
+		DebugTextPrintString("Folder already exists.");
 	}
 
 	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	TextDinodonS("outputFileName: " + outputFileName);
+	DebugTextPrintString("outputFileName: " + outputFileName);
 	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
 	if (file_mhd.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
 	if (file_raw.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 
@@ -337,45 +363,53 @@ void MainWindow::process_MhdToPbrt() {
 
 		m_DisplayWidget->startRenderThread(4);
 	}
+	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_MhdRotateAxis() {
-	TextDinodonS("Permute axis of .mhd-.raw file.");
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Permute axis of .mhd-.raw file.");
 
 	QString inputfile = m_InteractionDockWidget->getInputFilePath();
-	TextDinodonS("inputfile: " + inputfile);
+	DebugTextPrintString("inputfile: " + inputfile);
 	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	TextDinodonS("outputDir: " + outputDir);
+	DebugTextPrintString("outputDir: " + outputDir);
 
 	QFile file_input(inputfile);
 	if (!file_input.exists()) {
-		TextDinodonS("Error: The input file does not exist.");
+		DebugTextPrintString("Error: The input file does not exist.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 
 	QDir dir;
 	if (!dir.exists(outputDir)) {
 		if (dir.mkpath(outputDir)) {
-			TextDinodonS("Folder created successfully.");
+			DebugTextPrintString("Folder created successfully.");
 		}
 		else {
-			TextDinodonS("Error: Folder creation failed.");
+			DebugTextPrintString("Error: Folder creation failed.");
+			DebugTextPrintString(".................  Process finished   ....................");
 			return;
 		}
 	}
 	else {
-		TextDinodonS("Folder already exists.");
+		DebugTextPrintString("Folder already exists.");
 	}
 
 	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	TextDinodonS("outputFileName: " + outputFileName);
+	DebugTextPrintString("outputFileName: " + outputFileName);
 	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
 	if (file_mhd.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
 	if (file_raw.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 
@@ -390,45 +424,53 @@ void MainWindow::process_MhdRotateAxis() {
 
 		m_DisplayWidget->startRenderThread(5);
 	}
+	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_MhdFlipAxis() {
-	TextDinodonS("Flip axis of .mhd-.raw file.");
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Flip axis of .mhd-.raw file.");
 
 	QString inputfile = m_InteractionDockWidget->getInputFilePath();
-	TextDinodonS("inputfile: " + inputfile);
+	DebugTextPrintString("inputfile: " + inputfile);
 	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	TextDinodonS("outputDir: " + outputDir);
+	DebugTextPrintString("outputDir: " + outputDir);
 
 	QFile file_input(inputfile);
 	if (!file_input.exists()) {
-		TextDinodonS("Error: The input file does not exist.");
+		DebugTextPrintString("Error: The input file does not exist.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 
 	QDir dir;
 	if (!dir.exists(outputDir)) {
 		if (dir.mkpath(outputDir)) {
-			TextDinodonS("Folder created successfully.");
+			DebugTextPrintString("Folder created successfully.");
 		}
 		else {
-			TextDinodonS("Error: Folder creation failed.");
+			DebugTextPrintString("Error: Folder creation failed.");
+			DebugTextPrintString(".................  Process finished   ....................");
 			return;
 		}
 	}
 	else {
-		TextDinodonS("Folder already exists.");
+		DebugTextPrintString("Folder already exists.");
 	}
 
 	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	TextDinodonS("outputFileName: " + outputFileName);
+	DebugTextPrintString("outputFileName: " + outputFileName);
 	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
 	if (file_mhd.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
 	if (file_raw.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 
@@ -444,45 +486,53 @@ void MainWindow::process_MhdFlipAxis() {
 
 		m_DisplayWidget->startRenderThread(6);
 	}
+	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_MhdClip() {
-	TextDinodonS("Clip.mhd - .raw file.");
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Clip.mhd - .raw file.");
 
 	QString inputfile = m_InteractionDockWidget->getInputFilePath();
-	TextDinodonS("inputfile: " + inputfile);
+	DebugTextPrintString("inputfile: " + inputfile);
 	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	TextDinodonS("outputDir: " + outputDir);
+	DebugTextPrintString("outputDir: " + outputDir);
 
 	QFile file_input(inputfile);
 	if (!file_input.exists()) {
-		TextDinodonS("Error: The input file does not exist.");
+		DebugTextPrintString("Error: The input file does not exist.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 
 	QDir dir;
 	if (!dir.exists(outputDir)) {
 		if (dir.mkpath(outputDir)) {
-			TextDinodonS("Folder created successfully.");
+			DebugTextPrintString("Folder created successfully.");
 		}
 		else {
-			TextDinodonS("Error: Folder creation failed.");
+			DebugTextPrintString("Error: Folder creation failed.");
+			DebugTextPrintString(".................  Process finished   ....................");
 			return;
 		}
 	}
 	else {
-		TextDinodonS("Folder already exists.");
+		DebugTextPrintString("Folder already exists.");
 	}
 
 	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	TextDinodonS("outputFileName: " + outputFileName);
+	DebugTextPrintString("outputFileName: " + outputFileName);
 	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
 	if (file_mhd.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
 	if (file_raw.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 
@@ -494,49 +544,55 @@ void MainWindow::process_MhdClip() {
 
 		m_DisplayWidget->startRenderThread(7);
 	}
-
+	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_MhdResize() {
-	TextDinodonS("Resize .mhd-.raw file.");
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Resize .mhd-.raw file.");
 
 	QString inputfile = m_InteractionDockWidget->getInputFilePath();
-	TextDinodonS("inputfile: " + inputfile);
+	DebugTextPrintString("inputfile: " + inputfile);
 	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	TextDinodonS("outputDir: " + outputDir);
+	DebugTextPrintString("outputDir: " + outputDir);
 
 	QFile file_input(inputfile);
 	if (!file_input.exists()) {
-		TextDinodonS("Error: The input file does not exist.");
+		DebugTextPrintString("Error: The input file does not exist.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 
 	QDir dir;
 	if (!dir.exists(outputDir)) {
 		if (dir.mkpath(outputDir)) {
-			TextDinodonS("Folder created successfully.");
+			DebugTextPrintString("Folder created successfully.");
 		}
 		else {
-			TextDinodonS("Error: Folder creation failed.");
+			DebugTextPrintString("Error: Folder creation failed.");
+			DebugTextPrintString(".................  Process finished   ....................");
 			return;
 		}
 	}
 	else {
-		TextDinodonS("Folder already exists.");
+		DebugTextPrintString("Folder already exists.");
 	}
 
 	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	TextDinodonS("outputFileName: " + outputFileName);
+	DebugTextPrintString("outputFileName: " + outputFileName);
 	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
 	if (file_mhd.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
 	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
 	if (file_raw.exists()) {
-		TextDinodonS("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
+		DebugTextPrintString(".................  Process finished   ....................");
 		return;
 	}
-
 
 	if (!m_DisplayWidget->renderFlag) {
 
@@ -546,7 +602,7 @@ void MainWindow::process_MhdResize() {
 
 		m_DisplayWidget->startRenderThread(4);
 	}
-
+	DebugTextPrintString(".................  Process finished   ....................");
 }
 
 

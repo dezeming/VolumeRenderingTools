@@ -154,7 +154,7 @@ public:
 		QString permu = permuteEdit->text();
 		QStringList splitList = permu.split(",");
 		if (splitList.size() != 3) {
-			TextDinodonS("Incorrect input format.");
+			DebugTextPrintString("Incorrect input format.");
 			return false;
 		}
 

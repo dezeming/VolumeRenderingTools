@@ -32,7 +32,7 @@ DebugText::DebugText(QWidget * parent) : QWidget(parent) {
 	
 	qlayout = new QHBoxLayout(this);
 	ShowDebugArea = new QTextEdit(this);
-	ShowDebugArea->setFontPointSize(18);
+	ShowDebugArea->setFontPointSize(14);
 	qlayout->setAlignment(Qt::AlignCenter);
 	qlayout->addWidget(ShowDebugArea);
 	show();
@@ -46,7 +46,22 @@ void DebugText::addContents(const QString& s1)
 {
 	//QMutexLocker locker(&mutexInDebugText);
 	mutexInDebugText.lock();
+	QTextCursor cursor = ShowDebugArea->textCursor();
+	cursor.movePosition(QTextCursor::End);
+	ShowDebugArea->setTextCursor(cursor);
 	ShowDebugArea->append(s1);
+	show();
+	mutexInDebugText.unlock();
+}
+
+void DebugText::addHtmlContents(const QString& s1)
+{
+	//QMutexLocker locker(&mutexInDebugText);
+	mutexInDebugText.lock();
+	QTextCursor cursor = ShowDebugArea->textCursor();
+	cursor.movePosition(QTextCursor::End);
+	ShowDebugArea->setTextCursor(cursor);
+	ShowDebugArea->insertHtml(s1);
 	show();
 	mutexInDebugText.unlock();
 }

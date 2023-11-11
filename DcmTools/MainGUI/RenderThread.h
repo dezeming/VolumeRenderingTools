@@ -44,21 +44,21 @@ public:
 	void DCMTK_Test();
 	void GDCM_Test();
 
-	/** Generate DCMTK version of MHD file from Dicom
+	/** DCMTK version: Generate MHD file from Dicom
 	* It is necessary to ensure that the width and height of all DCM files are consistent
 	* dirPath: Path to store dicom files
 	* outputDir：Output Folder
-	* 将输出结果存放到Output文件夹内
-	* 免费版不支持JPEG2000压缩格式（付费版支持）
+	* Store the output results in the Output folder
+	* The free version does not support JPEG2000 compression format (paid version supports)
 	*/
 	void DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& outputDir, const QString& outName);
 
-	/** 将Dicom生成MHD文件 DCMTK版
-	* 需要保证所有dcm文件的宽高一致
-	* dirPath: 存放dicom文件的路径
-	* outputDir：输出文件夹
-	* 将输出结果存放到Output文件夹内
-	* 支持格式最全
+	/** GDCM version: Generate MHD file from Dicom
+	* It is necessary to ensure that the width and height of all DCM files are consistent
+	* dirPath: Path to store dicom files
+	* outputDir：Output Folder
+	* Store the output results in the Output folder
+	* The most comprehensive DICOM formats supported
 	*/
 	void DcmMakeMHDFile_GDCM(const QString& dirPath, const QString& outputDir, const QString& outName);
 
@@ -116,6 +116,9 @@ public:
 signals:
 	void PrintString(const char* s);
 	void PrintDataD(const char* s, const double data);
+
+	void PrintError(const char* s);
+	void PrintWarning(const char* s);
 
 	void PaintBuffer(DcmTools::Uchar* buffer, int width, int height, int channals);
 

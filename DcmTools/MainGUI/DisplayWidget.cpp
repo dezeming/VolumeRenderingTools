@@ -51,6 +51,9 @@ void DisplayWidget::startRenderThread(int index) {
 		//connect(rThread, SIGNAL(PrintDataI(char* s, int data)), this, SLOT(PrintDataI(char* s, int data)));
 		connect(rThread, SIGNAL(PaintBuffer(DcmTools::Uchar*, int, int, int)), &m_IMAGraphicsView, SLOT(PaintBuffer(DcmTools::Uchar*, int, int, int)));
 
+		connect(rThread, SIGNAL(PrintError(const char*)), this, SLOT(PrintErrorString(const char*)));
+		connect(rThread, SIGNAL(PrintWarning(const char*)), this, SLOT(PrintWarningString(const char*)));
+
 		// Temporarily disable thread
 		//rThread->start();
 	}
@@ -82,8 +85,6 @@ void DisplayWidget::startRenderThread(int index) {
 		rThread->ResizeMHD_IntervalSampling(InputFilePath, OutputFolder, OutputFileName, interval);
 	}
 
-
-
 	//renderFlag = true;
 }
 
@@ -103,19 +104,27 @@ void DisplayWidget::killRenderThread() {
 }
 
 void DisplayWidget::PrintString(const char* s) {
-	TextDinodonS(s);
+	DebugTextPrintString(s);
 }
 void DisplayWidget::PrintQString(const QString s) {
-	TextDinodonS(s);
+	DebugTextPrintString(s);
 }
 void DisplayWidget::PrintDataD(const char* s, const double data) {
-	TextDinodonN(s, data);
+	DebugTextPrintNum(s, data);
 }
+
+void DisplayWidget::PrintErrorString(const char* s) {
+	DebugTextPrintErrorString(s);
+}
+void DisplayWidget::PrintWarningString(const char* s) {
+	DebugTextPrintWarningString(s);
+}
+
 /*void DisplayWidget::PrintDataF(char* s, float data) {
-	TextDinodonN(s, data);
+	DebugTextPrintNum(s, data);
 }
 void DisplayWidget::PrintDataI(char* s, int data) {
-	TextDinodonN(s, data);
+	DebugTextPrintNum(s, data);
 }*/
 
 

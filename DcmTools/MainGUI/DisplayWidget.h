@@ -69,6 +69,10 @@ private slots:
 	void PrintString(const char* s);
 	void PrintQString(const QString s);
 	void PrintDataD(const char* s, const double data);
+
+	void PrintErrorString(const char* s);
+	void PrintWarningString(const char* s);
+
 	//void PrintDataF(char* s, float data);
 	//void PrintDataI(char* s, int data);
 };

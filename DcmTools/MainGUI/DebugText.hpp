@@ -33,6 +33,7 @@ class DebugText : public QWidget {
 public:
 	~DebugText();
 	void addContents(const QString& s1);
+	void addHtmlContents(const QString& s1);
 	static DebugText* getDebugText();
 
 private:
@@ -44,14 +45,16 @@ private:
 
 };
 
-#define  TextDinodonS(text)  DebugText::getDebugText()->addContents(text)
+#define DebugTextPrintLineBreak() DebugText::getDebugText()->addContents("")
+#define DebugTextPrintString(text)  DebugText::getDebugText()->addContents(QString("<font color='black' size='14'>Info:[") + text + QString("]</font>"))
 
-#define  TextDinodonN(text, num)  DebugText::getDebugText()->addContents(QString(text) + " " + QString::number(num))
-#define  TextDinodonN2(text, num1, num2)  DebugText::getDebugText()->addContents(QString(text) + " " + QString::number(num1) + " " + QString::number(num2))
-#define  TextDinodonN3(text, num1, num2, num3)  DebugText::getDebugText()->addContents(QString(text) + " " + QString::number(num1) + " " + QString::number(num2) + " " + QString::number(num3))
-#define  TextDinodonN4(text, num1, num2, num3, num4)  DebugText::getDebugText()->addContents(QString(text) + " " + QString::number(num1) + " " + QString::number(num2) + " " + QString::number(num3) + " " + QString::number(num4))
+#define DebugTextPrintNum(text, num)  DebugText::getDebugText()->addContents(QString("<font color='black' size='14'>") + text + ":[" + QString::number(num) + "]</font>")
+#define DebugTextPrint2Nums(text, num1, num2)  DebugText::getDebugText()->addContents(QString("<font color='black' size='14'>") + text + ":[" + QString::number(num1) + "," + QString::number(num2) + "]</font>")
+#define DebugTextPrint3Nums(text, num1, num2, num3)  DebugText::getDebugText()->addContents(QString("<font color='black' size='14'>") + text + ":[" + QString::number(num1) + "," + QString::number(num2) + "," + QString::number(num3) + "]</font>")
+#define DebugTextPrint4Nums(text, num1, num2, num3, num4)  DebugText::getDebugText()->addContents(QString("<font color='black' size='14'>") + text + ":[" + QString::number(num1) + "," + QString::number(num2) + "," + QString::number(num3) + "," + QString::number(num4) + "]</font>")
 
-
+#define DebugTextPrintErrorString(text) DebugText::getDebugText()->addHtmlContents(QString("<font color='red' size='14'>Error:[") + QString(text) + QString("]</font>"))
+#define DebugTextPrintWarningString(text) DebugText::getDebugText()->addHtmlContents(QString("<font color='blue' size='14'>Warning:[") + QString(text) + QString("]</font>"))
 
 
 #endif
