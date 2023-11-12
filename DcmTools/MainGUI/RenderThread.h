@@ -73,6 +73,12 @@ enum DcmParseLib {
 	Dez_DCMTK = 1
 };
 
+struct ImportFormat {
+	DataFormat format;
+	unsigned int xLength, yLength, zLength;
+	float xPixelSpace, yPixelSpace, zPixelSpace;
+};
+
 struct GenerateFormat {
 	DataFormat format = Dez_Origin;
 	DcmParseLib parseLib = Dez_GDCM;
