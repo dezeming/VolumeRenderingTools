@@ -42,7 +42,7 @@
 #include "gdcmStringFilter.h"
 #include "gdcmImageReader.h"
 
-// VTK lib
+// VTK
 #include <vtkAutoInit.h>
 VTK_MODULE_INIT(vtkRenderingOpenGL2)
 VTK_MODULE_INIT(vtkInteractionStyle);
@@ -66,7 +66,11 @@ VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2);
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <string>
 
+// **********************************************//
+// *** RenderThread *** //
+// **********************************************//
 
 RenderThread::RenderThread() {
 	paintFlag = false;
@@ -77,26 +81,37 @@ RenderThread::~RenderThread() {
 	
 }
 
-void RenderThread::process() {
-	emit PrintString("Prepared to Process");
+
+void RenderThread::run() {
+
+}
+
+
+// **********************************************//
+// *** ProcessVolumeData *** //
+// **********************************************//
+ProcessVolumeData::ProcessVolumeData() {
+
+}
+ProcessVolumeData::~ProcessVolumeData() {
+
+}
+
+
+void ProcessVolumeData::process() {
 
 	// DCMTK_Test();
 	// GDCM_Test();
 
-
 	// Dicom to MHD-RAW
-	if (0) {
-		emit PrintString("........................  New Task   ................................");
-		emit PrintString("Convert .dcm files into VTK' .mdh-.raw format using DCMTK lib.");
-		DcmMakeMHDFile_DCMTK(
+	if (0) {	
+		DcmMakeMhdFile_DCMTK(
 			"D:/Datasets/DicomImages/Heart/", 
 			"./Output", 
 			"sample");
 	}
 	if (0) {
-		emit PrintString("........................  New Task   ................................");
-		emit PrintString("Convert .dcm files into VTK' .mdh-.raw format using GDCM lib.");
-		DcmMakeMHDFile_GDCM(
+		DcmMakeMhdFile_GDCM(
 			"E:/Datasets/MaxinData/3D_AX+C_Series0010/",
 			"./Output", 
 			"PT096");
@@ -125,7 +140,7 @@ void RenderThread::process() {
 				emit PrintString("Folder already exists.");
 			}
 
-			DcmMakeMHDFile_GDCM(
+			DcmMakeMhdFile_GDCM(
 				inputfolderPath,
 				outputfolderPath,
 				"R" + QString::number(i / 100) + QString::number(i % 100 / 10) + QString::number(i % 10));
@@ -137,9 +152,7 @@ void RenderThread::process() {
 
 	// down sampling
 	if (0) {
-		emit PrintString("........................  New Task   ................................");
-		emit PrintString("Resize .mhd-.raw file.");
-		ResizeMHD_IntervalSampling(
+		DownSamplingMhdWithInterval(
 			"D:/DataSets/OpenScientificVisData-Origin/synthetic_truss_with_five_defects/synthetic_truss.mhd", 
 			"./Output", 
 			"synthetic_truss_small", 2);
@@ -147,11 +160,9 @@ void RenderThread::process() {
 
 	// MHD clipping
 	if (0) {
-		emit PrintString("........................  New Task   ................................");
-		emit PrintString("Clip .mhd-.raw file.");
 		double center[3] = { 0.0, 0, 0.0 };
 		double bound[3] = { 0.212, 0.5, 0.5 };
-		MHDClip(
+		MhdClip(
 			"D:/DataSets/OpenScientificVisData/Chameleon/chameleon.mhd", 
 			"Chameleon_small", 
 			"./Output",
@@ -160,10 +171,8 @@ void RenderThread::process() {
 
 	// MHD Rotate according to axis
 	if (0) {
-		emit PrintString("........................  New Task   ................................");
-		emit PrintString("Permute axis of .mhd-.raw file.");
 		int permute[3] = {0,2,1};
-		MHDRotateAxis(
+		MhdRotateAxis(
 			"E:/DataSets/DcmToolsTest/ssas/mhd_abdomen.mhd", 
 			"E:/DataSets/DcmToolsTest/dddd/",
 			"bunny_r", 
@@ -172,10 +181,8 @@ void RenderThread::process() {
 
 	// MHD flips up, down, left, and right based on the selected axis
 	if (0) {
-		emit PrintString("........................  New Task   ................................");
-		emit PrintString("Flip axis of .mhd-.raw file.");
 		int flip[3] = { 0,1,0 };
-		MHDFlipAxis(
+		MhdFlipAxis(
 			"E:/DataSets/DcmToolsTest/mhd_abdomen.mhd", 
 			"E:/DataSets/DcmToolsTest/dddd/",
 			"sample", 
@@ -184,50 +191,28 @@ void RenderThread::process() {
 
 	// MHD to Feimos format
 	if (0) {
-		emit PrintString("........................  New Task   ................................");
-		emit PrintString("Convert (.mhd)-(.raw) file into Feimos file format.");
-		MHDGenerateFeimosData(
+		GenerateFormat generateFormat;
+		MhdGenerateFeimosData(
 			"sample.mhd", 
 			"./Output", 
-			"sample");
+			"sample", generateFormat);
 	}
-
-	// Start processing, currently not engaged in actual tasks
-	{
-		QTime t;
-		t.start();
-
-		for (int i = 0; i < 800; i++) {
-			for(int j = 0; j < 600; j++) {
-				
-				p_framebuffer->set_uc(i, j, 0, 255);
-				p_framebuffer->set_uc(i, j, 1, 0);
-				p_framebuffer->set_uc(i, j, 2, 0);
-				p_framebuffer->set_uc(i, j, 3, 255);
-			}
-		}
-		//emit PaintBuffer(p_framebuffer->getUCbuffer(), 800, 600, 4);
-	}
-
-	emit PrintString(".................  Process finished   ....................");
 }
 
-void RenderThread::run() {
-
-}
-
-
+// **********************************************//
+// *** Functions *** //
+// **********************************************//
 
 struct DcmFile {
 	Uint16 *pixData16 = nullptr;
 	float position = 0.0f;
 };
-bool DateUpSort(const DcmFile &f1, const DcmFile &f2) {
+bool DataUpSort(const DcmFile &f1, const DcmFile &f2) {
 	if (f1.position < f2.position) return true;
 	else return false;
 }
-void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& outputDir, const QString& outName) {
-
+void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QString& outputDir, const QString& outName) {
+	emit PrintString("Convert .dcm files into (.mhd)-(.raw) format using DCMTK lib.");
 	QDir dir(dirPath);
 	if (!dir.exists()) {
 		emit PrintError("Dir does not exist!");
@@ -364,8 +349,6 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 		OFString ImageHeight;
 		data->findAndGetOFString(DCM_Rows, ImageHeight);
 		height = atoi(ImageHeight.data());
-		//emit PrintDataD("width : ", width);
-		//emit PrintDataD("height : ", height);
 		OFString ImagePos;
 		data->findAndGetOFString(DCM_SliceLocation, ImagePos);
 
@@ -379,7 +362,7 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 		dcmFileVec.push_back(dcmF);
 	}
 
-	std::sort(dcmFileVec.begin(), dcmFileVec.end(), DateUpSort);
+	std::sort(dcmFileVec.begin(), dcmFileVec.end(), DataUpSort);
 
 
 	int shape1[3] = { width, height, imageNum };
@@ -394,7 +377,6 @@ void RenderThread::DcmMakeMHDFile_DCMTK(const QString& dirPath, const QString& o
 		//for (int i = 0; i < imageNum; i++) fwrite(dcmFileVec[i].pixData16, sizeof(Uint16), width * height, fp);
 		//fclose(fp);
 	}
-
 
 	Uint16 * aim_data = new Uint16[width * height * imageNum];
 	if (!aim_data) {
@@ -455,7 +437,8 @@ bool compareInstance(gdcm::DataSet const & ds1, gdcm::DataSet const & ds2)
 	at2.Set(ds2);
 	return at1 < at2;
 }
-void RenderThread::DcmMakeMHDFile_GDCM(const QString& dirPath, const QString& outputDir, const QString& outName) {
+void ProcessVolumeData::DcmMakeMhdFile_GDCM(const QString& dirPath, const QString& outputDir, const QString& outName) {
+	emit PrintString("Convert .dcm files into (.mhd)-(.raw) format using GDCM lib.");
 	QDir dir(dirPath);
 	if (!dir.exists()) {
 		emit PrintError("Dir does not exist!");
@@ -588,7 +571,7 @@ void RenderThread::DcmMakeMHDFile_GDCM(const QString& dirPath, const QString& ou
 		dcmFileVec[i].pixData16 = m_data + i * width * height;
 	}
 
-	std::sort(dcmFileVec.begin(), dcmFileVec.end(), DateUpSort);
+	std::sort(dcmFileVec.begin(), dcmFileVec.end(), DataUpSort);
 
 	Uint16 * aim_data = new Uint16[width * height * imageNum];
 	if (!aim_data) {
@@ -637,8 +620,8 @@ void RenderThread::DcmMakeMHDFile_GDCM(const QString& dirPath, const QString& ou
 }
 
 
-void RenderThread::MHDRotateAxis(const QString& filePath, const QString& outputDir, const QString& outName, int permute[3]) {
-
+void ProcessVolumeData::MhdRotateAxis(const QString& filePath, const QString& outputDir, const QString& outName, int permute[3]) {
+	emit PrintString("Permute axis of (.mhd)-(.raw) file.");
 	if (permute[0] == permute[1] || permute[0] == permute[2] || permute[2] == permute[1]) {
 		emit PrintError("Error in MHDRotateAxis: (permute[0] == permute[1] || permute[0] == permute[2] || permute[2] == flip[1])");
 		return;
@@ -718,8 +701,8 @@ void RenderThread::MHDRotateAxis(const QString& filePath, const QString& outputD
 }
 
 
-void RenderThread::MHDFlipAxis(const QString& filePath, const QString& outputDir, const QString& outName, int flip[3]) {
-
+void ProcessVolumeData::MhdFlipAxis(const QString& filePath, const QString& outputDir, const QString& outName, int flip[3]) {
+	emit PrintString("Flip axis of (.mhd)-(.raw) file.");
 	vtkSmartPointer<vtkMetaImageReader> reader =
 		vtkSmartPointer<vtkMetaImageReader>::New();
 	reader->SetFileName(filePath.toStdString().c_str());
@@ -812,7 +795,8 @@ inline short At_shortArray(short* data, int dim[3], int pos[3]) {
 	int offset = pos[0] + dim[0] * pos[1] + dim[0] * dim[1] * pos[2];
 	return data[offset];
 }
-void RenderThread::MHDClip(const QString& filePath, const QString& outputDir, const QString& outName, double center[3], double bound[3]) {
+void ProcessVolumeData::MhdClip(const QString& filePath, const QString& outputDir, const QString& outName, double center[3], double bound[3]) {
+	emit PrintString("Clip (.mhd)-(.raw) file.");
 	vtkSmartPointer<vtkMetaImageReader> reader =
 		vtkSmartPointer<vtkMetaImageReader>::New();
 
@@ -874,7 +858,9 @@ void RenderThread::MHDClip(const QString& filePath, const QString& outputDir, co
 	delete[] data_m;
 }
 
-void RenderThread::ResizeMHD_IntervalSampling(const QString& filePath, const QString& outputDir, const QString& outName, int Interval) {
+
+void ProcessVolumeData::DownSamplingMhdWithInterval(const QString& filePath, const QString& outputDir, const QString& outName, int Interval) {
+	emit PrintString("Resize (.mhd)-(.raw) file.");
 
 	vtkSmartPointer<vtkMetaImageReader> reader =
 		vtkSmartPointer<vtkMetaImageReader>::New();
@@ -936,10 +922,9 @@ void RenderThread::ResizeMHD_IntervalSampling(const QString& filePath, const QSt
 }
 
 
-#include <string>
-#include <iostream>
-#include <fstream>
-void RenderThread::MHDGenerateFeimosData(const QString& filePath, const QString& outputDir, const QString& outName) {
+void ProcessVolumeData::MhdGenerateFeimosData(const QString& filePath, const QString& outputDir, const QString& outName, 
+	const GenerateFormat& generateFormat) {
+	emit PrintString("Convert (.mhd)-(.raw) file into Feimos file format.");
 	vtkSmartPointer<vtkMetaImageReader> reader =
 		vtkSmartPointer<vtkMetaImageReader>::New();
 
@@ -985,7 +970,8 @@ void RenderThread::MHDGenerateFeimosData(const QString& filePath, const QString&
 
 }
 
-void RenderThread::MHDGeneratePbrtVolume(const QString& filePath, const QString& outputDir, const QString& outName) {
+
+void ProcessVolumeData::MhdGeneratePbrtVolume(const QString& filePath, const QString& outputDir, const QString& outName) {
 
 	emit PrintError("This function has not been implemented yet.");
 }
@@ -995,7 +981,7 @@ void RenderThread::MHDGeneratePbrtVolume(const QString& filePath, const QString&
 // **********************************************//
 // *** Some simple test code *** //
 // **********************************************//
-void RenderThread::DCMTK_Test() {
+void ProcessVolumeData::DCMTK_Test() {
 
 	/*DcmFileFormat dfile;
 	dfile.loadFile("Images/aa1.dcm");
@@ -1050,7 +1036,7 @@ void RenderThread::DCMTK_Test() {
 	element->getUint16Array(pixData16);*/
 
 }
-void RenderThread::GDCM_Test() {
+void ProcessVolumeData::GDCM_Test() {
 	/*
 	gdcm::Reader reader;
 	reader.SetFileName("Images/IM-0001-0001.dcm");

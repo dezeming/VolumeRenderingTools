@@ -28,11 +28,25 @@ DisplayWidget::DisplayWidget(QGroupBox * parent) {
 	displayWidgetLayout.addWidget(&m_IMAGraphicsView);
 
 	framebuffer.InitBuffer(800, 600, 4);
+
+	{
+		connect(&processVolumeData, SIGNAL(PrintString(const char*)), this, SLOT(PrintString(const char*)));
+		connect(&processVolumeData, SIGNAL(PrintDataD(const char*, const double)), this, SLOT(PrintDataD(const char*, const double)));
+		connect(&processVolumeData, SIGNAL(PrintError(const char*)), this, SLOT(PrintErrorString(const char*)));
+		connect(&processVolumeData, SIGNAL(PrintWarning(const char*)), this, SLOT(PrintWarningString(const char*)));
+	}
 }
 
 DisplayWidget::~DisplayWidget() { 
 	killRenderThread();
 	framebuffer.FreeBuffer();
+
+	{
+		disconnect(&processVolumeData, SIGNAL(PrintString(const char*)), this, SLOT(PrintString(const char*)));
+		disconnect(&processVolumeData, SIGNAL(PrintDataD(const char*, const double)), this, SLOT(PrintDataD(const char*, const double)));
+		disconnect(&processVolumeData, SIGNAL(PrintError(const char*)), this, SLOT(PrintErrorString(const char*)));
+		disconnect(&processVolumeData, SIGNAL(PrintWarning(const char*)), this, SLOT(PrintWarningString(const char*)));
+	}
 }
 
 void DisplayWidget::closeEvent(QCloseEvent *event) {
@@ -55,37 +69,10 @@ void DisplayWidget::startRenderThread(int index) {
 		connect(rThread, SIGNAL(PrintWarning(const char*)), this, SLOT(PrintWarningString(const char*)));
 
 		// Temporarily disable thread
-		//rThread->start();
+		rThread->start();
 	}
 
-	if (0 == index)
-		rThread->process();
-	if (1 == index) {
-		rThread->DcmMakeMHDFile_DCMTK(InputFolder, OutputFolder, OutputFileName);
-	}
-	if (2 == index) {
-		rThread->DcmMakeMHDFile_GDCM(InputFolder, OutputFolder, OutputFileName);
-	}
-	if (3 == index) {
-		rThread->MHDGenerateFeimosData(InputFilePath, OutputFolder, OutputFileName);
-	}
-	if (4 == index) {
-		rThread->MHDGeneratePbrtVolume(InputFilePath, OutputFolder, OutputFileName);
-	}
-	if (5 == index) {
-		rThread->MHDRotateAxis(InputFilePath, OutputFolder, OutputFileName, permute);
-	}
-	if (6 == index) {
-		rThread->MHDFlipAxis(InputFilePath, OutputFolder, OutputFileName, flip);
-	}
-	if (7 == index) {
-		rThread->MHDClip(InputFilePath, OutputFolder, OutputFileName, clipCenter, clipBound);
-	}
-	if (8 == index) {
-		rThread->ResizeMHD_IntervalSampling(InputFilePath, OutputFolder, OutputFileName, interval);
-	}
-
-	//renderFlag = true;
+	renderFlag = true;
 }
 
 void DisplayWidget::killRenderThread() {
@@ -120,14 +107,35 @@ void DisplayWidget::PrintWarningString(const char* s) {
 	DebugTextPrintWarningString(s);
 }
 
-/*void DisplayWidget::PrintDataF(char* s, float data) {
-	DebugTextPrintNum(s, data);
+
+void DisplayWidget::Process(int index) {
+	if (0 == index)
+		processVolumeData.process();
+	if (1 == index) {
+		processVolumeData.DcmMakeMhdFile_DCMTK(InputFolder, OutputFolder, OutputFileName);
+	}
+	if (2 == index) {
+		processVolumeData.DcmMakeMhdFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+	}
+	if (3 == index) {
+		processVolumeData.MhdGenerateFeimosData(InputFilePath, OutputFolder, OutputFileName, generateFormat);
+	}
+	if (4 == index) {
+		processVolumeData.MhdGeneratePbrtVolume(InputFilePath, OutputFolder, OutputFileName);
+	}
+	if (5 == index) {
+		processVolumeData.MhdRotateAxis(InputFilePath, OutputFolder, OutputFileName, permute);
+	}
+	if (6 == index) {
+		processVolumeData.MhdFlipAxis(InputFilePath, OutputFolder, OutputFileName, flip);
+	}
+	if (7 == index) {
+		processVolumeData.MhdClip(InputFilePath, OutputFolder, OutputFileName, clipCenter, clipBound);
+	}
+	if (8 == index) {
+		processVolumeData.DownSamplingMhdWithInterval(InputFilePath, OutputFolder, OutputFileName, interval);
+	}
 }
-void DisplayWidget::PrintDataI(char* s, int data) {
-	DebugTextPrintNum(s, data);
-}*/
-
-
 
 
 

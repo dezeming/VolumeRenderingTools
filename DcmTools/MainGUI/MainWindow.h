@@ -55,6 +55,7 @@ private:
 
 private slots:
 	void setRendering();
+	void setProcess();
 
 	void process_DcmToMhd_DCMTK();
 	void process_DcmToMhd_GDCM();

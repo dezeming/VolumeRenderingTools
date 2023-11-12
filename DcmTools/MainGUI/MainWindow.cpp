@@ -40,7 +40,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	setDock();
 	
-	connect(m_InteractionDockWidget->renderButton, SIGNAL(clicked()), this, SLOT(setRendering()));
+	connect(m_InteractionDockWidget->processButton, SIGNAL(clicked()), this, SLOT(setProcess()));
 
 	
 	/*DebugTextPrintString("Let's start !");
@@ -123,16 +123,20 @@ void MainWindow::setDock(void) {
 }
 
 void MainWindow::setRendering() {
-
 	if (!m_DisplayWidget->renderFlag) {
 		// start rendering
-		m_InteractionDockWidget->renderButton->setText("Processing");
+		m_InteractionDockWidget->processButton->setText("Processing");
 		m_DisplayWidget->startRenderThread();
 	}
-
 }
 
 #include <QDir>
+
+void MainWindow::setProcess() {
+	DebugTextPrintString("........................  New Task   ................................");
+	m_DisplayWidget->Process(0);
+	DebugTextPrintString(".................  Process finished   ....................");
+}
 
 void MainWindow::process_DcmToMhd_DCMTK() {
 	DebugTextPrintLineBreak();
@@ -181,14 +185,11 @@ void MainWindow::process_DcmToMhd_DCMTK() {
 		return;
 	}
 
-	if (!m_DisplayWidget->renderFlag) {
-		
-		m_DisplayWidget->InputFolder = inputDir;
-		m_DisplayWidget->OutputFolder = outputDir;
-		m_DisplayWidget->OutputFileName = outputFileName;
+	m_DisplayWidget->InputFolder = inputDir;
+	m_DisplayWidget->OutputFolder = outputDir;
+	m_DisplayWidget->OutputFileName = outputFileName;
 
-		m_DisplayWidget->startRenderThread(1);
-	}
+	m_DisplayWidget->Process(1);
 	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_DcmToMhd_GDCM() {
@@ -238,14 +239,12 @@ void MainWindow::process_DcmToMhd_GDCM() {
 		return;
 	}
 
-	if (!m_DisplayWidget->renderFlag) {
+	m_DisplayWidget->InputFolder = inputDir;
+	m_DisplayWidget->OutputFolder = outputDir;
+	m_DisplayWidget->OutputFileName = outputFileName;
 
-		m_DisplayWidget->InputFolder = inputDir;
-		m_DisplayWidget->OutputFolder = outputDir;
-		m_DisplayWidget->OutputFileName = outputFileName;
-
-		m_DisplayWidget->startRenderThread(2);
-	}
+	m_DisplayWidget->Process(2);
+	
 	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_MhdToFeimos() {
@@ -296,15 +295,12 @@ void MainWindow::process_MhdToFeimos() {
 		return;
 	}
 
+	m_DisplayWidget->InputFilePath = inputfile;
+	m_DisplayWidget->OutputFolder = outputDir;
+	m_DisplayWidget->OutputFileName = outputFileName;
 
-	if (!m_DisplayWidget->renderFlag) {
-
-		m_DisplayWidget->InputFilePath = inputfile;
-		m_DisplayWidget->OutputFolder = outputDir;
-		m_DisplayWidget->OutputFileName = outputFileName;
-
-		m_DisplayWidget->startRenderThread(3);
-	}
+	m_DisplayWidget->Process(3);
+	
 	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_MhdToPbrt() {
@@ -355,14 +351,12 @@ void MainWindow::process_MhdToPbrt() {
 		return;
 	}
 
-	if (!m_DisplayWidget->renderFlag) {
+	m_DisplayWidget->InputFilePath = inputfile;
+	m_DisplayWidget->OutputFolder = outputDir;
+	m_DisplayWidget->OutputFileName = outputFileName;
 
-		m_DisplayWidget->InputFilePath = inputfile;
-		m_DisplayWidget->OutputFolder = outputDir;
-		m_DisplayWidget->OutputFileName = outputFileName;
-
-		m_DisplayWidget->startRenderThread(4);
-	}
+	m_DisplayWidget->Process(4);
+	
 	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_MhdRotateAxis() {
@@ -413,17 +407,15 @@ void MainWindow::process_MhdRotateAxis() {
 		return;
 	}
 
-	if (!m_DisplayWidget->renderFlag) {
+	bool ok = m_InteractionDockWidget->MhdRotateAxis_Frame->getRotateAxis(m_DisplayWidget->permute);
+	if (!ok) return;
 
-		bool ok = m_InteractionDockWidget->MhdRotateAxis_Frame->getRotateAxis(m_DisplayWidget->permute);
-		if (!ok) return;
+	m_DisplayWidget->InputFilePath = inputfile;
+	m_DisplayWidget->OutputFolder = outputDir;
+	m_DisplayWidget->OutputFileName = outputFileName;
 
-		m_DisplayWidget->InputFilePath = inputfile;
-		m_DisplayWidget->OutputFolder = outputDir;
-		m_DisplayWidget->OutputFileName = outputFileName;
-
-		m_DisplayWidget->startRenderThread(5);
-	}
+	m_DisplayWidget->Process(5);
+	
 	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_MhdFlipAxis() {
@@ -474,18 +466,15 @@ void MainWindow::process_MhdFlipAxis() {
 		return;
 	}
 
+	bool ok = m_InteractionDockWidget->MhdFlipAxis_Frame->getFlipAxis(m_DisplayWidget->flip);
+	if (!ok) return;
 
-	if (!m_DisplayWidget->renderFlag) {
+	m_DisplayWidget->InputFilePath = inputfile;
+	m_DisplayWidget->OutputFolder = outputDir;
+	m_DisplayWidget->OutputFileName = outputFileName;
 
-		bool ok = m_InteractionDockWidget->MhdFlipAxis_Frame->getFlipAxis(m_DisplayWidget->flip);
-		if (!ok) return;
-
-		m_DisplayWidget->InputFilePath = inputfile;
-		m_DisplayWidget->OutputFolder = outputDir;
-		m_DisplayWidget->OutputFileName = outputFileName;
-
-		m_DisplayWidget->startRenderThread(6);
-	}
+	m_DisplayWidget->Process(6);
+	
 	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_MhdClip() {
@@ -536,14 +525,12 @@ void MainWindow::process_MhdClip() {
 		return;
 	}
 
-	if (!m_DisplayWidget->renderFlag) {
+	m_DisplayWidget->InputFilePath = inputfile;
+	m_DisplayWidget->OutputFolder = outputDir;
+	m_DisplayWidget->OutputFileName = outputFileName;
 
-		m_DisplayWidget->InputFilePath = inputfile;
-		m_DisplayWidget->OutputFolder = outputDir;
-		m_DisplayWidget->OutputFileName = outputFileName;
-
-		m_DisplayWidget->startRenderThread(7);
-	}
+	m_DisplayWidget->startRenderThread(7);
+	
 	DebugTextPrintString(".................  Process finished   ....................");
 }
 void MainWindow::process_MhdResize() {
@@ -594,14 +581,12 @@ void MainWindow::process_MhdResize() {
 		return;
 	}
 
-	if (!m_DisplayWidget->renderFlag) {
+	m_DisplayWidget->InputFilePath = inputfile;
+	m_DisplayWidget->OutputFolder = outputDir;
+	m_DisplayWidget->OutputFileName = outputFileName;
 
-		m_DisplayWidget->InputFilePath = inputfile;
-		m_DisplayWidget->OutputFolder = outputDir;
-		m_DisplayWidget->OutputFileName = outputFileName;
-
-		m_DisplayWidget->startRenderThread(4);
-	}
+	m_DisplayWidget->Process(4);
+	
 	DebugTextPrintString(".................  Process finished   ....................");
 }
 

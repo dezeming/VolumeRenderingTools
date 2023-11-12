@@ -53,10 +53,10 @@ void InteractionDockWidget::closeEvent(QCloseEvent * event) {
 
 void InteractionDockWidget::setupDock() {
 
-	renderButton = new QPushButton;
-	renderButton->setText("Start Processing");
+	processButton = new QPushButton;
+	processButton->setText("Process examples");
 
-	centerLayout->addWidget(renderButton);
+	centerLayout->addWidget(processButton);
 }
 
 void InteractionDockWidget::setupInputOutput() {
@@ -92,6 +92,14 @@ void InteractionDockWidget::setupInputOutput() {
 	OutputFileNameEdit->setText("Sample");
 
 	centerLayout->addLayout(FolderLayout);
+
+	m_QParseDcmLibFormat_Frame = new QParseDcmLibFormat_Frame;
+
+	m_QGenerateFormat_Frame = new QGenerateFormat_Frame;
+
+	centerLayout->addWidget(m_QParseDcmLibFormat_Frame);
+
+	centerLayout->addWidget(m_QGenerateFormat_Frame);
 }
 
 void InteractionDockWidget::setupFrames() {

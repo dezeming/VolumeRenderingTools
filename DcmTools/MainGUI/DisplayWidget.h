@@ -38,23 +38,30 @@ public:
 	DisplayWidget(QGroupBox * parent = Q_NULLPTR);
 	~DisplayWidget();
 
-	void startRenderThread(int index = 0);
-	void killRenderThread();
-
 public:
 	bool renderFlag;
 	RenderThread * rThread;
+	void startRenderThread(int index = 0);
+	void killRenderThread();
 
+	ProcessVolumeData processVolumeData;
+	void Process(int index = 0);
+
+	// process setting
 	QString InputFolder;
 	QString OutputFolder;
 	QString OutputFileName;
 	QString InputFilePath;
+
+	GenerateFormat generateFormat;
+
 	int permute[3];
 	int flip[3];
 	double clipCenter[3], clipBound[3];
 	double clipLower[3], clipUpper[3];
 	int interval;
 
+	// display buffer
 	FrameBuffer framebuffer;
 
 private:
@@ -73,8 +80,6 @@ private slots:
 	void PrintErrorString(const char* s);
 	void PrintWarningString(const char* s);
 
-	//void PrintDataF(char* s, float data);
-	//void PrintDataI(char* s, int data);
 };
 
 
