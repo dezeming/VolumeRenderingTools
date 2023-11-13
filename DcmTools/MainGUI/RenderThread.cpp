@@ -97,7 +97,6 @@ ProcessVolumeData::~ProcessVolumeData() {
 
 }
 
-
 void ProcessVolumeData::process() {
 
 	// DCMTK_Test();
@@ -199,8 +198,223 @@ void ProcessVolumeData::process() {
 	}
 }
 
+
+
 // **********************************************//
-// *** Functions *** //
+// *** Check input/output legitimacy *** //
+// **********************************************//
+
+bool ProcessVolumeData::isInputDirExist(const QString& inputDir) {
+	QDir dir;
+	if (!dir.exists(inputDir)) {
+		emit PrintError("Input Folder does not exist.");
+		return false;
+	}
+	return true;
+}
+bool ProcessVolumeData::isInputFileExist(const QString& inputFilePath) {
+	QFile file_input(inputFilePath);
+	if (!file_input.exists()) {
+		emit PrintError("Input file does not exist.");
+		return false;
+	}
+	return true;
+}
+bool ProcessVolumeData::checkOutputDir_Mhd(const QString& outputDir, const QString& outName) {
+	QDir dir;
+	if (!dir.exists(outputDir)) {
+		if (!dir.mkpath(outputDir)) {
+			emit PrintError("Folder creation failed.");
+			return false;
+		}
+	}
+
+	QFile file_mhd(outputDir + "/" + outName + ".mhd");
+	if (file_mhd.exists()) {
+		emit PrintError("It is mandatory not to overwrite file with the same name.");
+		return false;
+	}
+	QFile file_raw(outputDir + "/" + outName + ".raw");
+	if (file_raw.exists()) {
+		emit PrintError("It is mandatory not to overwrite file with the same name.");
+		return false;
+	}
+
+	return true;
+}
+bool ProcessVolumeData::checkOutputDir_Feimos(const QString& outputDir, const QString& outName) {
+	QDir dir;
+	if (!dir.exists(outputDir)) {
+		if (!dir.mkpath(outputDir)) {
+			emit PrintError("Folder creation failed.");
+			return false;
+		}
+	}
+
+	QFile file_feimos(outputDir + "/" + outName + ".feimos");
+	if (file_feimos.exists()) {
+		emit PrintError("It is mandatory not to overwrite file with the same name.");
+		return false;
+	}
+	QFile file_raw(outputDir + "/" + outName + ".raw");
+	if (file_raw.exists()) {
+		emit PrintError("It is mandatory not to overwrite file with the same name.");
+		return false;
+	}
+
+	return true;
+}
+bool ProcessVolumeData::getInputDcmFileList(const QString& inputDir, std::vector<QString>& fileList) {
+	QDir dir(inputDir);
+	unsigned int file_count = 0;
+	QString _DirPath;
+
+	// load files info
+	{
+		if (!dir.exists()) {
+			emit PrintError("Fatal: Dir does not exist!");
+			return false;
+		}
+
+		fileList.clear();
+		fileList.shrink_to_fit();
+
+		QStringList filters;
+		filters << "*.dcm";
+		//Set type filters only for file formats, do not use symbolic links
+		dir.setFilter(QDir::Files | QDir::NoSymLinks);
+		//Set file name filters, filters format
+		dir.setNameFilters(filters);
+		//Number of record files
+		file_count = dir.count();
+		if (file_count == 0) {
+			emit PrintError("No .dcm file exists");
+			return false;
+		}
+		_DirPath = inputDir;
+		if (inputDir[inputDir.size() - 1] != '/') _DirPath = _DirPath + "/";
+	}
+
+	for (unsigned int i = 0; i < file_count; i++) {
+		QString file_Path = _DirPath + dir[i];
+		fileList.push_back(file_Path);
+	}
+	return true;
+}
+
+
+// **********************************************//
+// *** Generate input data to ImportFormat object *** //
+// **********************************************//
+
+bool ProcessVolumeData::GenerateInput_GDCM(const QString& inputDir, ImportFormat& importFormat) {
+	
+
+
+	return false;
+}
+bool ProcessVolumeData::GenerateInput_DCMTK(const QString& inputDir, ImportFormat& importFormat) {
+
+
+	return false;
+}
+bool ProcessVolumeData::GenerateInput_Mhd(const QString& inputFilePath, ImportFormat& importFormat) {
+	return false;
+}
+bool ProcessVolumeData::GenerateInput_Feimos(const QString& inputFilePath, ImportFormat& importFormat) {
+	return false;
+}
+
+
+// ********************************************** //
+// *** Process input data *** //
+// ********************************************** //
+
+bool ProcessVolumeData::RotateAxis(ImportFormat& importFormat, int permute[3]) {
+	return false;
+}
+bool ProcessVolumeData::FlipAxis(ImportFormat& importFormat, int flip[3]) {
+	return false;
+}
+bool ProcessVolumeData::Clip(ImportFormat& importFormat, double center[3], double bound[3]) {
+	return false;
+}
+bool ProcessVolumeData::DownSamplingWithInterval(ImportFormat& importFormat, int Interval) {
+	return false;
+}
+bool ProcessVolumeData::Resize(ImportFormat& importFormat, float scale) {
+	return false;
+}
+
+
+// ********************************************** //
+// *** Generate output data *** //
+// ********************************************** //
+
+bool ProcessVolumeData::GenerateOutput_Mhd(const QString& outputDir, const QString& outName,
+	const GenerateFormat& generateFormat, ImportFormat& importFormat) {
+
+	return true;
+}
+
+bool ProcessVolumeData::GenerateOutput_Feimos(const QString& outputDir, const QString& outName,
+	const GenerateFormat& generateFormat, ImportFormat& importFormat) {
+	return true;
+}
+
+// **********************************************//
+// *** Special functions that cannot be performed in steps *** //
+// **********************************************//
+
+bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath, const QString& outputDir, const QString& outName,
+	int Interval) {
+
+	return true;
+}
+
+// **********************************************//
+// *** Call type function *** //
+// **********************************************//
+
+void ProcessVolumeData::DcmMakeMhdFile(const QString& inputDir, const QString& outputDir, const QString& outName,
+	const GenerateFormat& generateFormat) {
+	ImportFormat importFormat;
+
+	bool parseFlag = false;
+	if (generateFormat.parseLib == Dez_GDCM) {
+		parseFlag = GenerateInput_GDCM(inputDir, importFormat);
+	}
+	else if (generateFormat.parseLib == Dez_DCMTK) {
+		parseFlag = GenerateInput_DCMTK(inputDir, importFormat);
+	}
+
+	if (parseFlag) {
+		parseFlag = GenerateOutput_Mhd(outputDir, outName, generateFormat, importFormat);
+	}
+	importFormat.clear();
+}
+
+void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString& outputDir, const QString& outName, 
+	const GenerateFormat& generateFormat) {
+	ImportFormat importFormat;
+
+	bool parseFlag = false;
+	if (generateFormat.parseLib == Dez_GDCM) {
+		parseFlag = GenerateInput_GDCM(inputDir, importFormat);
+	}
+	else if (generateFormat.parseLib == Dez_DCMTK) {
+		parseFlag = GenerateInput_DCMTK(inputDir, importFormat);
+	}
+
+	if (parseFlag) {
+		parseFlag = GenerateOutput_Feimos(outputDir, outName, generateFormat, importFormat);
+	}
+	importFormat.clear();
+}
+
+
+// **********************************************//
+// *** Dicom Functions *** //
 // **********************************************//
 
 struct DcmFile {
@@ -213,41 +427,50 @@ bool DataUpSort(const DcmFile &f1, const DcmFile &f2) {
 }
 void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QString& outputDir, const QString& outName) {
 	emit PrintString("Convert .dcm files into (.mhd)-(.raw) format using DCMTK lib.");
+
 	QDir dir(dirPath);
-	if (!dir.exists()) {
-		emit PrintError("Dir does not exist!");
-		return;
-	}
-		
-	QStringList filters;
-	filters << "*.dcm";
-	//Set type filters only for file formats, do not use symbolic links
-	dir.setFilter(QDir::Files | QDir::NoSymLinks);
-	//Set file name filters, filters format
-	dir.setNameFilters(filters);
-	//Number of record files
-	int file_count = dir.count();
-	if (file_count <= 1) {
-		emit PrintError("file count less than 2");
-		return;
-	}
-	emit PrintDataD("file count", file_count);
-	QString _DirPath = dirPath;
-	if (dirPath[dirPath.size() - 1] != '/') _DirPath = _DirPath + "/";
-	
-	int width = 0, height = 0, imageNum = file_count;
-	double pixelSpacing_X, pixelSpacing_Y, pixelSpacing_Z;
-	// Obtain width and height information
-	for(int i = 0;i < file_count;i++)
+	unsigned int file_count;
+	QString _DirPath;
+
+	// load files info
 	{
-		
+		if (!dir.exists()) {
+			emit PrintError("Dir does not exist!");
+			return;
+		}
+
+		QStringList filters;
+		filters << "*.dcm";
+		//Set type filters only for file formats, do not use symbolic links
+		dir.setFilter(QDir::Files | QDir::NoSymLinks);
+		//Set file name filters, filters format
+		dir.setNameFilters(filters);
+		//Number of record files
+		file_count = dir.count();
+		if (file_count <= 1) {
+			emit PrintError("file count less than 2");
+			return;
+		}
+		emit PrintDataD("file count", file_count);
+		_DirPath = dirPath;
+		if (dirPath[dirPath.size() - 1] != '/') _DirPath = _DirPath + "/";
+	}
+
+	ImportFormat importFormat;
+	unsigned int width = 0, height = 0;
+	double pixelSpacing_X, pixelSpacing_Y, pixelSpacing_Z;
+	Uint16 bitsAllocated, bitsStored;
+	// valid 
+	std::vector<unsigned int> correctImagesNum;
+	for (unsigned int i = 0; i < file_count; i++)
+	{
+
 		QString file_Path = _DirPath + dir[i];
 		DcmFileFormat dfile;
 		dfile.loadFile(file_Path.toStdString().c_str());
 		DcmMetaInfo *Metalnfo = dfile.getMetaInfo();
 
 		if (!Metalnfo) {
-			imageNum--;
 			emit PrintError(("No Metalnfo in File " + file_Path).toStdString().c_str());
 			continue;
 		}
@@ -256,62 +479,190 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QStri
 		Tag = Metalnfo->getTag();
 		Uint16 G_tag = Tag.getGTag();
 		DcmDataset *data = dfile.getDataset();
-
 		if (!data) {
-			imageNum--;
 			emit PrintError(("No data in File " + file_Path).toStdString().c_str());
 			continue;
 		}
 
+		// Get Pixel Data
 		DcmElement *element = NULL;
-		data->findAndGetElement(DCM_PixelData, element);
-
-		OFString ImageWidth;
-		data->findAndGetOFString(DCM_Columns, ImageWidth);
-		if (i != 0 && width != atoi(ImageWidth.data())) {
-			emit PrintError(("The width of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
-			return;
-		}else width = atoi(ImageWidth.data());
-		OFString ImageHeight;
-		data->findAndGetOFString(DCM_Rows, ImageHeight);
-		if (i != 0 && height != atoi(ImageHeight.data())) {
-			emit PrintError(("The height of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
-			return;
-		}
-		else height = atoi(ImageHeight.data());
-
-
-		OFString PixelSpacing;
-		data->findAndGetOFString(DCM_PixelSpacing, PixelSpacing);
-		if (i != 0 && pixelSpacing_X != atof(PixelSpacing.data())) {
-			emit PrintError(("The pixelSpacing of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
-			return;
-		}
-		else if (i == 0) {
-			pixelSpacing_X = atof(PixelSpacing.data());
-			pixelSpacing_Y = pixelSpacing_X;
+		if (!data->findAndGetElement(DCM_PixelData, element).good()) {
+			emit PrintError(("Get PixelData wrong in File " + file_Path).toStdString().c_str());
+			continue;
 		}
 
-		OFString SliceThickness;
-		data->findAndGetOFString(DCM_SliceThickness, SliceThickness);
-		if (i != 0 && pixelSpacing_Z != atof(SliceThickness.data())) {
-			emit PrintError(("The SliceThickness of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
-			return;
-		}
-		else if (i == 0) {
-			pixelSpacing_Z = atof(SliceThickness.data());
-		}
-		
-
+		// Get Width Info
 		{
-			//emit PrintDataD("width : ", width);
-			//emit PrintDataD("height : ", height);
-			//emit PrintDataD("pixelSpacing_X : ", pixelSpacing_X);
-			//emit PrintDataD("pixelSpacing_Y : ", pixelSpacing_Y);
-			//emit PrintDataD("SliceThickness : ", pixelSpacing_Z);
+			OFString ImageWidth;
+			if (!data->findAndGetOFString(DCM_Columns, ImageWidth).good()) {
+				emit PrintError(("Get DCM_Columns wrong in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			if (correctImagesNum.size() != 0 && width != static_cast<unsigned int>(atoi(ImageWidth.data()))) {
+				emit PrintError(("The width of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			else if (correctImagesNum.size() == 0) {
+				width = static_cast<unsigned int>(atoi(ImageWidth.data()));
+				importFormat.xLength = width;
+			}
 		}
+
+		// Get Height Info
+		{
+			OFString ImageHeight;
+			if (!data->findAndGetOFString(DCM_Rows, ImageHeight).good()) {
+				emit PrintError(("Get DCM_Rows wrong in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			if (correctImagesNum.size() != 0 && height != static_cast<unsigned int>(atoi(ImageHeight.data()))) {
+				emit PrintError(("The height of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			else if (correctImagesNum.size() == 0) {
+				height = static_cast<unsigned int>(atoi(ImageHeight.data()));
+				importFormat.yLength = height;
+			}
+		}
+
+		// Get Pixel Spacing
+		{
+			OFString PixelSpacing;
+			if (!data->findAndGetOFString(DCM_PixelSpacing, PixelSpacing).good()) {
+				emit PrintError(("Get DCM_PixelSpacing wrong in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			if (correctImagesNum.size() != 0 && pixelSpacing_X != atof(PixelSpacing.data())) {
+				emit PrintError(("The pixelSpacing of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			else if (correctImagesNum.size() == 0) {
+				pixelSpacing_X = atof(PixelSpacing.data());
+				pixelSpacing_Y = pixelSpacing_X;
+				importFormat.xLength = pixelSpacing_X;
+				importFormat.yLength = pixelSpacing_Y;
+			}
+		}
+
+		// Get Slice Thickness
+		{
+			OFString SliceThickness;
+			if (!data->findAndGetOFString(DCM_SliceThickness, SliceThickness).good()) {
+				emit PrintError(("Get DCM_SliceThickness wrong in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			if (i != 0 && pixelSpacing_Z != atof(SliceThickness.data())) {
+				emit PrintError(("The SliceThickness of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			else if (correctImagesNum.size() == 0) {
+				pixelSpacing_Z = atof(SliceThickness.data());
+				importFormat.zLength = pixelSpacing_Z;
+			}
+		}
+
+		// Get Bit Allocated
+		{
+			Uint16 bitsAllocated_temp, bitsStored_temp;
+			if (correctImagesNum.size() == 0) {
+				if (data->findAndGetUint16(DCM_BitsAllocated, bitsAllocated).good() &&
+					data->findAndGetUint16(DCM_BitsStored, bitsStored).good()) {
+					emit PrintDataD("bitsAllocated_temp", bitsAllocated_temp);
+					emit PrintDataD("bitsStored_temp", bitsStored_temp);
+				}
+				else {
+					emit PrintError(("Unable to obtain bits information for data storage in File" + file_Path).toStdString().c_str());
+					continue;
+				}
+			}
+			else {
+				if (data->findAndGetUint16(DCM_BitsAllocated, bitsAllocated).good() &&
+					data->findAndGetUint16(DCM_BitsStored, bitsStored).good()) {
+					if (bitsAllocated_temp != bitsAllocated || bitsStored_temp != bitsStored) {
+						emit PrintError(("The bits allocated or stored is inconsistent in File" + file_Path).toStdString().c_str());
+						continue;
+					}
+				}
+				else {
+					emit PrintError(("Unable to obtain bits information for data storage in File" + file_Path).toStdString().c_str());
+					continue;
+				}
+			}
+		}
+
+		// Get Data Format
+		{
+			// Pixel Representation
+			DcmTagKey tagKey(0x0028, 0x0100);
+			DcmElement* elementPR;
+			if (data->findAndGetElement(tagKey, elementPR).good()) {
+				// Obtaining Value Representation of Data Elements (VR)
+				DcmEVR valueRepresentation = element->getVR();
+
+				// Print Value Representation (VR) to Console
+				std::cout << "Value Representation: " << DcmVR(valueRepresentation).getVRName() << std::endl;
+
+				// Float
+				if (valueRepresentation == EVR_FL) {
+					if (correctImagesNum.size() == 0) importFormat.format = Dez_Float;
+					else if (importFormat.format != Dez_Float) {
+						emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+					}
+				}
+				// Double
+				else if (valueRepresentation == EVR_FD) {
+					if (correctImagesNum.size() == 0) importFormat.format = Dez_Double;
+					else if (importFormat.format != Dez_Double) {
+						emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+					}
+				}
+				// signed short
+				else if (valueRepresentation == EVR_SS) {
+					if (correctImagesNum.size() == 0) importFormat.format = Dez_SignedShort;
+					else if (importFormat.format != Dez_SignedShort) {
+						emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+					}
+				}
+				// unsigned short
+				else if (valueRepresentation == EVR_US) {
+					if (correctImagesNum.size() == 0) importFormat.format = Dez_UnsignedShort;
+					else if (importFormat.format != Dez_UnsignedShort) {
+						emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+					}
+				}
+				// signed long
+				else if (valueRepresentation == EVR_SL) {
+					if (correctImagesNum.size() == 0) importFormat.format = Dez_SignedLong;
+					else if (importFormat.format != Dez_SignedLong) {
+						emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+					}
+				}
+				// unsigned long
+				else if (valueRepresentation == EVR_UL) {
+					if (correctImagesNum.size() == 0) importFormat.format = Dez_UnsignedLong;
+					else if (importFormat.format != Dez_UnsignedLong) {
+						emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+					}
+				}
+				else {
+					emit PrintError(("Temporarily unsupported data format " + file_Path).toStdString().c_str());
+					continue;
+				}
+			}
+			else {
+				emit PrintError(("Get Pixel Representation wrong in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+		}
+
+		correctImagesNum.push_back(i);
 	}
-	
+
+	unsigned int imageNum = correctImagesNum.size();
+
+	// Print import data Info
+	emit PrintString(importFormat.toString().toStdString().c_str());
+
 	Uint16 * m_data = new Uint16[width * height * imageNum];
 	if (!m_data) {
 		emit PrintError("Unable to request sufficient amount of memory!");
@@ -320,9 +671,9 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QStri
 
 	// Start processing each image
 	std::vector<DcmFile> dcmFileVec;
-	for (int i = 0; i < file_count; i++) {
+	for (int i = 0; i < imageNum; i++) {
 		// File Path
-		QString file_Path = _DirPath + dir[i];
+		QString file_Path = _DirPath + dir[correctImagesNum[i]];
 
 		// DcmFileFormat will automatically release memory
 		DcmFileFormat dfile;
@@ -330,7 +681,7 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QStri
 		DcmMetaInfo *Metalnfo = dfile.getMetaInfo();
 		if (!Metalnfo) {
 			emit PrintError(("No Metalnfo in File " + file_Path).toStdString().c_str());
-			continue;
+			break;
 		}
 		DcmTag Tag;
 		Tag = Metalnfo->getTag();
@@ -362,21 +713,8 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QStri
 		dcmFileVec.push_back(dcmF);
 	}
 
+	// Sort by image position
 	std::sort(dcmFileVec.begin(), dcmFileVec.end(), DataUpSort);
-
-
-	int shape1[3] = { width, height, imageNum };
-	int stride1[3] = { 1, width, width * height };
-
-	// Previously written code, now using VTK to generate compressed versions of data
-	{
-		//std::ofstream file("sample.raw", std::ios::binary);
-		//for (int i = 0; i < imageNum; i++) file.write((char*)dcmFileVec[i].pixData16, width * height * sizeof(Uint16));
-		//file.close();
-		//FILE *fp = fopen("./sample.raw", "wb");
-		//for (int i = 0; i < imageNum; i++) fwrite(dcmFileVec[i].pixData16, sizeof(Uint16), width * height, fp);
-		//fclose(fp);
-	}
 
 	Uint16 * aim_data = new Uint16[width * height * imageNum];
 	if (!aim_data) {
@@ -390,21 +728,13 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QStri
 			flag = false;
 		}
 	}
-
 	if (flag) {
 
 	}
+
 	for (int i = 0; i < imageNum; i++) {
 		memcpy((Uint16*)aim_data + i * width * height, dcmFileVec[i].pixData16, width * height * sizeof(Uint16));
 	}
-
-	// Previously written code, now using VTK to generate compressed versions of data
-	{
-		//std::ofstream file("sample.raw", std::ios::binary);
-		//file.write((char*)aim_data, width * height * imageNum * sizeof(Uint16));
-		//file.close();
-	}
-
 
 	vtkSmartPointer<vtkImageImport> imageImport = vtkSmartPointer<vtkImageImport>::New();
 	imageImport->SetDataSpacing(pixelSpacing_X, pixelSpacing_Y, pixelSpacing_Z);
@@ -412,14 +742,14 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QStri
 	imageImport->SetWholeExtent(0, width - 1, 0, height - 1, 0, imageNum - 1);
 	imageImport->SetDataExtentToWholeExtent();
 	imageImport->SetDataScalarTypeToShort();
-	imageImport->SetNumberOfScalarComponents(1); 
+	imageImport->SetNumberOfScalarComponents(1);
 	imageImport->SetImportVoidPointer(aim_data);
 	imageImport->Update();
 
 	vtkSmartPointer<vtkMetaImageWriter> writer =
 		vtkSmartPointer<vtkMetaImageWriter>::New();
 	writer->SetInputConnection(imageImport->GetOutputPort());
-	writer->SetFileName(( outputDir + "/" + outName + ".mhd").toStdString().c_str());
+	writer->SetFileName((outputDir + "/" + outName + ".mhd").toStdString().c_str());
 	writer->SetRAWFileName((outputDir + "/" + outName + ".raw").toStdString().c_str());
 	writer->Write();
 	emit PrintDataD("Write Finished! ", 0);
@@ -485,7 +815,7 @@ void ProcessVolumeData::DcmMakeMhdFile_GDCM(const QString& dirPath, const QStrin
 		gdcm::Attribute<0x0020, 0x1041> at_position;
 		at_position.SetFromDataSet(ds);
 		gdcm::Attribute<0x0020, 0x1041>::ArrayType v_position = at_position.GetValue();
-		
+
 		// Rows
 		gdcm::Attribute<0x0028, 0x0010> at_rows;
 		at_rows.SetFromDataSet(ds);
@@ -519,21 +849,6 @@ void ProcessVolumeData::DcmMakeMhdFile_GDCM(const QString& dirPath, const QStrin
 		dcmfile1.position = v_position;
 		dcmFileVec.push_back(dcmfile1);
 
-		{
-			//std::cout << "Image Position = " << v_position << std::endl;
-			//std::cout << "Height = " << v_rows << std::endl;
-			//std::cout << "Width = " << v_columns << std::endl;
-			//std::cout << "Spacing between slices = " << v_Spacing_slices << std::endl;
-			//std::cout << "Pixel Spacing = " << vv_Pixel_Spacing << std::endl;
-			//std::cout << "bit allocate = " << v_bit << std::endl;
-		}
-
-		// data
-		{
-			//gdcm::Attribute<0x7fe0, 0x0010> at_dcm_data;
-			//at_dcm_data.SetFromDataSet(ds);
-		}
-
 	}
 
 	Uint16 * m_data = new Uint16[width * height * imageNum];
@@ -558,7 +873,7 @@ void ProcessVolumeData::DcmMakeMhdFile_GDCM(const QString& dirPath, const QStrin
 		std::vector<char> vbuffer;
 		vbuffer.resize(gimage.GetBufferLength());
 		char *buffer = &vbuffer[0];
-		
+
 		{
 			// 512 * 512 * 2 = 524288
 			//std::cout << "gimage.GetBufferLength() = " << gimage.GetBufferLength() << std::endl;
@@ -589,13 +904,7 @@ void ProcessVolumeData::DcmMakeMhdFile_GDCM(const QString& dirPath, const QStrin
 	for (int i = 0; i < imageNum; i++) {
 		memcpy((Uint16*)aim_data + i * width * height, dcmFileVec[i].pixData16, width * height * sizeof(Uint16));
 	}
-
-	{
-		//std::ofstream file("sample.raw", std::ios::binary);
-		//file.write((char*)aim_data, width * height * imageNum * sizeof(Uint16));
-		//file.close();
-	}
-
+	delete[] m_data;
 
 	vtkSmartPointer<vtkImageImport> imageImport = vtkSmartPointer<vtkImageImport>::New();
 	imageImport->SetDataSpacing(pixelSpacing_X, pixelSpacing_Y, pixelSpacing_Z);
@@ -614,11 +923,12 @@ void ProcessVolumeData::DcmMakeMhdFile_GDCM(const QString& dirPath, const QStrin
 	writer->SetRAWFileName((outputDir + "/" + outName + ".raw").toStdString().c_str());
 	writer->Write();
 	emit PrintDataD("Write Finished! ", 0);
-	delete[] m_data;
 	delete[] aim_data;
-
 }
 
+// **********************************************//
+// *** Dicom Functions *** //
+// **********************************************//
 
 void ProcessVolumeData::MhdRotateAxis(const QString& filePath, const QString& outputDir, const QString& outName, int permute[3]) {
 	emit PrintString("Permute axis of (.mhd)-(.raw) file.");
@@ -965,6 +1275,23 @@ void ProcessVolumeData::MhdGenerateFeimosData(const QString& filePath, const QSt
 		file.write((char*)((short *)data_m + i * width * height), sizeof(short) * width * height);
 	}
 	file.close();
+
+	// Previously written code
+	{
+		//std::ofstream file("sample.raw", std::ios::binary);
+		//for (int i = 0; i < imageNum; i++) file.write((char*)dcmFileVec[i].pixData16, width * height * sizeof(Uint16));
+		//file.close();
+		//FILE *fp = fopen("./sample.raw", "wb");
+		//for (int i = 0; i < imageNum; i++) fwrite(dcmFileVec[i].pixData16, sizeof(Uint16), width * height, fp);
+		//fclose(fp);
+	}
+	// Previously written code
+	{
+		//std::ofstream file("sample.raw", std::ios::binary);
+		//file.write((char*)aim_data, width * height * imageNum * sizeof(Uint16));
+		//file.close();
+	}
+
 	emit PrintDataD("Write Finished! ", 0);
 	delete[] data_m;
 

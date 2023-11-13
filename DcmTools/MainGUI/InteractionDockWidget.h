@@ -481,8 +481,8 @@ public:
 
 	DataFormat getDataFormatSet() {
 		if (RadioButton_Origin->isChecked()) return Dez_Origin;
-		if (RadioButton_UnsignedInt->isChecked()) return Dez_UnsignedInt;
-		if (RadioButton_SignedInt->isChecked()) return Dez_SignedInt;
+		if (RadioButton_UnsignedInt->isChecked()) return Dez_UnsignedLong;
+		if (RadioButton_SignedInt->isChecked()) return Dez_SignedLong;
 		if (RadioButton_UnsignedShort->isChecked()) return Dez_UnsignedShort;
 		if (RadioButton_SignedShort->isChecked()) return Dez_SignedShort;
 		if (RadioButton_UnsignedChar->isChecked()) return Dez_UnsignedChar;

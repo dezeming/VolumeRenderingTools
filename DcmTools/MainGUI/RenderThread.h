@@ -21,7 +21,11 @@
 #define __RenderThread_h__
 
 #include <QThread>
+
 #include <QString>
+#include <QStringList>
+
+#include <vector>
 
 #include "Core\FrameBuffer.h"
 #include "IMAGraphicsView.h"
@@ -58,8 +62,8 @@ public:
 
 enum DataFormat {
 	Dez_Origin = 0,
-	Dez_UnsignedInt = 1,
-	Dez_SignedInt = 2,
+	Dez_UnsignedLong = 1,
+	Dez_SignedLong = 2,
 	Dez_UnsignedShort = 3,
 	Dez_SignedShort = 4,
 	Dez_UnsignedChar = 5,
@@ -73,10 +77,82 @@ enum DcmParseLib {
 	Dez_DCMTK = 1
 };
 
+
+struct DcmFileInfo {
+	void *pixData = nullptr;
+	float position = 0.0f;
+};
 struct ImportFormat {
 	DataFormat format;
 	unsigned int xLength, yLength, zLength;
 	float xPixelSpace, yPixelSpace, zPixelSpace;
+
+	void * data;
+	void * data_aim;
+	std::vector<DcmFileInfo> dcmFiles;
+
+	ImportFormat() {
+		data = data_aim = nullptr;
+		format = Dez_Origin;
+	}
+	~ImportFormat() {
+		clear();
+	}
+
+	void clear() {
+		if (data) delete data;
+		data = nullptr;
+		if (data_aim) delete data_aim;
+		data_aim = nullptr;
+
+		dcmFiles.clear();
+		dcmFiles.shrink_to_fit();
+	}
+
+	QString toString() {
+		QString form;
+		switch (format)
+		{
+		case Dez_Origin:
+			form = "Origin";
+			break;
+		case Dez_UnsignedLong:
+			form = "UnsignedLong";
+			break;
+		case Dez_SignedLong:
+			form = "SignedLong";
+			break;
+		case Dez_UnsignedShort:
+			form = "UnsignedShort";
+			break;
+		case Dez_SignedShort:
+			form = "SignedShort";
+			break;
+		case Dez_UnsignedChar:
+			form = "UnsignedChar";
+			break;
+		case Dez_SignedChar:
+			form = "SignedChar";
+			break;
+		case Dez_Float:
+			form = "Float";
+			break;
+		case Dez_Double:
+			form = "Double";
+			break;
+		default:
+			break;
+		}
+
+		QString s = "xLength:[" + QString::number(xLength) + "] "
+			"yLength:[" + QString::number(yLength) + "] "
+			"zLength:[" + QString::number(zLength) + "]; "
+			"xPixelSpace:[" + QString::number(xPixelSpace) + "] "
+			"yPixelSpace:[" + QString::number(yPixelSpace) + "] "
+			"zPixelSpace:[" + QString::number(zPixelSpace) + "] "
+			"form:[" + form + "] ";
+		return s;
+	}
 };
 
 struct GenerateFormat {
@@ -92,14 +168,158 @@ public:
 
 public:
 
-	void process();
+	/*******************************************************/
+	/* Check if the directory or target file exists. 
+	* Check if the generated target file already exists to prevent overwriting.
+	* 
+	* inputDir: Input Folder
+	* inputFilePath: Input File Path
+	* outputDir£ºOutput Folder
+	* outName: Output File Name */
+	/*******************************************************/
+	
+	/**
+	* Check if the input directory exists.
+	*/
+	bool isInputDirExist(const QString& inputDir);
+
+	/**
+	* Check if the input file path exists.
+	*/
+	bool isInputFileExist(const QString& inputFilePath);
+
+	/**
+	* Check if the output directory exists.
+	*/
+	bool checkOutputDir_Mhd(const QString& outputDir, const QString& outName);
+
+	/**
+	* Check if the output directory exists.
+	*/
+	bool checkOutputDir_Feimos(const QString& outputDir, const QString& outName);
+
+	/**
+	* Obtain the sequence of dcm files in the specified directory
+	*/
+	bool getInputDcmFileList(const QString& inputDir, std::vector<QString>& fileList);
 
 
-	void DCMTK_Test();
-	void GDCM_Test();
+	/*******************************************************/
+	/* Generate input data to ImportFormat object
+	*
+	* inputDir: Input Folder
+	* inputFilePath: Input File Path */
+	/*******************************************************/
+
+	/**
+	* Generate ImportFormat Object From (.dcm) files Using GDCM
+	*/
+	bool GenerateInput_GDCM(const QString& inputDir, ImportFormat& importFormat);
+
+	/**
+	* Generate ImportFormat Object From (.dcm) files Using DCMTK
+	*/
+	bool GenerateInput_DCMTK(const QString& inputDir, ImportFormat& importFormat);
+
+	/**
+	* Generate ImportFormat Object From (.mhd,.raw) file Using VTK
+	*/
+	bool GenerateInput_Mhd(const QString& inputFilePath, ImportFormat& importFormat);
+
+	/**
+	* Generate ImportFormat Object From (.feimos,.raw) file
+	*/
+	bool GenerateInput_Feimos(const QString& inputFilePath, ImportFormat& importFormat);
 
 
-	void DcmMakeMhdFile(const QString& dirPath, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
+	/*******************************************************/
+	/** Process input data
+	* Please refer to the instruction document for details */
+	/*******************************************************/
+
+	/** Rotate the volume data in MHD format according to the axis set by permute
+	* Fill 0,1,2 into the permute array
+	*/
+	bool RotateAxis(ImportFormat& importFormat, int permute[3]);
+
+	/** MHD Flip up, down, left, and right based on the selected axis
+	*/
+	bool FlipAxis(ImportFormat& importFormat, int flip[3]);
+
+	/** Clip the MHD file according to the boundary
+	* All three axes of the original boundary are [-bound,bound]=[-0.5,0.5], The center is [center]=[0]¡£
+	* Cutting needs to ensure that the range of each axis [center-round, center+bound] is within [-0.5,0.5]
+	*/
+	bool Clip(ImportFormat& importFormat, double center[3], double bound[3]);
+
+	/** DownSampling MHD files
+	* Interval: Reduce the sampling interval, which is equivalent to a resolution reduction of Interval times, and only supports integers.
+	*/
+	bool DownSamplingWithInterval(ImportFormat& importFormat, int Interval = 2);
+
+	/** Resize the volume data by scale
+	*/
+	bool Resize(ImportFormat& importFormat, float scale);
+
+
+	/*******************************************************/
+	/* Generate output data
+	* 
+	* outputDir£ºOutput Folder
+	* outName: Output File Name */
+	/*******************************************************/
+
+	/**
+	* Generate .mhd file
+	*/
+	bool GenerateOutput_Mhd(const QString& outputDir, const QString& outName,
+		const GenerateFormat& generateFormat, ImportFormat& importFormat);
+
+	/**
+	* Generate .feimos file
+	*/
+	bool GenerateOutput_Feimos(const QString& outputDir, const QString& outName,
+		const GenerateFormat& generateFormat, ImportFormat& importFormat);
+
+
+	/*******************************************************/
+	/* Call type function
+	*
+	* inputDir: Input Folder
+	* inputFilePath: Input File Path
+	* outputDir£ºOutput Folder
+	* outName: Output File Name */
+	/*******************************************************/
+
+	/**
+	* Make (.mhd,.raw) file from (.dcm) files
+	*/
+	void DcmMakeMhdFile(const QString& inputDir, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
+
+	/**
+	* Make (.feimos,.raw) file from (.dcm) files
+	*/
+	void DcmMakeFeimosFile(const QString& inputDir, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
+
+
+	/*******************************************************/
+	/* Special functions that cannot be performed in steps
+	*
+	* inputFilePath: Input File Path
+	* outputDir£ºOutput Folder
+	* outName: Output File Name */
+	/*******************************************************/
+
+	/**
+	* DownSampling large (.feimos,.raw) file
+	*/
+	bool DownSamplingLargeFeimosData(const QString& inputFilePath, const QString& outputDir, const QString& outName, int Interval = 5);
+
+
+
+	/*******************************************************/
+	/******** Old functions *******/
+	/*******************************************************/
 
 	/** DCMTK version: Generate MHD file from Dicom
 	* dirPath: Path to store dicom files
@@ -123,18 +343,6 @@ public:
 	*/
 	void DcmMakeMhdFile_GDCM(const QString& dirPath, const QString& outputDir, const QString& outName);
 
-	/** GDCM version: Generate Feimos file format from Dicom
-	* dirPath: Path to store dicom files
-	* outputDir£ºOutput Folder
-	* outName: Output file name
-	* 
-	* It is necessary to ensure that the width and height of all DCM files are consistent
-	* Store the output results in the Output folder
-	* The most comprehensive DICOM formats supported
-	*/
-	void DcmMakeFeimosFile_GDCM(const QString& dirPath, const QString& outputDir, const QString& outName);
-
-
 
 	/** Rotate the volume data in MHD format according to the axis set by permute
 	* filePath£ºmhd File Path
@@ -146,7 +354,6 @@ public:
 	*/
 	void MhdRotateAxis(const QString& filePath, const QString& outputDir, const QString& outName, int permute[3]);
 
-
 	/** MHD Flip up, down, left, and right based on the selected axis
 	* filePath£ºmhd File Path
 	* outputDir£ºOutput Folder
@@ -155,7 +362,6 @@ public:
 	* Store the output results in the outputDir
 	*/
 	void MhdFlipAxis(const QString& filePath, const QString& outputDir, const QString& outName, int flip[3]);
-
 
 	/** Clip the MHD file according to the boundary
 	* filePath: Input .mhd file path
@@ -167,7 +373,6 @@ public:
 	*/
 	void MhdClip(const QString& filePath, const QString& outputDir, const QString& outName, double center[3], double bound[3]);
 
-
 	/** DownSampling MHD files
 	* filePath: Input .mhd file path
 	* outputDir£ºOutput folder
@@ -178,23 +383,12 @@ public:
 	void DownSamplingMhdWithInterval(const QString& filePath, const QString& outputDir, const QString& outName, int Interval = 2);
 
 
-	/**DownSampling "Feimos" data format (without compression)
-	* filePath: The path to the input. mhd file
-	* outputDir: Output folder
-	* outName: The file name of the output
-	*
-	*/
-	void DownSamplingFeimosWithInterval(const QString& filePath, const QString& outputDir, const QString& outName, 
-		const GenerateFormat& generateFormat, int Interval = 2);
-
-
 	/** Generate my readable volume data format "Feimos" (binary uncompressed) from MHD files
 	* filePath: Input. mhd file path
 	* outputDir£ºOutput Folder
 	* outName: Output file name
 	*/
 	void MhdGenerateFeimosData(const QString& filePath, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
-
 
 	/**Generate MHD files into PBRT volume data format (without compression)
 	* filePath: The path to the input. mhd file
@@ -203,7 +397,12 @@ public:
 	*/
 	void MhdGeneratePbrtVolume(const QString& filePath, const QString& outputDir, const QString& outName);
 
+	// test functions
+	void process();
 
+	// Obsolete functions
+	void DCMTK_Test();
+	void GDCM_Test();
 
 signals:
 	void PrintString(const char* s);
