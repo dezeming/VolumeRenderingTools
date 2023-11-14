@@ -78,38 +78,136 @@ enum DcmParseLib {
 };
 
 
-struct DcmFileInfo {
-	void *pixData = nullptr;
-	float position = 0.0f;
-};
 struct ImportFormat {
-	DataFormat format;
 	unsigned int xLength, yLength, zLength;
 	float xPixelSpace, yPixelSpace, zPixelSpace;
 
 	void * data;
+	DataFormat format;
+
+	// If the data format needs to be converted, use this pointer
 	void * data_aim;
-	std::vector<DcmFileInfo> dcmFiles;
+	DataFormat format_aim;
 
 	ImportFormat() {
-		data = data_aim = nullptr;
+		data = nullptr;
+		data_aim = nullptr;
 		format = Dez_Origin;
 	}
 	~ImportFormat() {
 		clear();
 	}
-
 	void clear() {
-		if (data) delete data;
+		if (data) {
+			switch (format)
+			{
+			case Dez_Origin:
+				break;
+			case Dez_UnsignedLong:
+				delete[] static_cast<unsigned long*>(data);
+				break;
+			case Dez_SignedLong:
+				delete[] static_cast<signed long*>(data);
+				break;
+			case Dez_UnsignedShort:
+				delete[] static_cast<unsigned short*>(data);
+				break;
+			case Dez_SignedShort:
+				delete[] static_cast<signed short*>(data);
+				break;
+			case Dez_UnsignedChar:
+				delete[] static_cast<unsigned char*>(data);
+				break;
+			case Dez_SignedChar:
+				delete[] static_cast<signed char*>(data);
+				break;
+			case Dez_Float:
+				delete[] static_cast<float*>(data);
+				break;
+			case Dez_Double:
+				delete[] static_cast<double*>(data);
+				break;
+			default:
+				break;
+			}
+		}
 		data = nullptr;
-		if (data_aim) delete data_aim;
-		data_aim = nullptr;
 
-		dcmFiles.clear();
-		dcmFiles.shrink_to_fit();
+		if (data_aim && format_aim != format) {
+			switch (format_aim)
+			{
+			case Dez_Origin:
+				break;
+			case Dez_UnsignedLong:
+				delete[] static_cast<unsigned long*>(data_aim);
+				break;
+			case Dez_SignedLong:
+				delete[] static_cast<signed long*>(data_aim);
+				break;
+			case Dez_UnsignedShort:
+				delete[] static_cast<unsigned short*>(data_aim);
+				break;
+			case Dez_SignedShort:
+				delete[] static_cast<signed short*>(data_aim);
+				break;
+			case Dez_UnsignedChar:
+				delete[] static_cast<unsigned char*>(data_aim);
+				break;
+			case Dez_SignedChar:
+				delete[] static_cast<signed char*>(data_aim);
+				break;
+			case Dez_Float:
+				delete[] static_cast<float*>(data_aim);
+				break;
+			case Dez_Double:
+				delete[] static_cast<double*>(data_aim);
+				break;
+			default:
+				break;
+			}
+		}
+		data_aim = nullptr;
 	}
 
-	QString toString() {
+	void clearAim() {
+		if (data_aim && format_aim != format) {
+			switch (format_aim)
+			{
+			case Dez_Origin:
+				break;
+			case Dez_UnsignedLong:
+				delete[] static_cast<unsigned long*>(data_aim);
+				break;
+			case Dez_SignedLong:
+				delete[] static_cast<signed long*>(data_aim);
+				break;
+			case Dez_UnsignedShort:
+				delete[] static_cast<unsigned short*>(data_aim);
+				break;
+			case Dez_SignedShort:
+				delete[] static_cast<signed short*>(data_aim);
+				break;
+			case Dez_UnsignedChar:
+				delete[] static_cast<unsigned char*>(data_aim);
+				break;
+			case Dez_SignedChar:
+				delete[] static_cast<signed char*>(data_aim);
+				break;
+			case Dez_Float:
+				delete[] static_cast<float*>(data_aim);
+				break;
+			case Dez_Double:
+				delete[] static_cast<double*>(data_aim);
+				break;
+			default:
+				break;
+			}
+		}
+		data_aim = nullptr;
+	}
+
+
+	QString getFormatString() {
 		QString form;
 		switch (format)
 		{
@@ -141,16 +239,20 @@ struct ImportFormat {
 			form = "Double";
 			break;
 		default:
+			form = "Error";
 			break;
 		}
+		return form;
+	}
 
+	QString toString() {
 		QString s = "xLength:[" + QString::number(xLength) + "] "
 			"yLength:[" + QString::number(yLength) + "] "
 			"zLength:[" + QString::number(zLength) + "]; "
 			"xPixelSpace:[" + QString::number(xPixelSpace) + "] "
 			"yPixelSpace:[" + QString::number(yPixelSpace) + "] "
 			"zPixelSpace:[" + QString::number(zPixelSpace) + "] "
-			"form:[" + form + "] ";
+			"form:[" + getFormatString() + "] ";
 		return s;
 	}
 };
@@ -268,6 +370,8 @@ public:
 	* outputDir£ºOutput Folder
 	* outName: Output File Name */
 	/*******************************************************/
+
+	bool DataFormatConvert(const GenerateFormat& generateFormat, ImportFormat& importFormat);
 
 	/**
 	* Generate .mhd file

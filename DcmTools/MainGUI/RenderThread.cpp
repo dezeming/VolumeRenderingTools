@@ -322,6 +322,10 @@ bool ProcessVolumeData::GenerateInput_Mhd(const QString& inputFilePath, ImportFo
 	return false;
 }
 bool ProcessVolumeData::GenerateInput_Feimos(const QString& inputFilePath, ImportFormat& importFormat) {
+
+
+
+
 	return false;
 }
 
@@ -351,14 +355,235 @@ bool ProcessVolumeData::Resize(ImportFormat& importFormat, float scale) {
 // *** Generate output data *** //
 // ********************************************** //
 
+template <typename T, typename U>
+bool __DataFormatConvert(const T* data, U* aimdata, ImportFormat& importFormat) {
+	unsigned int width = importFormat.xLength, height = importFormat.yLength, images = importFormat.zLength;
+
+	aimdata = new U[width * height * images];
+	if (!aimdata) return false;
+
+	for (unsigned int k = 0; k < importFormat.zLength; k++) {
+
+		T* imageP = (T *)data + k * width * height;
+		U* imageAimP = (U *)aimdata + k * width * height;
+
+		for (unsigned int i = 0; i < importFormat.xLength; i++) {
+			for (unsigned int j = 0; j < importFormat.yLength; j++) {
+				imageAimP[i + j * importFormat.xLength] = 
+					static_cast<U>(imageP[i + j * importFormat.xLength]);
+			}
+		}
+	}
+	return true;
+}
+
+bool ProcessVolumeData::DataFormatConvert(const GenerateFormat& generateFormat, ImportFormat& importFormat) {
+
+	// To ensure data accuracy, only a small number of conversions are supported.
+	
+	importFormat.clearAim();
+
+	if (generateFormat.format == Dez_Origin) {
+		importFormat.data_aim = importFormat.data;
+		importFormat.format_aim = importFormat.format;
+		return true;
+	}
+
+	bool convertFlag = true;
+	if (importFormat.format == Dez_SignedShort && generateFormat.format == Dez_Float) {
+		
+		convertFlag = convertFlag && 
+			__DataFormatConvert(
+				static_cast<signed short*>(importFormat.data),
+				static_cast<float*>(importFormat.data_aim),
+				importFormat);
+		return convertFlag;
+	}
+
+	if (importFormat.format == Dez_UnsignedShort && generateFormat.format == Dez_Float) {
+		
+		convertFlag = convertFlag &&
+			__DataFormatConvert(
+				static_cast<unsigned short*>(importFormat.data),
+				static_cast<float*>(importFormat.data_aim),
+				importFormat);
+		return convertFlag;
+	}
+
+	emit PrintError("Unsupported conversion");
+	return false;
+}
+
 bool ProcessVolumeData::GenerateOutput_Mhd(const QString& outputDir, const QString& outName,
 	const GenerateFormat& generateFormat, ImportFormat& importFormat) {
 
+	if (!DataFormatConvert(generateFormat, importFormat)) {
+		return false;
+	}
+
+	int dimM[3] = { importFormat.xLength, importFormat.yLength, importFormat.zLength };
+	double PixelSpace[3] = { importFormat.xPixelSpace, importFormat.yPixelSpace, importFormat.zPixelSpace};
+
+	vtkSmartPointer<vtkImageImport> imageImport = vtkSmartPointer<vtkImageImport>::New();
+	imageImport->SetDataSpacing(PixelSpace[0], PixelSpace[1], PixelSpace[2]);
+	imageImport->SetDataOrigin(0, 0, 0);
+	imageImport->SetWholeExtent(0, dimM[0] - 1, 0, dimM[1] - 1, 0, dimM[2] - 1);
+	imageImport->SetDataExtentToWholeExtent();
+
+	switch (importFormat.format_aim)
+	{
+	case Dez_Origin:
+		emit PrintError("Error Mhd output format");
+		return false;
+		break;
+	case Dez_UnsignedLong:
+		emit PrintError("Undefined Mhd output format in VTK");
+		return false;
+		break;
+	case Dez_SignedLong:
+		imageImport->SetDataScalarTypeToInt();
+		break;
+	case Dez_UnsignedShort:
+		imageImport->SetDataScalarTypeToUnsignedShort();
+		break;
+	case Dez_SignedShort:
+		imageImport->SetDataScalarTypeToShort();
+		break;
+	case Dez_UnsignedChar:
+		imageImport->SetDataScalarTypeToUnsignedChar();
+		break;
+	case Dez_SignedChar:
+		emit PrintError("Undefined Mhd output format in VTK");
+		return false;
+		break;
+	case Dez_Float:
+		imageImport->SetDataScalarTypeToFloat();
+		break;
+	case Dez_Double:
+		imageImport->SetDataScalarTypeToDouble();
+		break;
+	default:
+		emit PrintError("Error Mhd output format");
+		return false;
+		break;
+	}
+	
+	imageImport->SetNumberOfScalarComponents(1); // channel
+	imageImport->SetImportVoidPointer(importFormat.data_aim);
+	imageImport->Update();
+	vtkSmartPointer<vtkMetaImageWriter> writer =
+		vtkSmartPointer<vtkMetaImageWriter>::New();
+	writer->SetInputConnection(imageImport->GetOutputPort());
+	writer->SetFileName((outputDir + "/" + outName + ".mhd").toStdString().c_str());
+	writer->SetRAWFileName((outputDir + "/" + outName + ".raw").toStdString().c_str());
+	writer->Write();
+
+
+	return true;
+}
+
+template <typename T>
+bool SaveUncompressedRawData(std::string filename, const T* data, const ImportFormat& importFormat) {
+	unsigned int width = importFormat.xLength, height = importFormat.yLength;
+	std::ofstream file(filename, std::ios::binary);
+	if (!file.is_open()) return false;
+	for (unsigned int i = 0; i < importFormat.zLength; i++) {
+		file.write((char*)((T *)data + i * width * height), sizeof(T) * width * height);
+	}
+	file.close();
 	return true;
 }
 
 bool ProcessVolumeData::GenerateOutput_Feimos(const QString& outputDir, const QString& outName,
 	const GenerateFormat& generateFormat, ImportFormat& importFormat) {
+
+	if (!DataFormatConvert(generateFormat, importFormat)) {
+		return false;
+	}
+
+	std::string format; bool writebinaryFlag = true;
+	switch (importFormat.format_aim)
+	{
+	case Dez_Origin:
+		format = "Error";
+		emit PrintError("Non compliant data output format");
+		return false;
+		break;
+	case Dez_UnsignedLong:
+		format = "UnsignedLong";
+		writebinaryFlag = writebinaryFlag && 
+			SaveUncompressedRawData((outputDir + "/" + outName + ".raw").toStdString(),
+			static_cast<unsigned long*>(importFormat.data_aim), importFormat);
+		break;
+	case Dez_SignedLong:
+		format = "SignedLong";
+		SaveUncompressedRawData((outputDir + "/" + outName + ".raw").toStdString(),
+			static_cast<signed long*>(importFormat.data_aim), importFormat);
+		break;
+	case Dez_UnsignedShort:
+		format = "UnsignedShort";
+		writebinaryFlag = writebinaryFlag && 
+			SaveUncompressedRawData((outputDir + "/" + outName + ".raw").toStdString(),
+			static_cast<unsigned short*>(importFormat.data_aim), importFormat);
+		break;
+	case Dez_SignedShort:
+		format = "SignedShort";
+		writebinaryFlag = writebinaryFlag && 
+			SaveUncompressedRawData((outputDir + "/" + outName + ".raw").toStdString(),
+			static_cast<signed short*>(importFormat.data_aim), importFormat);
+		break;
+	case Dez_UnsignedChar:
+		format = "UnsignedChar";
+		writebinaryFlag = writebinaryFlag && 
+			SaveUncompressedRawData((outputDir + "/" + outName + ".raw").toStdString(),
+			static_cast<unsigned char*>(importFormat.data_aim), importFormat);
+		break;
+	case Dez_SignedChar:
+		format = "SignedChar";
+		writebinaryFlag = writebinaryFlag && 
+			SaveUncompressedRawData((outputDir + "/" + outName + ".raw").toStdString(),
+			static_cast<signed char*>(importFormat.data_aim), importFormat);
+		break;
+	case Dez_Float:
+		format = "Float";
+		writebinaryFlag = writebinaryFlag && 
+			SaveUncompressedRawData((outputDir + "/" + outName + ".raw").toStdString(),
+			static_cast<float*>(importFormat.data_aim), importFormat);
+		break;
+	case Dez_Double:
+		format = "Double";
+		writebinaryFlag = writebinaryFlag && 
+			SaveUncompressedRawData((outputDir + "/" + outName + ".raw").toStdString(),
+			static_cast<double*>(importFormat.data_aim), importFormat);
+		break;
+	default:
+		emit PrintError("Non compliant data output format");
+		return false;
+		break;
+	}
+	if (!writebinaryFlag) {
+		emit PrintError("Fail to write to binary file");
+		return false;
+	}
+
+	{
+		std::ofstream fileInfo((outputDir + "/" + outName + ".feimos").toStdString());
+		if (!fileInfo.is_open()) {
+			emit PrintError("Fail to write to info file");
+			return false;
+		}
+		fileInfo << "xLength " << importFormat.xLength << std::endl;
+		fileInfo << "yLength " << importFormat.yLength << std::endl;
+		fileInfo << "zLength " << importFormat.zLength << std::endl;
+		fileInfo << "xPixelSpace " << importFormat.xPixelSpace << std::endl;
+		fileInfo << "yPixelSpace " << importFormat.yPixelSpace << std::endl;
+		fileInfo << "zPixelSpace " << importFormat.zPixelSpace << std::endl;
+		fileInfo << "format " << (outName.toStdString() + ".raw") << std::endl;
+		fileInfo << "Raw " << (outName.toStdString() + ".raw") << std::endl;
+		fileInfo.close();
+	}
+	
+
 	return true;
 }
 
@@ -378,6 +603,11 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 
 void ProcessVolumeData::DcmMakeMhdFile(const QString& inputDir, const QString& outputDir, const QString& outName,
 	const GenerateFormat& generateFormat) {
+
+	// check input and output
+	if (!isInputDirExist(inputDir)) return;
+	if (!checkOutputDir_Mhd(outputDir, outName)) return;
+
 	ImportFormat importFormat;
 
 	bool parseFlag = false;
@@ -396,6 +626,11 @@ void ProcessVolumeData::DcmMakeMhdFile(const QString& inputDir, const QString& o
 
 void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString& outputDir, const QString& outName, 
 	const GenerateFormat& generateFormat) {
+
+	// check input and output
+	if (!isInputDirExist(inputDir)) return;
+	if (!checkOutputDir_Feimos(outputDir, outName)) return;
+
 	ImportFormat importFormat;
 
 	bool parseFlag = false;
@@ -414,7 +649,7 @@ void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString
 
 
 // **********************************************//
-// *** Dicom Functions *** //
+// *** Old Dicom Functions *** //
 // **********************************************//
 
 struct DcmFile {
