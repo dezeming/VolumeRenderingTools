@@ -14,7 +14,7 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-	Github site: <https://github.com/dezeming/Crystal>
+	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
 #pragma once
@@ -28,6 +28,7 @@
 
 #include "DisplayWidget.h"
 #include "InteractionDockWidget.h"
+#include "InfoPresent/DataPresentDockWidget.hpp"
 
 class MainWindow : public QMainWindow
 {
@@ -47,20 +48,29 @@ private:
 
 	InteractionDockWidget* m_InteractionDockWidget;
 
+	DataPresentDockWidget* m_DataPresentDockWidget;
+
 private:
 	void setMenu(void);
 	void setWidget(void);
 	void setDock(void);
 	void closeEvent(QCloseEvent *event);
 
+	void getPredefinedInfo();
+
 private slots:
 	void setRendering();
+
+	// test
 	void setProcess();
 
-	void process_DcmToMhd_DCMTK();
-	void process_DcmToMhd_GDCM();
+	// volume file type convert
+	void process_DcmToMhd();
+	void process_DcmToFeimos();
 	void process_MhdToFeimos();
-	void process_MhdToPbrt();
+	void process_FeimosToMhd();
+
+	// volume process
 	void process_MhdRotateAxis();
 	void process_MhdFlipAxis();
 	void process_MhdClip();

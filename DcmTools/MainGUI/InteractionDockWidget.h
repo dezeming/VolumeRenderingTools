@@ -14,7 +14,7 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-	Github site: <https://github.com/dezeming/Crystal>
+	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
 #ifndef __ImageToolsDockWidget_h__
@@ -40,90 +40,42 @@
 
 #include "RenderThread.h"
 
-class QDcmToMhd_DCMTK_Frame : public QGroupBox {
+class QVolumeConvert_Frame : public QGroupBox {
 	Q_OBJECT
 public:
-	QDcmToMhd_DCMTK_Frame(QWidget * parent = Q_NULLPTR) {
-		setTitle("DCM To MHD-RAW(DCMTK)");
+	QVolumeConvert_Frame(QWidget * parent = Q_NULLPTR) {
+		setTitle("DCM To MHD-RAW");
 		setMinimumWidth(200);
 
-		DcmToMhd_DCMTK_Layoput = new QVBoxLayout;
-		setLayout(DcmToMhd_DCMTK_Layoput);
+		VolumeConvert_Layoput = new QVBoxLayout;
+		setLayout(VolumeConvert_Layoput);
 
-		DcmToMhd_Frame_DCMTK_processButton = new QPushButton;
-		DcmToMhd_Frame_DCMTK_processButton->setText("Process");
+		DcmToMhd_processButton = new QPushButton;
+		DcmToMhd_processButton->setText("Dcm To Mhd format");
 
-		DcmToMhd_DCMTK_Layoput->addWidget(DcmToMhd_Frame_DCMTK_processButton);
-	}
-	~QDcmToMhd_DCMTK_Frame(){ }
-
-	QPushButton *DcmToMhd_Frame_DCMTK_processButton;
-	QVBoxLayout *DcmToMhd_DCMTK_Layoput;
-};
-
-class QDcmToMhd_GDCM_Frame : public QGroupBox {
-	Q_OBJECT
-public:
-	QDcmToMhd_GDCM_Frame(QWidget * parent = Q_NULLPTR) {
-		setTitle("DCM To MHD-RAW(GDCM)");
-		setMinimumWidth(200);
-
-		DcmToMhd_GDCM_Layoput = new QVBoxLayout;
-		setLayout(DcmToMhd_GDCM_Layoput);
-
-		DcmToMhd_Frame_GDCM_processButton = new QPushButton;
-		DcmToMhd_Frame_GDCM_processButton->setText("Process");
-
-		DcmToMhd_GDCM_Layoput->addWidget(DcmToMhd_Frame_GDCM_processButton);
-	}
-	~QDcmToMhd_GDCM_Frame() { }
-
-	QPushButton *DcmToMhd_Frame_GDCM_processButton;
-	QVBoxLayout *DcmToMhd_GDCM_Layoput;
-};
-
-class QMhdToFeimos_Frame : public QGroupBox {
-	Q_OBJECT
-public:
-	QMhdToFeimos_Frame(QWidget * parent = Q_NULLPTR) {
-		setTitle("MHD To Feimos Format");
-		setMinimumWidth(200);
-
-		MhdToFeimos_Layoput = new QVBoxLayout;
-		setLayout(MhdToFeimos_Layoput);
+		DcmToFeimos_processButton = new QPushButton;
+		DcmToFeimos_processButton->setText("Dcm To Feimos format");
 
 		MhdToFeimos_processButton = new QPushButton;
-		MhdToFeimos_processButton->setText("Process");
+		MhdToFeimos_processButton->setText("Mhd To Feimos format");
 
-		MhdToFeimos_Layoput->addWidget(MhdToFeimos_processButton);
+		FeimosToMhd_processButton = new QPushButton;
+		FeimosToMhd_processButton->setText("Feimos To Mhd format");
+
+		VolumeConvert_Layoput->addWidget(DcmToMhd_processButton);
+		VolumeConvert_Layoput->addWidget(DcmToFeimos_processButton);
+		VolumeConvert_Layoput->addWidget(MhdToFeimos_processButton);
+		VolumeConvert_Layoput->addWidget(FeimosToMhd_processButton);
 	}
-	~QMhdToFeimos_Frame() { }
+	~QVolumeConvert_Frame(){ }
 
+	QPushButton *DcmToMhd_processButton;
+	QPushButton *DcmToFeimos_processButton;
 	QPushButton *MhdToFeimos_processButton;
-	QVBoxLayout *MhdToFeimos_Layoput;
+	QPushButton *FeimosToMhd_processButton;
+
+	QVBoxLayout *VolumeConvert_Layoput;
 };
-
-class QMhdToPbrt_Frame : public QGroupBox {
-	Q_OBJECT
-public:
-	QMhdToPbrt_Frame(QWidget * parent = Q_NULLPTR) {
-		setTitle("MHD To Pbrt Format");
-		setMinimumWidth(200);
-
-		MhdToPbrt_Layoput = new QVBoxLayout;
-		setLayout(MhdToPbrt_Layoput);
-
-		MhdToPbrt_processButton = new QPushButton;
-		MhdToPbrt_processButton->setText("Process");
-
-		MhdToPbrt_Layoput->addWidget(MhdToPbrt_processButton);
-	}
-	~QMhdToPbrt_Frame() { }
-
-	QPushButton *MhdToPbrt_processButton;
-	QVBoxLayout *MhdToPbrt_Layoput;
-};
-
 
 class QMhdRotateAxis_Frame : public QGroupBox {
 	Q_OBJECT
@@ -512,10 +464,7 @@ public:
 	InteractionDockWidget(QWidget * parent = Q_NULLPTR);
 	~InteractionDockWidget();
 
-	QDcmToMhd_DCMTK_Frame *DcmToMhd_Frame_DCMTK_Frame;
-	QDcmToMhd_GDCM_Frame *DcmToMhd_Frame_GDCM_Frame;
-	QMhdToFeimos_Frame *MhdToFeimos_Frame;
-	QMhdToPbrt_Frame *MhdToPbrt_Frame;
+	QVolumeConvert_Frame *VolumeConvert_Frame;
 
 	QMhdRotateAxis_Frame * MhdRotateAxis_Frame;
 	QMhdFlipAxis_Frame *MhdFlipAxis_Frame;
@@ -533,6 +482,12 @@ public:
 	}
 	QString getOutputFileName() {
 		return OutputFileNameEdit->text();
+	}
+	DataFormat getGenerateDataFormat() {
+		return m_QGenerateFormat_Frame->getDataFormatSet();
+	}
+	DcmParseLib getDcmParseLib() {
+		return m_QParseDcmLibFormat_Frame->getParseSet();
 	}
 
 private:

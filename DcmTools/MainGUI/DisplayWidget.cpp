@@ -14,7 +14,7 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-	Github site: <https://github.com/dezeming/Crystal>
+	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
 #include "DisplayWidget.h"
@@ -111,18 +111,20 @@ void DisplayWidget::PrintWarningString(const char* s) {
 void DisplayWidget::Process(int index) {
 	if (0 == index)
 		processVolumeData.process();
+	// convert
 	if (1 == index) {
-		processVolumeData.DcmMakeMhdFile_DCMTK(InputFolder, OutputFolder, OutputFileName);
+		processVolumeData.DcmMakeMhdFile(InputFolder, OutputFolder, OutputFileName, generateFormat);
 	}
 	if (2 == index) {
-		processVolumeData.DcmMakeMhdFile_GDCM(InputFolder, OutputFolder, OutputFileName);
+		processVolumeData.DcmMakeFeimosFile(InputFolder, OutputFolder, OutputFileName, generateFormat);
 	}
 	if (3 == index) {
-		processVolumeData.MhdGenerateFeimosData(InputFilePath, OutputFolder, OutputFileName, generateFormat);
+		processVolumeData.MhdMakeFeimosFile(InputFilePath, OutputFolder, OutputFileName, generateFormat);
 	}
 	if (4 == index) {
-		processVolumeData.MhdGeneratePbrtVolume(InputFilePath, OutputFolder, OutputFileName);
+		processVolumeData.FeimosMakeMhdFile(InputFilePath, OutputFolder, OutputFileName, generateFormat);
 	}
+	// process
 	if (5 == index) {
 		processVolumeData.MhdRotateAxis(InputFilePath, OutputFolder, OutputFileName, permute);
 	}

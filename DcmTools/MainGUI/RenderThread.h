@@ -14,7 +14,7 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-	Github site: <https://github.com/dezeming/Crystal>
+	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
 #ifndef __RenderThread_h__
@@ -324,6 +324,12 @@ public:
 	bool GenerateInput_DCMTK(const QString& inputDir, ImportFormat& importFormat);
 
 	/**
+	* Copy data to importFormat.data with format T
+	*/
+	template <typename T>
+	bool CopyUncompressedRawData(const T* data, ImportFormat& importFormat);
+
+	/**
 	* Generate ImportFormat Object From (.mhd,.raw) file Using VTK
 	*/
 	bool GenerateInput_Mhd(const QString& inputFilePath, ImportFormat& importFormat);
@@ -405,6 +411,15 @@ public:
 	*/
 	void DcmMakeFeimosFile(const QString& inputDir, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
 
+	/**
+	* Make (.feimos,.raw) file from (.mhd,.raw) file
+	*/
+	void MhdMakeFeimosFile(const QString& inputFilePath, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
+
+	/**
+	* Make (.mhd,.raw) file from (.feimos,.raw) file
+	*/
+	void FeimosMakeMhdFile(const QString& inputFilePath, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
 
 	/*******************************************************/
 	/* Special functions that cannot be performed in steps

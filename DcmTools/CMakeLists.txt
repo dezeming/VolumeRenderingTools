@@ -90,11 +90,25 @@ set(Core
 # Make the Core group
 SOURCE_GROUP("Core" FILES ${Core})
 
+# InfoPresent files
+set(InfoPresent
+	InfoPresent/Status.hpp
+	InfoPresent/Status.cpp
+	InfoPresent/DataTreeWidget.hpp
+	InfoPresent/DataTreeWidget.cpp
+	InfoPresent/DataPresentDockWidget.hpp
+	InfoPresent/DataPresentDockWidget.cpp
+	InfoPresent/MemoryRecord.cpp
+)
+# Make the InfoPresent group
+SOURCE_GROUP("InfoPresent" FILES ${InfoPresent})
+
 # Create executable
 add_executable(DcmTools
 	WIN32
 	${MainGUI}
 	${Core}
+	${InfoPresent}
 )
 
 FILE(GLOB Icons ${CMAKE_CURRENT_SOURCE_DIR}/Icons/*.png)

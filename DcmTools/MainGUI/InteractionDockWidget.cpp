@@ -14,7 +14,7 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-	Github site: <https://github.com/dezeming/Crystal>
+	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
 #include "InteractionDockWidget.h"
@@ -106,34 +106,20 @@ void InteractionDockWidget::setupFrames() {
 
 	framesLayout = new QGridLayout;
 
-	DcmToMhd_Frame_DCMTK_Frame = new QDcmToMhd_DCMTK_Frame;
-	framesLayout->addWidget(DcmToMhd_Frame_DCMTK_Frame, 0, 0);
-
-	DcmToMhd_Frame_GDCM_Frame = new QDcmToMhd_GDCM_Frame;
-	framesLayout->addWidget(DcmToMhd_Frame_GDCM_Frame, 0, 1);
-
-	MhdToFeimos_Frame = new QMhdToFeimos_Frame;
-	framesLayout->addWidget(MhdToFeimos_Frame, 1, 0);
-
-	MhdToPbrt_Frame = new QMhdToPbrt_Frame;
-	framesLayout->addWidget(MhdToPbrt_Frame, 1, 1);
-
-
+	VolumeConvert_Frame = new QVolumeConvert_Frame;
+	framesLayout->addWidget(VolumeConvert_Frame, 0, 0);
 
 	MhdRotateAxis_Frame = new QMhdRotateAxis_Frame;
-	framesLayout->addWidget(MhdRotateAxis_Frame, 2, 0);
+	framesLayout->addWidget(MhdRotateAxis_Frame, 1, 0);
 
 	MhdFlipAxis_Frame = new QMhdFlipAxis_Frame;
-	framesLayout->addWidget(MhdFlipAxis_Frame, 2, 1);
+	framesLayout->addWidget(MhdFlipAxis_Frame, 1, 1);
 
 	MhdClip_Frame = new QMhdClip_Frame;
-	framesLayout->addWidget(MhdClip_Frame, 3, 0);
+	framesLayout->addWidget(MhdClip_Frame, 2, 0);
 
 	MhdResize_Frame = new QMhdResize_Frame;
-	framesLayout->addWidget(MhdResize_Frame, 3, 1);
-
-
-
+	framesLayout->addWidget(MhdResize_Frame, 2, 1);
 
 	centerLayout->addLayout(framesLayout);
 }

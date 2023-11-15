@@ -14,12 +14,13 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-	Github site: <https://github.com/dezeming/Crystal>
+	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
 #include "MainWindow.h"
 #include "DebugText.hpp"
 
+#include <QDir>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent) {
@@ -39,10 +40,7 @@ MainWindow::MainWindow(QWidget *parent)
 	setWidget();
 
 	setDock();
-	
-	connect(m_InteractionDockWidget->processButton, SIGNAL(clicked()), this, SLOT(setProcess()));
 
-	
 	/*DebugTextPrintString("Let's start !");
 
 	DcmTools::Vector4f vec(2.0, 1.0, 3.0, 2.0);
@@ -98,19 +96,22 @@ void MainWindow::setWidget(void) {
 
 }
 
+void showMemoryInfo(void);
 void MainWindow::setDock(void) {
 	m_InteractionDockWidget = new InteractionDockWidget;
 	addDockWidget(Qt::LeftDockWidgetArea, m_InteractionDockWidget);
 
-	connect(m_InteractionDockWidget->DcmToMhd_Frame_DCMTK_Frame->DcmToMhd_Frame_DCMTK_processButton,
-		SIGNAL(clicked()), this, SLOT(process_DcmToMhd_DCMTK()));
-	connect(m_InteractionDockWidget->DcmToMhd_Frame_GDCM_Frame->DcmToMhd_Frame_GDCM_processButton,
-		SIGNAL(clicked()), this, SLOT(process_DcmToMhd_GDCM()));
-	connect(m_InteractionDockWidget->MhdToFeimos_Frame->MhdToFeimos_processButton,
+	// volume file type convert
+	connect(m_InteractionDockWidget->VolumeConvert_Frame->DcmToMhd_processButton,
+		SIGNAL(clicked()), this, SLOT(process_DcmToMhd()));
+	connect(m_InteractionDockWidget->VolumeConvert_Frame->DcmToFeimos_processButton,
+		SIGNAL(clicked()), this, SLOT(process_DcmToFeimos()));
+	connect(m_InteractionDockWidget->VolumeConvert_Frame->MhdToFeimos_processButton,
 		SIGNAL(clicked()), this, SLOT(process_MhdToFeimos()));
-	connect(m_InteractionDockWidget->MhdToPbrt_Frame->MhdToPbrt_processButton,
-		SIGNAL(clicked()), this, SLOT(process_MhdToPbrt()));
+	connect(m_InteractionDockWidget->VolumeConvert_Frame->FeimosToMhd_processButton,
+		SIGNAL(clicked()), this, SLOT(process_FeimosToMhd()));
 
+	// volume process
 	connect(m_InteractionDockWidget->MhdRotateAxis_Frame->MhdRotateAxis_processButton,
 		SIGNAL(clicked()), this, SLOT(process_MhdRotateAxis()));
 	connect(m_InteractionDockWidget->MhdFlipAxis_Frame->MhdFlipAxis_processButton,
@@ -120,6 +121,13 @@ void MainWindow::setDock(void) {
 	connect(m_InteractionDockWidget->MhdResize_Frame->MhdResize_processButton,
 		SIGNAL(clicked()), this, SLOT(process_MhdResize()));
 
+	// test
+	connect(m_InteractionDockWidget->processButton, 
+		SIGNAL(clicked()), this, SLOT(setProcess()));
+
+	m_DataPresentDockWidget = new DataPresentDockWidget;
+	addDockWidget(Qt::RightDockWidgetArea, m_DataPresentDockWidget);
+	showMemoryInfo();
 }
 
 void MainWindow::setRendering() {
@@ -130,467 +138,145 @@ void MainWindow::setRendering() {
 	}
 }
 
-#include <QDir>
 
-void MainWindow::setProcess() {
-	DebugTextPrintString("........................  New Task   ................................");
-	m_DisplayWidget->Process(0);
-	DebugTextPrintString(".................  Process finished   ....................");
-}
 
-void MainWindow::process_DcmToMhd_DCMTK() {
-	DebugTextPrintLineBreak();
-	DebugTextPrintString("........................  New Task   ................................");
-
-	DebugTextPrintString("Convert .dcm files into VTK's .mdh-.raw format using DCMTK lib.");
-
+void MainWindow::getPredefinedInfo() {
+	// Obtain predefined information
+	
+	QString inputfilePath = m_InteractionDockWidget->getInputFilePath();
+	//DebugTextPrintString("inputfilePath: " + inputfilePath);
 	QString inputDir = m_InteractionDockWidget->getInputFolder();
-	DebugTextPrintString("inputDir: " + inputDir);
+	//DebugTextPrintString("inputDir: " + inputDir);
 	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	DebugTextPrintString("outputDir: " + outputDir);
-
-	QDir dir;
-	if (!dir.exists(inputDir)) {
-		DebugTextPrintString("Error: Input Folder does not exist.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-	if (!dir.exists(outputDir)) {
-		if (dir.mkpath(outputDir)) {
-			DebugTextPrintString("Folder created successfully.");
-		}
-		else {
-			DebugTextPrintString("Error: Folder creation failed.");
-			DebugTextPrintString(".................  Process finished   ....................");
-			return;
-		}
-	}
-	else {
-		DebugTextPrintString("Folder already exists.");
-	}
-
+	//DebugTextPrintString("outputDir: " + outputDir);
 	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	DebugTextPrintString("outputFileName: " + outputFileName);
-
-	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
-	if (file_mhd.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
-	if (file_raw.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
+	//DebugTextPrintString("outputFileName: " + outputFileName);
 
 	m_DisplayWidget->InputFolder = inputDir;
 	m_DisplayWidget->OutputFolder = outputDir;
 	m_DisplayWidget->OutputFileName = outputFileName;
+	m_DisplayWidget->InputFilePath = inputfilePath;
+
+	m_DisplayWidget->generateFormat.parseLib = m_InteractionDockWidget->getDcmParseLib();
+	m_DisplayWidget->generateFormat.format = m_InteractionDockWidget->getGenerateDataFormat();
+	
+}
+
+// volume file type convert
+void MainWindow::process_DcmToMhd() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Convert .dcm files into VTK's .mdh-.raw format.");
+	getPredefinedInfo();
 
 	m_DisplayWidget->Process(1);
+
 	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
 }
-void MainWindow::process_DcmToMhd_GDCM() {
+void MainWindow::process_DcmToFeimos() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
-	DebugTextPrintString("Convert .dcm files into VTK's .mdh-.raw format using GDCM lib.");
-
-	QString inputDir = m_InteractionDockWidget->getInputFolder();
-	DebugTextPrintString("inputDir: " + inputDir);
-	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	DebugTextPrintString("outputDir: " + outputDir);
-
-	QDir dir;
-	if (!dir.exists(inputDir)) {
-		DebugTextPrintString("Error: Input Folder does not exist.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-	if (!dir.exists(outputDir)) {
-		if (dir.mkpath(outputDir)) {
-			DebugTextPrintString("Folder created successfully.");
-		}
-		else {
-			DebugTextPrintString("Error: Folder creation failed.");
-			DebugTextPrintString(".................  Process finished   ....................");
-			return;
-		}
-	}
-	else {
-		DebugTextPrintString("Folder already exists.");
-	}
-
-	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	DebugTextPrintString("outputFileName: " + outputFileName);
-
-	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
-	if (file_mhd.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
-	if (file_raw.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-
-	m_DisplayWidget->InputFolder = inputDir;
-	m_DisplayWidget->OutputFolder = outputDir;
-	m_DisplayWidget->OutputFileName = outputFileName;
+	DebugTextPrintString("Convert .dcm files into Feimos' uncompressed .raw format.");
+	getPredefinedInfo();
 
 	m_DisplayWidget->Process(2);
-	
+
 	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
 }
 void MainWindow::process_MhdToFeimos() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
 	DebugTextPrintString("Convert .mhd-.raw file into Feimos file format.");
+	getPredefinedInfo();
 
-	QString inputfile = m_InteractionDockWidget->getInputFilePath();
-	DebugTextPrintString("inputfile: " + inputfile);
-	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	DebugTextPrintString("outputDir: " + outputDir);
-
-	QFile file_input(inputfile);
-	if (!file_input.exists()) {
-		DebugTextPrintString("Error: The input file does not exist.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-	 
-	QDir dir;
-	if (!dir.exists(outputDir)) {
-		if (dir.mkpath(outputDir)) {
-			DebugTextPrintString("Folder created successfully.");
-		}
-		else {
-			DebugTextPrintString("Error: Folder creation failed.");
-			DebugTextPrintString(".................  Process finished   ....................");
-			return;
-		}
-	}
-	else {
-		DebugTextPrintString("Folder already exists.");
-	}
-
-	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	DebugTextPrintString("outputFileName: " + outputFileName);
-	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
-	if (file_mhd.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
-	if (file_raw.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-
-	m_DisplayWidget->InputFilePath = inputfile;
-	m_DisplayWidget->OutputFolder = outputDir;
-	m_DisplayWidget->OutputFileName = outputFileName;
 
 	m_DisplayWidget->Process(3);
 	
 	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
 }
-void MainWindow::process_MhdToPbrt() {
+void MainWindow::process_FeimosToMhd() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
 	DebugTextPrintString("Convert .mhd-.raw file into Pbrt file format.");
 
-	QString inputfile = m_InteractionDockWidget->getInputFilePath();
-	DebugTextPrintString("inputfile: " + inputfile);
-	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	DebugTextPrintString("outputDir: " + outputDir);
-
-	QFile file_input(inputfile);
-	if (!file_input.exists()) {
-		DebugTextPrintString("Error: The input file does not exist.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-
-	QDir dir;
-	if (!dir.exists(outputDir)) {
-		if (dir.mkpath(outputDir)) {
-			DebugTextPrintString("Folder created successfully.");
-		}
-		else {
-			DebugTextPrintString("Error: Folder creation failed.");
-			DebugTextPrintString(".................  Process finished   ....................");
-			return;
-		}
-	}
-	else {
-		DebugTextPrintString("Folder already exists.");
-	}
-
-	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	DebugTextPrintString("outputFileName: " + outputFileName);
-	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
-	if (file_mhd.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
-	if (file_raw.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-
-	m_DisplayWidget->InputFilePath = inputfile;
-	m_DisplayWidget->OutputFolder = outputDir;
-	m_DisplayWidget->OutputFileName = outputFileName;
+	getPredefinedInfo();
 
 	m_DisplayWidget->Process(4);
 	
 	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
 }
+
+// volume process
 void MainWindow::process_MhdRotateAxis() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
 	DebugTextPrintString("Permute axis of .mhd-.raw file.");
-
-	QString inputfile = m_InteractionDockWidget->getInputFilePath();
-	DebugTextPrintString("inputfile: " + inputfile);
-	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	DebugTextPrintString("outputDir: " + outputDir);
-
-	QFile file_input(inputfile);
-	if (!file_input.exists()) {
-		DebugTextPrintString("Error: The input file does not exist.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-
-	QDir dir;
-	if (!dir.exists(outputDir)) {
-		if (dir.mkpath(outputDir)) {
-			DebugTextPrintString("Folder created successfully.");
-		}
-		else {
-			DebugTextPrintString("Error: Folder creation failed.");
-			DebugTextPrintString(".................  Process finished   ....................");
-			return;
-		}
-	}
-	else {
-		DebugTextPrintString("Folder already exists.");
-	}
-
-	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	DebugTextPrintString("outputFileName: " + outputFileName);
-	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
-	if (file_mhd.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
-	if (file_raw.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
+	getPredefinedInfo();
 
 	bool ok = m_InteractionDockWidget->MhdRotateAxis_Frame->getRotateAxis(m_DisplayWidget->permute);
 	if (!ok) return;
 
-	m_DisplayWidget->InputFilePath = inputfile;
-	m_DisplayWidget->OutputFolder = outputDir;
-	m_DisplayWidget->OutputFileName = outputFileName;
-
 	m_DisplayWidget->Process(5);
 	
 	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
 }
 void MainWindow::process_MhdFlipAxis() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
 	DebugTextPrintString("Flip axis of .mhd-.raw file.");
-
-	QString inputfile = m_InteractionDockWidget->getInputFilePath();
-	DebugTextPrintString("inputfile: " + inputfile);
-	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	DebugTextPrintString("outputDir: " + outputDir);
-
-	QFile file_input(inputfile);
-	if (!file_input.exists()) {
-		DebugTextPrintString("Error: The input file does not exist.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-
-	QDir dir;
-	if (!dir.exists(outputDir)) {
-		if (dir.mkpath(outputDir)) {
-			DebugTextPrintString("Folder created successfully.");
-		}
-		else {
-			DebugTextPrintString("Error: Folder creation failed.");
-			DebugTextPrintString(".................  Process finished   ....................");
-			return;
-		}
-	}
-	else {
-		DebugTextPrintString("Folder already exists.");
-	}
-
-	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	DebugTextPrintString("outputFileName: " + outputFileName);
-	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
-	if (file_mhd.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
-	if (file_raw.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
+	getPredefinedInfo();
 
 	bool ok = m_InteractionDockWidget->MhdFlipAxis_Frame->getFlipAxis(m_DisplayWidget->flip);
 	if (!ok) return;
 
-	m_DisplayWidget->InputFilePath = inputfile;
-	m_DisplayWidget->OutputFolder = outputDir;
-	m_DisplayWidget->OutputFileName = outputFileName;
-
 	m_DisplayWidget->Process(6);
 	
 	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
 }
 void MainWindow::process_MhdClip() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
 	DebugTextPrintString("Clip.mhd - .raw file.");
+	getPredefinedInfo();
 
-	QString inputfile = m_InteractionDockWidget->getInputFilePath();
-	DebugTextPrintString("inputfile: " + inputfile);
-	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	DebugTextPrintString("outputDir: " + outputDir);
-
-	QFile file_input(inputfile);
-	if (!file_input.exists()) {
-		DebugTextPrintString("Error: The input file does not exist.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-
-	QDir dir;
-	if (!dir.exists(outputDir)) {
-		if (dir.mkpath(outputDir)) {
-			DebugTextPrintString("Folder created successfully.");
-		}
-		else {
-			DebugTextPrintString("Error: Folder creation failed.");
-			DebugTextPrintString(".................  Process finished   ....................");
-			return;
-		}
-	}
-	else {
-		DebugTextPrintString("Folder already exists.");
-	}
-
-	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	DebugTextPrintString("outputFileName: " + outputFileName);
-	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
-	if (file_mhd.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
-	if (file_raw.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-
-	m_DisplayWidget->InputFilePath = inputfile;
-	m_DisplayWidget->OutputFolder = outputDir;
-	m_DisplayWidget->OutputFileName = outputFileName;
-
-	m_DisplayWidget->startRenderThread(7);
+	m_DisplayWidget->Process(4);
 	
 	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
 }
 void MainWindow::process_MhdResize() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
 	DebugTextPrintString("Resize .mhd-.raw file.");
-
-	QString inputfile = m_InteractionDockWidget->getInputFilePath();
-	DebugTextPrintString("inputfile: " + inputfile);
-	QString outputDir = m_InteractionDockWidget->getOutputFolder();
-	DebugTextPrintString("outputDir: " + outputDir);
-
-	QFile file_input(inputfile);
-	if (!file_input.exists()) {
-		DebugTextPrintString("Error: The input file does not exist.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-
-	QDir dir;
-	if (!dir.exists(outputDir)) {
-		if (dir.mkpath(outputDir)) {
-			DebugTextPrintString("Folder created successfully.");
-		}
-		else {
-			DebugTextPrintString("Error: Folder creation failed.");
-			DebugTextPrintString(".................  Process finished   ....................");
-			return;
-		}
-	}
-	else {
-		DebugTextPrintString("Folder already exists.");
-	}
-
-	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
-	DebugTextPrintString("outputFileName: " + outputFileName);
-	QFile file_mhd(outputDir + "/" + outputFileName + ".mhd");
-	if (file_mhd.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-	QFile file_raw(outputDir + "/" + outputFileName + ".raw");
-	if (file_raw.exists()) {
-		DebugTextPrintString("Error: It is mandatory not to overwrite files with the same name.");
-		DebugTextPrintString(".................  Process finished   ....................");
-		return;
-	}
-
-	m_DisplayWidget->InputFilePath = inputfile;
-	m_DisplayWidget->OutputFolder = outputDir;
-	m_DisplayWidget->OutputFileName = outputFileName;
+	getPredefinedInfo();
 
 	m_DisplayWidget->Process(4);
 	
 	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
 }
 
-
+// test
+void MainWindow::setProcess() {
+	DebugTextPrintString("........................  New Task   ................................");
+	m_DisplayWidget->Process(0);
+	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
+}
 
 
 
