@@ -77,6 +77,10 @@ enum DcmParseLib {
 	Dez_DCMTK = 1
 };
 
+struct DcmFilePixelData {
+	char *pixData = nullptr;
+	float position = 0.0f;
+};
 
 struct ImportFormat {
 	unsigned int xLength, yLength, zLength;
@@ -206,6 +210,17 @@ struct ImportFormat {
 		data_aim = nullptr;
 	}
 
+	bool setFormatUsingString(QString str) {
+		if (str == "UnsignedLong") { format = Dez_UnsignedLong; return true; }
+		else if (str == "SignedLong") { format = Dez_SignedLong; return true; }
+		else if (str == "UnsignedShort") { format = Dez_UnsignedShort; return true; }
+		else if (str == "SignedShort") { format = Dez_SignedShort; return true; }
+		else if (str == "UnsignedChar") { format = Dez_UnsignedChar; return true; }
+		else if (str == "SignedChar") { format = Dez_SignedChar; return true; }
+		else if (str == "Float") { format = Dez_Float; return true; }
+		else if (str == "Double") { format = Dez_Double; return true; }
+		else { return false; }
+	}
 
 	QString getFormatString() {
 		QString form;
@@ -316,12 +331,12 @@ public:
 	/**
 	* Generate ImportFormat Object From (.dcm) files Using GDCM
 	*/
-	bool GenerateInput_GDCM(const QString& inputDir, ImportFormat& importFormat);
+	bool GenerateInput_GDCM(const std::vector<QString>& fileList, ImportFormat& importFormat);
 
 	/**
 	* Generate ImportFormat Object From (.dcm) files Using DCMTK
 	*/
-	bool GenerateInput_DCMTK(const QString& inputDir, ImportFormat& importFormat);
+	bool GenerateInput_DCMTK(const std::vector<QString>& fileList, ImportFormat& importFormat);
 
 	/**
 	* Copy data to importFormat.data with format T

@@ -167,7 +167,7 @@ void MainWindow::process_DcmToMhd() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
-	DebugTextPrintString("Convert .dcm files into VTK's .mdh-.raw format.");
+	DebugTextPrintString("Convert .dcm files into VTK's (.mdh-.raw) format.");
 	getPredefinedInfo();
 
 	m_DisplayWidget->Process(1);
@@ -179,7 +179,7 @@ void MainWindow::process_DcmToFeimos() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
-	DebugTextPrintString("Convert .dcm files into Feimos' uncompressed .raw format.");
+	DebugTextPrintString("Convert .dcm files into Feimos' uncompressed (.feimos,.raw) format.");
 	getPredefinedInfo();
 
 	m_DisplayWidget->Process(2);
@@ -191,7 +191,7 @@ void MainWindow::process_MhdToFeimos() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
-	DebugTextPrintString("Convert .mhd-.raw file into Feimos file format.");
+	DebugTextPrintString("Convert (.mhd-.raw) file into (.feimos,.raw) file format.");
 	getPredefinedInfo();
 
 
@@ -204,7 +204,7 @@ void MainWindow::process_FeimosToMhd() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
-	DebugTextPrintString("Convert .mhd-.raw file into Pbrt file format.");
+	DebugTextPrintString("Convert (.feimos,.raw) file into (.mhd-.raw) file format.");
 
 	getPredefinedInfo();
 

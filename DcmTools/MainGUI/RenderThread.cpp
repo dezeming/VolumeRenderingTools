@@ -307,16 +307,393 @@ bool ProcessVolumeData::getInputDcmFileList(const QString& inputDir, std::vector
 // *** Generate input data to ImportFormat object *** //
 // **********************************************//
 
-bool ProcessVolumeData::GenerateInput_GDCM(const QString& inputDir, ImportFormat& importFormat) {
+
+bool DcmFilePosCompare(const DcmFilePixelData &f1, const DcmFilePixelData &f2) {
+	if (f1.position < f2.position) return true;
+	else return false;
+}
+
+bool ProcessVolumeData::GenerateInput_GDCM(const std::vector<QString>& fileList, ImportFormat& importFormat) {
 	
 
 
 	return false;
 }
-bool ProcessVolumeData::GenerateInput_DCMTK(const QString& inputDir, ImportFormat& importFormat) {
 
+bool ProcessVolumeData::GenerateInput_DCMTK(const std::vector<QString>& fileList, ImportFormat& importFormat) {
 
-	return false;
+	unsigned int width = 0, height = 0;
+	double pixelSpacing_X, pixelSpacing_Y, pixelSpacing_Z;
+	Uint16 bitsAllocated, bitsStored, pixelRepresentation;
+
+	// valid 
+	std::vector<unsigned int> correctImagesNum;
+	for (unsigned int i = 0; i < fileList.size(); i++)
+	{
+
+		QString file_Path = fileList[i];
+		DcmFileFormat dfile;
+		dfile.loadFile(file_Path.toStdString().c_str());
+		DcmMetaInfo *Metalnfo = dfile.getMetaInfo();
+
+		if (!Metalnfo) {
+			emit PrintError(("No Metalnfo in File " + file_Path).toStdString().c_str());
+			continue;
+		}
+
+		DcmTag Tag;
+		Tag = Metalnfo->getTag();
+		Uint16 G_tag = Tag.getGTag();
+		DcmDataset *data = dfile.getDataset();
+		if (!data) {
+			emit PrintError(("No data in File " + file_Path).toStdString().c_str());
+			continue;
+		}
+
+		// Get Pixel Data
+		DcmElement *element = NULL;
+		if (!data->findAndGetElement(DCM_PixelData, element).good()) {
+			emit PrintError(("Get PixelData wrong in File " + file_Path).toStdString().c_str());
+			continue;
+		}
+
+		// Get Width Info
+		{
+			OFString ImageWidth;
+			if (!data->findAndGetOFString(DCM_Columns, ImageWidth).good()) {
+				emit PrintError(("Get DCM_Columns wrong in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			if (correctImagesNum.size() != 0 && width != static_cast<unsigned int>(atoi(ImageWidth.data()))) {
+				emit PrintError(("The width of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			else if (correctImagesNum.size() == 0) {
+				width = static_cast<unsigned int>(atoi(ImageWidth.data()));
+				importFormat.xLength = width;
+			}
+		}
+
+		// Get Height Info
+		{
+			OFString ImageHeight;
+			if (!data->findAndGetOFString(DCM_Rows, ImageHeight).good()) {
+				emit PrintError(("Get DCM_Rows wrong in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			if (correctImagesNum.size() != 0 && height != static_cast<unsigned int>(atoi(ImageHeight.data()))) {
+				emit PrintError(("The height of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			else if (correctImagesNum.size() == 0) {
+				height = static_cast<unsigned int>(atoi(ImageHeight.data()));
+				importFormat.yLength = height;
+			}
+		}
+
+		// Get Pixel Spacing
+		{
+			OFString PixelSpacing;
+			if (!data->findAndGetOFString(DCM_PixelSpacing, PixelSpacing).good()) {
+				emit PrintError(("Get DCM_PixelSpacing wrong in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			if (correctImagesNum.size() != 0 && pixelSpacing_X != atof(PixelSpacing.data())) {
+				emit PrintError(("The pixelSpacing of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			else if (correctImagesNum.size() == 0) {
+				pixelSpacing_X = atof(PixelSpacing.data());
+				pixelSpacing_Y = pixelSpacing_X;
+				importFormat.xPixelSpace = pixelSpacing_X;
+				importFormat.yPixelSpace = pixelSpacing_Y;
+			}
+		}
+
+		// Get Slice Thickness
+		{
+			OFString SliceThickness;
+			if (!data->findAndGetOFString(DCM_SliceThickness, SliceThickness).good()) {
+				emit PrintError(("Get DCM_SliceThickness wrong in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			if (i != 0 && pixelSpacing_Z != atof(SliceThickness.data())) {
+				emit PrintError(("The SliceThickness of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			else if (correctImagesNum.size() == 0) {
+				pixelSpacing_Z = atof(SliceThickness.data());
+				importFormat.zPixelSpace = pixelSpacing_Z;
+			}
+		}
+
+		// Get Bit Allocated
+		{
+			Uint16 bitsAllocated_temp, bitsStored_temp, pixelRepresentation_temp;
+			if (correctImagesNum.size() == 0) {
+				if (data->findAndGetUint16(DCM_BitsAllocated, bitsAllocated).good() &&
+					data->findAndGetUint16(DCM_BitsStored, bitsStored).good() && 
+					data->findAndGetUint16(DcmTagKey(0x0028, 0x0103), pixelRepresentation).good()) 
+				{
+					emit PrintDataD("bitsAllocated", bitsAllocated);
+					emit PrintDataD("bitsStored", bitsStored);
+					emit PrintDataD("pixelRepresentation", pixelRepresentation);
+				}
+				else 
+				{
+					emit PrintError(("Unable to obtain bits information for data storage in File" + file_Path).toStdString().c_str());
+					continue;
+				}
+			}
+			else {
+				if (data->findAndGetUint16(DCM_BitsAllocated, bitsAllocated_temp).good() &&
+					data->findAndGetUint16(DCM_BitsStored, bitsStored_temp).good() &&
+					data->findAndGetUint16(DcmTagKey(0x0028, 0x0103), pixelRepresentation_temp).good()) 
+				{
+					if (bitsAllocated_temp != bitsAllocated || 
+						bitsStored_temp != bitsStored || 
+						pixelRepresentation_temp != pixelRepresentation) 
+					{
+						emit PrintError(("The bits allocated or stored is inconsistent in File" + file_Path).toStdString().c_str());
+						continue;
+					}
+				}
+				else 
+				{
+					emit PrintError(("Unable to obtain bits information for data storage in File" + file_Path).toStdString().c_str());
+					continue;
+				}
+			}
+		}
+
+		// Get Data Format
+		{
+			// Pixel Representation
+			DcmTagKey tagKey(0x0028, 0x0100);
+			DcmElement* elementPR;
+			if (data->findAndGetElement(tagKey, elementPR).good()) {
+				// Obtaining Value Representation of Data Elements (VR)
+				DcmEVR valueRepresentation = elementPR->getVR();
+
+				// Print Value Representation (VR) to Console
+				// std::cout << "Value Representation: " << DcmVR(valueRepresentation).getVRName() << std::endl;
+
+				// Float
+				if (valueRepresentation == EVR_FL) {
+					if (correctImagesNum.size() == 0) importFormat.format = Dez_Float;
+					else if (importFormat.format != Dez_Float) {
+						emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+						continue;
+					}
+				}
+				// Double
+				else if (valueRepresentation == EVR_FD) {
+					if (correctImagesNum.size() == 0) importFormat.format = Dez_Double;
+					else if (importFormat.format != Dez_Double) {
+						emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+						continue;
+					}
+				}
+				// signed short
+				else if (valueRepresentation == EVR_SS) {
+					if (correctImagesNum.size() == 0) importFormat.format = Dez_SignedShort;
+					else if (importFormat.format != Dez_SignedShort) {
+						emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+					}
+				}
+				// unsigned short
+				else if (valueRepresentation == EVR_US) {
+					if (correctImagesNum.size() == 0) importFormat.format = Dez_UnsignedShort;
+					else if (importFormat.format != Dez_UnsignedShort) {
+						emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+						continue;
+					}
+				}
+				// signed long
+				else if (valueRepresentation == EVR_SL) {
+					if (correctImagesNum.size() == 0) importFormat.format = Dez_SignedLong;
+					else if (importFormat.format != Dez_SignedLong) {
+						emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+						continue;
+					}
+				}
+				// unsigned long
+				else if (valueRepresentation == EVR_UL) {
+					if (correctImagesNum.size() == 0) importFormat.format = Dez_UnsignedLong;
+					else if (importFormat.format != Dez_UnsignedLong) {
+						emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+						continue;
+					}
+				}
+				else {
+					emit PrintError(("Temporarily unsupported data format " + file_Path).toStdString().c_str());
+					continue;
+				}
+			}
+			else {
+				emit PrintError(("Get Pixel Representation wrong in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+		}
+
+		correctImagesNum.push_back(i);
+	}
+
+	if (correctImagesNum.size() == 0) {
+		emit PrintError("No suitable DCM images to read");
+		return false;
+	}
+
+	// check data format
+	unsigned int bytesOnPixel = 0;
+	{
+		if (importFormat.format == Dez_Float) {
+			bytesOnPixel = sizeof(float);
+		}
+		else if (importFormat.format == Dez_Double) {
+			bytesOnPixel = sizeof(double);
+		}
+		else if (importFormat.format == Dez_UnsignedLong) {
+			bytesOnPixel = sizeof(unsigned long);
+		}
+		else if (importFormat.format == Dez_SignedLong) {
+			bytesOnPixel = sizeof(long);
+		}
+		else if (importFormat.format == Dez_UnsignedShort) {
+			if (bitsAllocated != 16) {
+				emit PrintError("Mismatched image format");
+				return false;
+			}
+			bytesOnPixel = sizeof(unsigned short);
+		}
+		else if (importFormat.format == Dez_SignedShort) {
+			if (bitsAllocated != 16) {
+				emit PrintError("Mismatched image format");
+				return false;
+			}
+			bytesOnPixel = sizeof(short);
+		}
+		else if (importFormat.format == Dez_UnsignedChar) {
+			emit PrintError("Temporarily unsupported data format: unsigend char");
+			return false;
+		}
+		else if (importFormat.format == Dez_SignedChar) {
+			emit PrintError("Temporarily unsupported data format: char");
+			return false;
+		}
+		else {
+			emit PrintError("Temporarily unsupported data format: error format");
+			return false;
+		}
+	}
+
+	// Print import data Info
+	emit PrintString(importFormat.toString().toStdString().c_str());
+
+	unsigned int imageNum = correctImagesNum.size();
+	importFormat.zLength = imageNum;
+
+	void * m_data = new char[width * height * imageNum * bytesOnPixel];
+	if (!m_data) {
+		emit PrintError("Unable to request sufficient amount of memory!");
+		return false;
+	}
+
+	// Start processing each image
+	bool readDataFlag = true;
+	std::vector<DcmFilePixelData> dcmFileVec;
+	for (int i = 0; i < imageNum; i++) {
+		// File Path
+		QString file_Path = fileList[correctImagesNum[i]];
+
+		// DcmFileFormat will automatically release memory
+		DcmFileFormat dfile;
+		dfile.loadFile(file_Path.toStdString().c_str());
+		DcmMetaInfo *Metalnfo = dfile.getMetaInfo();
+		if (!Metalnfo) {
+			emit PrintError(("No Metalnfo in File " + file_Path).toStdString().c_str());
+			readDataFlag = false;
+			break;
+		}
+		DcmTag Tag;
+		Tag = Metalnfo->getTag();
+		Uint16 G_tag = Tag.getGTag();
+		DcmDataset *data = dfile.getDataset();
+		if (!data) {
+			emit PrintError(("No data in File " + file_Path).toStdString().c_str());
+			readDataFlag = false;
+			break;
+		}
+		DcmElement *element = NULL;
+		data->findAndGetElement(DCM_PixelData, element);
+
+		OFString ImageWidth;
+		data->findAndGetOFString(DCM_Columns, ImageWidth);
+		width = atoi(ImageWidth.data());
+		OFString ImageHeight;
+		data->findAndGetOFString(DCM_Rows, ImageHeight);
+		height = atoi(ImageHeight.data());
+		OFString ImagePos;
+		data->findAndGetOFString(DCM_SliceLocation, ImagePos);
+
+		if (importFormat.format == Dez_UnsignedShort) {
+			Uint16* dat_t;
+			element->getUint16Array(dat_t);
+			memcpy(static_cast<char*>(m_data) + i * width * height * bytesOnPixel, dat_t, width * height * sizeof(Uint16));
+		}
+		else if (importFormat.format == Dez_SignedShort) {
+			Sint16* dat_t;
+			element->getSint16Array(dat_t);
+			memcpy(static_cast<char*>(m_data) + i * width * height * bytesOnPixel, dat_t, width * height * sizeof(Sint16));
+		}
+		else if (importFormat.format == Dez_Float) {
+			Float32* dat_t;
+			element->getFloat32Array(dat_t);
+			memcpy(static_cast<char*>(m_data) + i * width * height * bytesOnPixel, dat_t, width * height * sizeof(Float32));
+		}
+		else if (importFormat.format == Dez_Double) {
+			Float64* dat_t;
+			element->getFloat64Array(dat_t);
+			memcpy(static_cast<char*>(m_data) + i * width * height * bytesOnPixel, dat_t, width * height * sizeof(Float64));
+		}
+		else {
+			emit PrintError("Temporarily unsupported data format!");
+			readDataFlag = false;
+		}
+
+		DcmFilePixelData dcmF;
+		dcmF.pixData = static_cast<char*>(m_data) + i * width * height * bytesOnPixel;
+		dcmF.position = atof(ImagePos.data());
+		dcmFileVec.push_back(dcmF);
+	}
+
+	if (readDataFlag) {
+		// Sort by image position
+		std::sort(dcmFileVec.begin(), dcmFileVec.end(), DcmFilePosCompare);
+
+		importFormat.data = new char[width * height * imageNum * bytesOnPixel];
+		if (!importFormat.data) {
+			emit PrintError("Unable to request sufficient amount of memory!");
+		}
+		else {
+			for (int i = 0; i < imageNum; i++) {
+				if (dcmFileVec[i].pixData == nullptr) {
+					emit PrintError("(dcmFileVec[i].pixData == nullptr) ");
+					readDataFlag = false;
+					break;
+				}
+				else {
+					memcpy(static_cast<char*>(importFormat.data) + i * width * height * bytesOnPixel,
+						dcmFileVec[i].pixData,
+						width * height * bytesOnPixel);
+				}
+			}
+		}
+
+	}
+
+	delete [] static_cast<char *>(m_data);
+	return readDataFlag;
 }
 
 template <typename T>
@@ -438,12 +815,135 @@ bool ProcessVolumeData::GenerateInput_Mhd(const QString& inputFilePath, ImportFo
 
 	return flag;
 }
+
+bool ReadUncompressedRawData(std::string filename, unsigned int bytesOneScalar, ImportFormat& importFormat) {
+	unsigned int width = importFormat.xLength, height = importFormat.yLength, imageNUm = importFormat.zLength;
+
+	importFormat.data = new char[importFormat.xLength * importFormat.yLength * importFormat.zLength * bytesOneScalar];
+	if (!importFormat.data) return false;
+
+	std::ifstream file(filename, std::ios::binary);
+	if (!file.is_open()) return false;
+	try {
+		file.read(reinterpret_cast<char*>(importFormat.data), bytesOneScalar * width * height * imageNUm);
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Exception caught: " << e.what() << std::endl;
+		return false;
+	}
+
+	file.close();
+	return true;
+}
+
 bool ProcessVolumeData::GenerateInput_Feimos(const QString& inputFilePath, ImportFormat& importFormat) {
 
+	std::ifstream file(inputFilePath.toStdString());
+	std::string name;
+	std::string rawDataFileName;
 
+	while (file >> name) {
 
+		if (name == "xLength") {
+			file >> importFormat.xLength;
+		}
+		else if (name == "yLength") {
+			file >> importFormat.yLength;
+		}
+		else if (name == "zLength") {
+			file >> importFormat.zLength;
+		}
+		else if (name == "xPixelSpace") {
+			file >> importFormat.xPixelSpace;
+		}
+		else if (name == "yPixelSpace") {
+			file >> importFormat.yPixelSpace;
+		}
+		else if (name == "zPixelSpace") {
+			file >> importFormat.zPixelSpace;
+		}
+		else if (name == "format") {
+			file >> name;
+			if (!importFormat.setFormatUsingString(name.c_str())) {
+				emit PrintError("Non compliant format input when parsing (.feimos) file!");
+				return false;
+			}
+		}
+		else if (name == "Raw") {
+			std::getline(file, name);
+			name.erase(name.begin());
+			rawDataFileName = name;
+		}
+	}
 
-	return false;
+	QFileInfo fileInfo(inputFilePath);
+	QString absoluteFilePath = fileInfo.absoluteFilePath();
+	QString absoluteDirPath = fileInfo.absolutePath();
+
+	if (!isInputFileExist(absoluteDirPath + "/" + rawDataFileName.c_str())) {
+		emit PrintError("Raw data does not exist when parsing (.feimos) file!");
+		return false;
+	}
+
+	bool readbinaryFlag = true;
+	switch (importFormat.format)
+	{
+	case Dez_Origin:
+		emit PrintError("Non compliant data format");
+		return false;
+		break;
+	case Dez_UnsignedLong:
+		readbinaryFlag = readbinaryFlag &&
+			ReadUncompressedRawData(
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(unsigned long), importFormat);
+		break;
+	case Dez_SignedLong:
+		readbinaryFlag = readbinaryFlag &&
+			ReadUncompressedRawData(
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(signed long), importFormat);
+		break;
+	case Dez_UnsignedShort:
+		readbinaryFlag = readbinaryFlag &&
+			ReadUncompressedRawData(
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(unsigned short), importFormat);
+		break;
+	case Dez_SignedShort:
+		readbinaryFlag = readbinaryFlag &&
+			ReadUncompressedRawData(
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(signed short), importFormat);
+		break;
+	case Dez_UnsignedChar:
+		readbinaryFlag = readbinaryFlag &&
+			ReadUncompressedRawData(
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(unsigned char), importFormat);
+		break;
+	case Dez_SignedChar:
+		readbinaryFlag = readbinaryFlag &&
+			ReadUncompressedRawData(
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(signed char), importFormat);
+		break;
+	case Dez_Float:
+		readbinaryFlag = readbinaryFlag &&
+			ReadUncompressedRawData(
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(float), importFormat);
+		break;
+	case Dez_Double:
+		readbinaryFlag = readbinaryFlag &&
+			ReadUncompressedRawData(
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(double), importFormat);
+		break;
+	default:
+		emit PrintError("Non compliant data output format");
+		return false;
+		break;
+	}
+
+	if (!readbinaryFlag) {
+		emit PrintError("Fail to Read to binary file");
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -606,13 +1106,13 @@ bool ProcessVolumeData::GenerateOutput_Mhd(const QString& outputDir, const QStri
 	return true;
 }
 
-bool SaveUncompressedRawData(std::string filename, unsigned int bytes, const ImportFormat& importFormat) {
+bool SaveUncompressedRawData(std::string filename, unsigned int bytesOneScalar, const ImportFormat& importFormat) {
 	unsigned int width = importFormat.xLength, height = importFormat.yLength, imageNUm = importFormat.zLength;
 
 	std::ofstream file(filename, std::ios::binary);
 	if (!file.is_open()) return false;
 	try {
-		file.write(reinterpret_cast<const char*>(importFormat.data_aim), bytes * width * height * imageNUm);
+		file.write(reinterpret_cast<const char*>(importFormat.data_aim), bytesOneScalar * width * height * imageNUm);
 	}
 	catch (const std::exception& e) {
 		std::cerr << "Exception caught: " << e.what() << std::endl;
@@ -738,14 +1238,17 @@ void ProcessVolumeData::DcmMakeMhdFile(const QString& inputDir, const QString& o
 	if (!isInputDirExist(inputDir)) return;
 	if (!checkOutputDir_Mhd(outputDir, outName)) return;
 
+	std::vector<QString> fileList;
+	bool parseFlag = getInputDcmFileList(inputDir, fileList);
+	if (!parseFlag) return;
+
 	ImportFormat importFormat;
 
-	bool parseFlag = false;
 	if (generateFormat.parseLib == Dez_GDCM) {
-		parseFlag = GenerateInput_GDCM(inputDir, importFormat);
+		parseFlag = GenerateInput_GDCM(fileList, importFormat);
 	}
 	else if (generateFormat.parseLib == Dez_DCMTK) {
-		parseFlag = GenerateInput_DCMTK(inputDir, importFormat);
+		parseFlag = GenerateInput_DCMTK(fileList, importFormat);
 	}
 
 	if (parseFlag) {
@@ -761,14 +1264,17 @@ void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString
 	if (!isInputDirExist(inputDir)) return;
 	if (!checkOutputDir_Feimos(outputDir, outName)) return;
 
+	std::vector<QString> fileList;
+	bool parseFlag = getInputDcmFileList(inputDir, fileList);
+	if (!parseFlag) return;
+
 	ImportFormat importFormat;
 
-	bool parseFlag = false;
 	if (generateFormat.parseLib == Dez_GDCM) {
-		parseFlag = GenerateInput_GDCM(inputDir, importFormat);
+		parseFlag = GenerateInput_GDCM(fileList, importFormat);
 	}
 	else if (generateFormat.parseLib == Dez_DCMTK) {
-		parseFlag = GenerateInput_DCMTK(inputDir, importFormat);
+		parseFlag = GenerateInput_DCMTK(fileList, importFormat);
 	}
 
 	if (parseFlag) {
@@ -785,8 +1291,7 @@ void ProcessVolumeData::MhdMakeFeimosFile(const QString& inputFilePath, const QS
 
 	ImportFormat importFormat;
 
-	bool parseFlag = false;
-	parseFlag = GenerateInput_Mhd(inputFilePath, importFormat);
+	bool parseFlag = GenerateInput_Mhd(inputFilePath, importFormat);
 	emit PrintString(importFormat.toString().toStdString().c_str());
 
 	if (parseFlag) {
@@ -804,6 +1309,7 @@ void ProcessVolumeData::FeimosMakeMhdFile(const QString& inputFilePath, const QS
 	ImportFormat importFormat;
 
 	bool parseFlag = GenerateInput_Feimos(inputFilePath, importFormat);
+	emit PrintString(importFormat.toString().toStdString().c_str());
 
 	if (parseFlag) {
 		parseFlag = GenerateOutput_Mhd(outputDir, outName, generateFormat, importFormat);
@@ -995,7 +1501,7 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QStri
 			DcmElement* elementPR;
 			if (data->findAndGetElement(tagKey, elementPR).good()) {
 				// Obtaining Value Representation of Data Elements (VR)
-				DcmEVR valueRepresentation = element->getVR();
+				DcmEVR valueRepresentation = elementPR->getVR();
 
 				// Print Value Representation (VR) to Console
 				std::cout << "Value Representation: " << DcmVR(valueRepresentation).getVRName() << std::endl;
