@@ -28,7 +28,8 @@
 #include "IMAGraphicsView.h"
 
 #include "Core/FrameBuffer.h"
-#include "RenderThread.h"
+#include "Core/RenderThread.h"
+#include "Core/DataProcess.h"
 
 class DisplayWidget : public QGroupBox {
 	Q_OBJECT

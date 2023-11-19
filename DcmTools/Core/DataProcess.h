@@ -17,8 +17,8 @@
 	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
-#ifndef __RenderThread_h__
-#define __RenderThread_h__
+#ifndef __DataProcess_h__
+#define __DataProcess_h__
 
 #include <QThread>
 
@@ -27,38 +27,8 @@
 
 #include <vector>
 
-#include "Core\FrameBuffer.h"
-#include "IMAGraphicsView.h"
-
-class RenderThread :public QThread {
-
-	Q_OBJECT
-public:
-	RenderThread();
-	~RenderThread();
-
-public:
-	bool renderFlag;
-	bool paintFlag;
-	FrameBuffer* p_framebuffer;
-
-signals:
-	void PrintString(const char* s);
-	void PrintDataD(const char* s, const double data);
-
-	void PrintError(const char* s);
-	void PrintWarning(const char* s);
-
-	void PaintBuffer(DcmTools::Uchar* buffer, int width, int height, int channals);
-
-private slots:
-	
-
-public:
-	void run();
-
-
-};
+#include "Core/FrameBuffer.h"
+#include "MainGUI/IMAGraphicsView.h"
 
 enum DataFormat {
 	Dez_Origin = 0,
@@ -77,13 +47,65 @@ enum DcmParseLib {
 	Dez_DCMTK = 1
 };
 
+inline int getFormatOnePixelBytes(const DataFormat form) {
+	int bytes = -1;
+	switch (form)
+	{
+	case Dez_Origin:
+		bytes = -1;
+		break;
+	case Dez_UnsignedLong:
+		bytes = sizeof(unsigned long);
+		break;
+	case Dez_SignedLong:
+		bytes = sizeof(signed long);
+		break;
+	case Dez_UnsignedShort:
+		bytes = sizeof(unsigned short);
+		break;
+	case Dez_SignedShort:
+		bytes = sizeof(signed short);
+		break;
+	case Dez_UnsignedChar:
+		bytes = sizeof(unsigned char);
+		break;
+	case Dez_SignedChar:
+		bytes = sizeof(signed char);
+		break;
+	case Dez_Float:
+		bytes = sizeof(float);
+		break;
+	case Dez_Double:
+		bytes = sizeof(double);
+		break;
+	default:
+		bytes = -1;
+		break;
+	}
+	return bytes;
+}
+
+inline int getFormatOnePixelBytes(const QString str) {
+	int bytes = -1;
+	if (str == "UnsignedLong") { bytes = sizeof(unsigned long); }
+	else if (str == "SignedLong") { bytes = sizeof(signed long); }
+	else if (str == "UnsignedShort") { bytes = sizeof(unsigned short); }
+	else if (str == "SignedShort") { bytes = sizeof(signed short); }
+	else if (str == "UnsignedChar") { bytes = sizeof(unsigned char); }
+	else if (str == "SignedChar") { bytes = sizeof(signed char); }
+	else if (str == "Float") { bytes = sizeof(float); }
+	else if (str == "Double") { bytes = sizeof(double); }
+	else {}
+	return bytes;
+}
+
 struct DcmFilePixelData {
 	char *pixData = nullptr;
 	float position = 0.0f;
 };
 
 struct ImportFormat {
-	unsigned int xLength, yLength, zLength;
+	unsigned int xResolution, yResolution, zResolution;
 	float xPixelSpace, yPixelSpace, zPixelSpace;
 
 	void * data;
@@ -210,7 +232,7 @@ struct ImportFormat {
 		data_aim = nullptr;
 	}
 
-	bool setFormatUsingString(QString str) {
+	bool setFormatUsingString(const QString str) {
 		if (str == "UnsignedLong") { format = Dez_UnsignedLong; return true; }
 		else if (str == "SignedLong") { format = Dez_SignedLong; return true; }
 		else if (str == "UnsignedShort") { format = Dez_UnsignedShort; return true; }
@@ -220,6 +242,44 @@ struct ImportFormat {
 		else if (str == "Float") { format = Dez_Float; return true; }
 		else if (str == "Double") { format = Dez_Double; return true; }
 		else { return false; }
+	}
+
+	int getFormatOnePixelBytes() {
+		int bytes = -1;
+		switch (format)
+		{
+		case Dez_Origin:
+			bytes = -1;
+			break;
+		case Dez_UnsignedLong:
+			bytes = sizeof(unsigned long);
+			break;
+		case Dez_SignedLong:
+			bytes = sizeof(signed long);
+			break;
+		case Dez_UnsignedShort:
+			bytes = sizeof(unsigned short);
+			break;
+		case Dez_SignedShort:
+			bytes = sizeof(signed short);
+			break;
+		case Dez_UnsignedChar:
+			bytes = sizeof(unsigned char);
+			break;
+		case Dez_SignedChar:
+			bytes = sizeof(signed char);
+			break;
+		case Dez_Float:
+			bytes = sizeof(float);
+			break;
+		case Dez_Double:
+			bytes = sizeof(double);
+			break;
+		default:
+			bytes = -1;
+			break;
+		}
+		return bytes;
 	}
 
 	QString getFormatString() {
@@ -261,13 +321,13 @@ struct ImportFormat {
 	}
 
 	QString toString() {
-		QString s = "xLength:[" + QString::number(xLength) + "] "
-			"yLength:[" + QString::number(yLength) + "] "
-			"zLength:[" + QString::number(zLength) + "]; "
+		QString s = "xResolution:[" + QString::number(xResolution) + "] "
+			"yResolution:[" + QString::number(yResolution) + "] "
+			"zResolution:[" + QString::number(zResolution) + "]; "
 			"xPixelSpace:[" + QString::number(xPixelSpace) + "] "
 			"yPixelSpace:[" + QString::number(yPixelSpace) + "] "
 			"zPixelSpace:[" + QString::number(zPixelSpace) + "] "
-			"form:[" + getFormatString() + "] ";
+			"format:[" + getFormatString() + "] ";
 		return s;
 	}
 };
@@ -303,7 +363,17 @@ public:
 	/**
 	* Check if the input file path exists.
 	*/
-	bool isInputFileExist(const QString& inputFilePath);
+	bool isInputFileExist(const QString& inputFilePath, const QString& suffix = "");
+
+	/**
+	* Check if the input (.mhd-.raw) file path exists.
+	*/
+	bool isInputMhdFileExist(const QString& inputFilePath);
+
+	/**
+	* Check if the input (.feimos-.raw) file path exists.
+	*/
+	bool isInputFeimosFileExist(const QString& inputFilePath);
 
 	/**
 	* Check if the output directory exists.
@@ -408,6 +478,25 @@ public:
 
 
 	/*******************************************************/
+	/* DownSampling functions
+	*
+	* inputFilePath: Input File Path
+	* outputDir£ºOutput Folder
+	* outName: Output File Name */
+	/*******************************************************/
+
+	void DownSamplingMhdFile(const QString& filePath, const QString& outputDir, const QString& outName, int Interval = 2);
+
+	void DownSamplingFeimosFile(const QString& filePath, const QString& outputDir, const QString& outName, int Interval = 2);
+
+	/**
+	* Special functions: cannot be performed in steps
+	* DownSampling large (.feimos,.raw) file
+	*/
+	bool DownSamplingLargeFeimosData(const QString& inputFilePath, const QString& outputDir, const QString& outName, unsigned int Interval = 5);
+
+
+	/*******************************************************/
 	/* Call type function
 	*
 	* inputDir: Input Folder
@@ -435,20 +524,6 @@ public:
 	* Make (.mhd,.raw) file from (.feimos,.raw) file
 	*/
 	void FeimosMakeMhdFile(const QString& inputFilePath, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
-
-	/*******************************************************/
-	/* Special functions that cannot be performed in steps
-	*
-	* inputFilePath: Input File Path
-	* outputDir£ºOutput Folder
-	* outName: Output File Name */
-	/*******************************************************/
-
-	/**
-	* DownSampling large (.feimos,.raw) file
-	*/
-	bool DownSamplingLargeFeimosData(const QString& inputFilePath, const QString& outputDir, const QString& outName, int Interval = 5);
-
 
 
 	/*******************************************************/

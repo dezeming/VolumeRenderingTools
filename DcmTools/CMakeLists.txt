@@ -67,8 +67,6 @@ set(MainGUI
 	MainGUI/DisplayWidget.cpp
 	MainGUI/IMAGraphicsView.h
 	MainGUI/IMAGraphicsView.cpp
-	MainGUI/RenderThread.h
-	MainGUI/RenderThread.cpp
 	MainGUI/InteractionDockWidget.h
 	MainGUI/InteractionDockWidget.cpp
 	MainGUI/DicomUtility.h
@@ -86,6 +84,10 @@ set(Core
 	# 数据存储
 	Core/FrameBuffer.h
 	Core/FrameBuffer.cpp
+	Core/RenderThread.h
+	Core/RenderThread.cpp
+	Core/DataProcess.h
+	Core/DataProcess.cpp
 )
 # Make the Core group
 SOURCE_GROUP("Core" FILES ${Core})
@@ -111,7 +113,7 @@ add_executable(DcmTools
 	${InfoPresent}
 )
 
-FILE(GLOB Icons ${CMAKE_CURRENT_SOURCE_DIR}/Icons/*.png)
+FILE(GLOB Icons ${CMAKE_CURRENT_SOURCE_DIR}/Icons/*.*)
 SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${Icons} DESTINATION ${EXECUTABLE_OUTPUT_PATH}/Icons/)
 

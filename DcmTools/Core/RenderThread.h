@@ -17,5 +17,53 @@
 	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
-#include "DicomUtility.h"
+#ifndef __RenderThread_h__
+#define __RenderThread_h__
+
+#include <QThread>
+
+#include <QString>
+#include <QStringList>
+
+#include <vector>
+
+#include "Core/FrameBuffer.h"
+#include "MainGUI/IMAGraphicsView.h"
+
+class RenderThread :public QThread {
+
+	Q_OBJECT
+public:
+	RenderThread();
+	~RenderThread();
+
+public:
+	bool renderFlag;
+	bool paintFlag;
+	FrameBuffer* p_framebuffer;
+
+signals:
+	void PrintString(const char* s);
+	void PrintDataD(const char* s, const double data);
+
+	void PrintError(const char* s);
+	void PrintWarning(const char* s);
+
+	void PaintBuffer(DcmTools::Uchar* buffer, int width, int height, int channals);
+
+private slots:
+	
+public:
+	void run();
+
+};
+
+
+
+#endif
+
+
+
+
+
 

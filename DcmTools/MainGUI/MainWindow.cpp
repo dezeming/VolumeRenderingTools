@@ -111,6 +111,14 @@ void MainWindow::setDock(void) {
 	connect(m_InteractionDockWidget->VolumeConvert_Frame->FeimosToMhd_processButton,
 		SIGNAL(clicked()), this, SLOT(process_FeimosToMhd()));
 
+	// down sampling
+	connect(m_InteractionDockWidget->VolumeDownSampling_Frame->MhdDownSampling_processButton,
+		SIGNAL(clicked()), this, SLOT(process_MhdDownSampling()));
+	connect(m_InteractionDockWidget->VolumeDownSampling_Frame->FeimosDownSampling_processButton,
+		SIGNAL(clicked()), this, SLOT(process_FeimosDownSampling()));
+	connect(m_InteractionDockWidget->VolumeDownSampling_Frame->LargeFeimosDownSampling_processButton,
+		SIGNAL(clicked()), this, SLOT(process_LargeFeimosDownSampling()));
+
 	// volume process
 	connect(m_InteractionDockWidget->MhdRotateAxis_Frame->MhdRotateAxis_processButton,
 		SIGNAL(clicked()), this, SLOT(process_MhdRotateAxis()));
@@ -118,8 +126,6 @@ void MainWindow::setDock(void) {
 		SIGNAL(clicked()), this, SLOT(process_MhdFlipAxis()));
 	connect(m_InteractionDockWidget->MhdClip_Frame->MhdClip_processButton,
 		SIGNAL(clicked()), this, SLOT(process_MhdClip()));
-	connect(m_InteractionDockWidget->MhdResize_Frame->MhdResize_processButton,
-		SIGNAL(clicked()), this, SLOT(process_MhdResize()));
 
 	// test
 	connect(m_InteractionDockWidget->processButton, 
@@ -152,6 +158,7 @@ void MainWindow::getPredefinedInfo() {
 	QString outputFileName = m_InteractionDockWidget->getOutputFileName();
 	//DebugTextPrintString("outputFileName: " + outputFileName);
 
+	// input/output
 	m_DisplayWidget->InputFolder = inputDir;
 	m_DisplayWidget->OutputFolder = outputDir;
 	m_DisplayWidget->OutputFileName = outputFileName;
@@ -160,6 +167,11 @@ void MainWindow::getPredefinedInfo() {
 	m_DisplayWidget->generateFormat.parseLib = m_InteractionDockWidget->getDcmParseLib();
 	m_DisplayWidget->generateFormat.format = m_InteractionDockWidget->getGenerateDataFormat();
 	
+	// down sampling
+	m_DisplayWidget->interval = m_InteractionDockWidget->VolumeDownSampling_Frame->getIntervalValue();
+
+
+
 }
 
 // volume file type convert
@@ -214,6 +226,50 @@ void MainWindow::process_FeimosToMhd() {
 	showMemoryInfo();
 }
 
+// down sampling
+void MainWindow::process_MhdDownSampling() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("DownSampling .mhd-.raw file.");
+	getPredefinedInfo();
+
+	m_DisplayWidget->interval = m_InteractionDockWidget->VolumeDownSampling_Frame->getIntervalValue();
+
+	m_DisplayWidget->Process(5);
+
+	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
+}
+void MainWindow::process_FeimosDownSampling() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("DownSampling .feimos-.raw file.");
+	getPredefinedInfo();
+
+	m_DisplayWidget->interval = m_InteractionDockWidget->VolumeDownSampling_Frame->getIntervalValue();
+
+	m_DisplayWidget->Process(6);
+
+	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
+}
+void MainWindow::process_LargeFeimosDownSampling() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("DownSampling large .feimos-.raw file.");
+	getPredefinedInfo();
+
+	m_DisplayWidget->interval = m_InteractionDockWidget->VolumeDownSampling_Frame->getIntervalValue();
+
+	m_DisplayWidget->Process(7);
+
+	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
+}
+
 // volume process
 void MainWindow::process_MhdRotateAxis() {
 	DebugTextPrintLineBreak();
@@ -257,18 +313,7 @@ void MainWindow::process_MhdClip() {
 	DebugTextPrintString(".................  Process finished   ....................");
 	showMemoryInfo();
 }
-void MainWindow::process_MhdResize() {
-	DebugTextPrintLineBreak();
-	DebugTextPrintString("........................  New Task   ................................");
 
-	DebugTextPrintString("Resize .mhd-.raw file.");
-	getPredefinedInfo();
-
-	m_DisplayWidget->Process(4);
-	
-	DebugTextPrintString(".................  Process finished   ....................");
-	showMemoryInfo();
-}
 
 // test
 void MainWindow::setProcess() {

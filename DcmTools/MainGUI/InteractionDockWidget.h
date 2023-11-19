@@ -38,7 +38,10 @@
 #include "QSliderDoubleRange.hpp"
 #include "DebugText.hpp"
 
-#include "RenderThread.h"
+#include "Core/RenderThread.h"
+#include "Core/DataProcess.h"
+
+// convert
 
 class QVolumeConvert_Frame : public QGroupBox {
 	Q_OBJECT
@@ -76,6 +79,71 @@ public:
 
 	QVBoxLayout *VolumeConvert_Layoput;
 };
+
+// down sampling
+
+class QVolumeDownSampling_Frame : public QGroupBox {
+	Q_OBJECT
+public:
+	QVolumeDownSampling_Frame(QWidget * parent = Q_NULLPTR) {
+		setTitle("Resize MHD");
+		setMinimumWidth(200);
+
+		DownSampling_Layoput = new QVBoxLayout;
+		setLayout(DownSampling_Layoput);
+
+		Interval_Label = new QLabel;
+		Interval_Label->setText("Interval:");
+		Interval_Slider = new QSlider(Qt::Horizontal);
+		Interval_Slider->setRange(1,100);
+		Interval_SpinBox = new QSpinBox;
+		Interval_SpinBox->setRange(1, 100);
+		Interval_Layout = new QGridLayout;
+		Interval_Layout->addWidget(Interval_Label, 0, 0);
+		Interval_Layout->addWidget(Interval_Slider, 0, 1);
+		Interval_Layout->addWidget(Interval_SpinBox, 0, 2);
+
+		MhdDownSampling_processButton = new QPushButton;
+		MhdDownSampling_processButton->setText("DownSampling .mhd");
+
+		FeimosDownSampling_processButton = new QPushButton;
+		FeimosDownSampling_processButton->setText("DownSampling .feimos");
+
+		LargeFeimosDownSampling_processButton = new QPushButton;
+		LargeFeimosDownSampling_processButton->setText("DownSampling large .feimos");
+
+		DownSampling_Layoput->addLayout(Interval_Layout);
+		DownSampling_Layoput->addWidget(MhdDownSampling_processButton);
+		DownSampling_Layoput->addWidget(FeimosDownSampling_processButton);
+		DownSampling_Layoput->addWidget(LargeFeimosDownSampling_processButton);
+
+		connect(Interval_Slider, SIGNAL(valueChanged(int)), Interval_SpinBox, SLOT(setValue(int)));
+		connect(Interval_SpinBox, SIGNAL(valueChanged(int)), Interval_Slider, SLOT(setValue(int)));
+		Interval_Slider->setValue(2);
+	}
+	~QVolumeDownSampling_Frame() { 
+		disconnect(Interval_Slider, SIGNAL(valueChanged(int)), Interval_SpinBox, SLOT(setValue(int)));
+		disconnect(Interval_SpinBox, SIGNAL(valueChanged(int)), Interval_Slider, SLOT(setValue(int)));
+	}
+
+	int getIntervalValue() {
+		return Interval_Slider->value();
+	}
+
+
+	QLabel * Interval_Label;
+	QSlider * Interval_Slider;
+	QSpinBox * Interval_SpinBox;
+	QGridLayout * Interval_Layout;
+
+	QPushButton *MhdDownSampling_processButton;
+	QPushButton *FeimosDownSampling_processButton;
+	QPushButton *LargeFeimosDownSampling_processButton;
+
+	QVBoxLayout *DownSampling_Layoput;
+};
+
+//
 
 class QMhdRotateAxis_Frame : public QGroupBox {
 	Q_OBJECT
@@ -256,45 +324,7 @@ public:
 	QVBoxLayout *MhdClip_Layoput;
 };
 
-class QMhdResize_Frame : public QGroupBox {
-	Q_OBJECT
-public:
-	QMhdResize_Frame(QWidget * parent = Q_NULLPTR) {
-		setTitle("Resize MHD");
-		setMinimumWidth(200);
-
-		MhdResize_Layoput = new QVBoxLayout;
-		setLayout(MhdResize_Layoput);
-
-		Interval_Label = new QLabel;
-		Interval_Label->setText("Interval:");
-		Interval_Slider = new QSlider(Qt::Horizontal);
-		Interval_Slider->setRange(1,100);
-		Interval_SpinBox = new QSpinBox;
-		Interval_SpinBox->setRange(1, 100);
-		Interval_Layout = new QGridLayout;
-		Interval_Layout->addWidget(Interval_Label, 0, 0);
-		Interval_Layout->addWidget(Interval_Slider, 0, 1);
-		Interval_Layout->addWidget(Interval_SpinBox, 0, 2);
-
-		MhdResize_processButton = new QPushButton;
-		MhdResize_processButton->setText("Process");
-
-		MhdResize_Layoput->addLayout(Interval_Layout);
-		MhdResize_Layoput->addWidget(MhdResize_processButton);
-	}
-	~QMhdResize_Frame() { }
-
-	QLabel * Interval_Label;
-	QSlider * Interval_Slider;
-	QSpinBox * Interval_SpinBox;
-	QGridLayout * Interval_Layout;
-
-	QPushButton *MhdResize_processButton;
-
-	QVBoxLayout *MhdResize_Layoput;
-};
-
+// Preset
 
 class QParseDcmLibFormat_Frame : public QGroupBox {
 	Q_OBJECT
@@ -456,6 +486,40 @@ public:
 	QLabel *Label_Double;
 };
 
+class OpenPresetPath_Frame : public QGroupBox {
+	Q_OBJECT
+public:
+	OpenPresetPath_Frame(QWidget * parent = Q_NULLPTR) {
+		setTitle("Dir Open");
+		setMinimumWidth(200);
+
+		Layout = new QGridLayout;
+		setLayout(Layout);
+
+		OpenInputDirButton = new QPushButton;
+		OpenOutputDirButton = new QPushButton;
+		OpenInputFileDirButton = new QPushButton;
+		OpenIconsDirButton = new QPushButton;
+
+		OpenInputDirButton->setText("Open InputDir");
+		OpenInputFileDirButton->setText("Open InputFile Dir");
+		OpenOutputDirButton->setText("Open OutputDir");
+		OpenIconsDirButton->setText("Open IconsDir");
+
+		Layout->addWidget(OpenInputDirButton, 0, 0);
+		Layout->addWidget(OpenInputFileDirButton, 0, 1);
+		Layout->addWidget(OpenOutputDirButton, 0, 2);
+		Layout->addWidget(OpenIconsDirButton, 0, 3);
+	}
+	~OpenPresetPath_Frame() { }
+
+	QGridLayout * Layout;
+	QPushButton *OpenInputDirButton, *OpenOutputDirButton, 
+		* OpenInputFileDirButton, *OpenIconsDirButton;
+};
+
+
+
 
 class InteractionDockWidget : public QDockWidget {
 	Q_OBJECT
@@ -469,7 +533,7 @@ public:
 	QMhdRotateAxis_Frame * MhdRotateAxis_Frame;
 	QMhdFlipAxis_Frame *MhdFlipAxis_Frame;
 	QMhdClip_Frame *MhdClip_Frame;
-	QMhdResize_Frame *MhdResize_Frame;
+	QVolumeDownSampling_Frame *VolumeDownSampling_Frame;
 
 	QString getInputFolder() {
 		return InputFolderEdit->text();
@@ -489,7 +553,7 @@ public:
 	DcmParseLib getDcmParseLib() {
 		return m_QParseDcmLibFormat_Frame->getParseSet();
 	}
-
+	void updataDirFromPresetFile(QString filename);
 private:
 	void setupDock();
 
@@ -507,8 +571,14 @@ private:
 	QPushButton * OutputFileNameButton;
 	QLineEdit * OutputFileNameEdit;
 	
+	QString InputFolderStr;
+	QString InputFilePathStr;
+	QString OutputFolderStr;
+	QString OutputFileNameStr;
+
 	QParseDcmLibFormat_Frame * m_QParseDcmLibFormat_Frame;
 	QGenerateFormat_Frame * m_QGenerateFormat_Frame;
+	OpenPresetPath_Frame * m_OpenPresetPath_Frame;
 
 	void setupInputOutput();
 
@@ -523,7 +593,10 @@ protected:
 	void closeEvent(QCloseEvent *event);
 	
 private slots :
-	
+	void OpenInputDir();
+	void OpenInputFileDir();
+	void OpenOutputDir();
+	void OpenIconsDir();
 	
 };
 

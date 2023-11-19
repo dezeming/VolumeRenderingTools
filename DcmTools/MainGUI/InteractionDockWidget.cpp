@@ -22,8 +22,12 @@
 InteractionDockWidget::InteractionDockWidget(QWidget * parent) {
 	setWindowTitle("Interaction");
 	
+	InputFolderStr = "";
+	InputFilePathStr = "";
+	OutputFolderStr = "";
+	OutputFileNameStr = "";
+
 	setFeatures(QDockWidget::DockWidgetMovable);
-	setFeatures(QDockWidget::AllDockWidgetFeatures);
 	
 	dockCentralWidget = new QFrame;
 
@@ -44,6 +48,11 @@ InteractionDockWidget::InteractionDockWidget(QWidget * parent) {
 }
 
 InteractionDockWidget::~InteractionDockWidget() {
+
+	disconnect(m_OpenPresetPath_Frame->OpenInputDirButton, SIGNAL(clicked()), this, SLOT(OpenInputDir()));
+	disconnect(m_OpenPresetPath_Frame->OpenInputFileDirButton, SIGNAL(clicked()), this, SLOT(OpenInputFileDir()));
+	disconnect(m_OpenPresetPath_Frame->OpenOutputDirButton, SIGNAL(clicked()), this, SLOT(OpenOutputDir()));
+	disconnect(m_OpenPresetPath_Frame->OpenIconsDirButton, SIGNAL(clicked()), this, SLOT(OpenIconsDir()));
 
 }
 
@@ -87,7 +96,7 @@ void InteractionDockWidget::setupInputOutput() {
 	OutputFolderEdit->setText("E:/Datasets/DcmToolsTest/Output/");
 
 	FolderLayout->addWidget(OutputFileNameButton, 3, 0);
-	OutputFileNameButton->setText("Output Folder");
+	OutputFileNameButton->setText("Output File Name");
 	FolderLayout->addWidget(OutputFileNameEdit, 3, 1);
 	OutputFileNameEdit->setText("Sample");
 
@@ -100,6 +109,17 @@ void InteractionDockWidget::setupInputOutput() {
 	centerLayout->addWidget(m_QParseDcmLibFormat_Frame);
 
 	centerLayout->addWidget(m_QGenerateFormat_Frame);
+
+	updataDirFromPresetFile("./Icons/DirPreset.txt");
+
+
+	m_OpenPresetPath_Frame = new OpenPresetPath_Frame;
+	connect(m_OpenPresetPath_Frame->OpenInputDirButton, SIGNAL(clicked()), this, SLOT(OpenInputDir()));
+	connect(m_OpenPresetPath_Frame->OpenInputFileDirButton, SIGNAL(clicked()), this, SLOT(OpenInputFileDir()));
+	connect(m_OpenPresetPath_Frame->OpenOutputDirButton, SIGNAL(clicked()), this, SLOT(OpenOutputDir()));
+	connect(m_OpenPresetPath_Frame->OpenIconsDirButton, SIGNAL(clicked()), this, SLOT(OpenIconsDir()));
+
+	centerLayout->addWidget(m_OpenPresetPath_Frame);
 }
 
 void InteractionDockWidget::setupFrames() {
@@ -108,6 +128,9 @@ void InteractionDockWidget::setupFrames() {
 
 	VolumeConvert_Frame = new QVolumeConvert_Frame;
 	framesLayout->addWidget(VolumeConvert_Frame, 0, 0);
+
+	VolumeDownSampling_Frame = new QVolumeDownSampling_Frame;
+	framesLayout->addWidget(VolumeDownSampling_Frame, 0, 1);
 
 	MhdRotateAxis_Frame = new QMhdRotateAxis_Frame;
 	framesLayout->addWidget(MhdRotateAxis_Frame, 1, 0);
@@ -118,11 +141,113 @@ void InteractionDockWidget::setupFrames() {
 	MhdClip_Frame = new QMhdClip_Frame;
 	framesLayout->addWidget(MhdClip_Frame, 2, 0);
 
-	MhdResize_Frame = new QMhdResize_Frame;
-	framesLayout->addWidget(MhdResize_Frame, 2, 1);
 
 	centerLayout->addLayout(framesLayout);
 }
+
+
+#include <string>
+#include <iostream>
+#include <fstream>
+
+#include <QFileInfo>
+#include <QDesktopServices>
+#include <QCoreApplication>
+#include <QDir>
+
+void InteractionDockWidget::updataDirFromPresetFile(QString filename) {
+
+	QFile file_input(filename);
+	if (!file_input.exists()) {
+		return;
+	}
+
+	std::ifstream file(filename.toStdString());
+	std::string name;
+
+	while (file >> name) {
+		if (name == "InputFolder") {
+			//file >> name;
+			std::getline(file, name);
+			name.erase(name.begin());
+			if (InputFolderStr == "")
+				InputFolderStr = QString(name.c_str());
+		}
+		else if (name == "InputFilePath") {
+			//file >> name;
+			std::getline(file, name);
+			name.erase(name.begin());
+			if (InputFilePathStr == "")
+				InputFilePathStr = QString(name.c_str());
+		}
+		else if (name == "OutputFolder") {
+			//file >> name;
+			std::getline(file, name);
+			name.erase(name.begin());
+			if (OutputFolderStr == "")
+				OutputFolderStr = QString(name.c_str());
+		}
+		else if (name == "OutputFileName") {
+			//file >> name;
+			std::getline(file, name);
+			name.erase(name.begin());
+			if (OutputFileNameStr == "")
+				OutputFileNameStr = QString(name.c_str());
+		}
+	}
+	file.close();
+
+	if (InputFolderStr != "") {
+		InputFolderEdit->setText(InputFolderStr);
+	}
+	if (InputFilePathStr != "") {
+		InputFilePathEdit->setText(InputFilePathStr);
+	}
+	if (OutputFolderStr != "") {
+		OutputFolderEdit->setText(OutputFolderStr);
+	}
+	if (OutputFileNameStr != "") {
+		OutputFileNameEdit->setText(OutputFileNameStr);
+	}
+}
+
+void InteractionDockWidget::OpenInputDir() {
+	QString inputDir = getInputFolder();
+
+	QDir absoluteDir(QCoreApplication::applicationDirPath());
+	QString absolutePath = absoluteDir.absoluteFilePath(inputDir);
+
+	QDesktopServices::openUrl(absolutePath);
+}
+
+void InteractionDockWidget::OpenInputFileDir() {
+	QString inputFilePath = getInputFilePath();
+
+	QFileInfo fileInfo(inputFilePath);
+	QString absoluteFilePath = fileInfo.absoluteFilePath();
+	QString absoluteDirPath = fileInfo.absolutePath();
+
+	QDesktopServices::openUrl(absoluteDirPath);
+}
+
+void InteractionDockWidget::OpenOutputDir() {
+	QString outputDir = getOutputFolder();
+	QDir absoluteDir(QCoreApplication::applicationDirPath());
+	QString absolutePath = absoluteDir.absoluteFilePath(outputDir);
+
+	DebugTextPrintString(outputDir);
+
+	QDesktopServices::openUrl(absolutePath);
+}
+
+void InteractionDockWidget::OpenIconsDir() {
+	QDesktopServices::openUrl(QUrl::fromLocalFile("./Icons"));
+}
+
+
+
+
+
 
 
 

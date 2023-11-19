@@ -70,11 +70,16 @@ private slots:
 	void process_MhdToFeimos();
 	void process_FeimosToMhd();
 
+	// down sampling
+	void process_MhdDownSampling();
+	void process_FeimosDownSampling();
+	void process_LargeFeimosDownSampling();
+
 	// volume process
 	void process_MhdRotateAxis();
 	void process_MhdFlipAxis();
 	void process_MhdClip();
-	void process_MhdResize();
+	
 
 
 };

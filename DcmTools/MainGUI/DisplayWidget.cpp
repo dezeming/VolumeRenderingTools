@@ -124,17 +124,28 @@ void DisplayWidget::Process(int index) {
 	if (4 == index) {
 		processVolumeData.FeimosMakeMhdFile(InputFilePath, OutputFolder, OutputFileName, generateFormat);
 	}
-	// process
+	// downsampling
 	if (5 == index) {
-		processVolumeData.MhdRotateAxis(InputFilePath, OutputFolder, OutputFileName, permute);
+		processVolumeData.DownSamplingMhdFile(InputFolder, OutputFolder, OutputFileName, interval);
 	}
 	if (6 == index) {
-		processVolumeData.MhdFlipAxis(InputFilePath, OutputFolder, OutputFileName, flip);
+		processVolumeData.DownSamplingFeimosFile(InputFolder, OutputFolder, OutputFileName, interval);
 	}
 	if (7 == index) {
+		processVolumeData.DownSamplingLargeFeimosData(InputFilePath, OutputFolder, OutputFileName, interval);
+	}
+
+	// process
+	if (105 == index) {
+		processVolumeData.MhdRotateAxis(InputFilePath, OutputFolder, OutputFileName, permute);
+	}
+	if (106 == index) {
+		processVolumeData.MhdFlipAxis(InputFilePath, OutputFolder, OutputFileName, flip);
+	}
+	if (107 == index) {
 		processVolumeData.MhdClip(InputFilePath, OutputFolder, OutputFileName, clipCenter, clipBound);
 	}
-	if (8 == index) {
+	if (108 == index) {
 		processVolumeData.DownSamplingMhdWithInterval(InputFilePath, OutputFolder, OutputFileName, interval);
 	}
 }

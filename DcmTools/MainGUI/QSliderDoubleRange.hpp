@@ -19,7 +19,7 @@
 
 
 /*
-	This code is copy from <https://github.com/ThisIsClark/Qt-RangeSlider>
+	This code is transplanted from <https://github.com/ThisIsClark/Qt-RangeSlider>
 
 	The way to use this widget:
 

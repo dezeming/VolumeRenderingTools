@@ -17,9 +17,8 @@
 	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
-#include "RenderThread.h"
-#include "DebugText.hpp"
-#include <QTime>
+#include "DataProcess.h"
+#include "MainGui/DebugText.hpp"
 
 // DCMTK
 #include "dcmdata/dcfilefo.h"
@@ -67,24 +66,8 @@ VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2);
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <QTime>
 
-// **********************************************//
-// *** RenderThread *** //
-// **********************************************//
-
-RenderThread::RenderThread() {
-	paintFlag = false;
-	renderFlag = false;
-}
-
-RenderThread::~RenderThread() {
-	
-}
-
-
-void RenderThread::run() {
-
-}
 
 
 // **********************************************//
@@ -212,13 +195,25 @@ bool ProcessVolumeData::isInputDirExist(const QString& inputDir) {
 	}
 	return true;
 }
-bool ProcessVolumeData::isInputFileExist(const QString& inputFilePath) {
+bool ProcessVolumeData::isInputFileExist(const QString& inputFilePath, const QString& suffix) {
+	if (suffix != "") {
+		if (!inputFilePath.endsWith(suffix, Qt::CaseInsensitive)) {
+			emit PrintError("Suffix does not meet the requirements for input files.");
+			return false;
+		}
+	}
 	QFile file_input(inputFilePath);
 	if (!file_input.exists()) {
 		emit PrintError("Input file does not exist.");
 		return false;
 	}
 	return true;
+}
+bool ProcessVolumeData::isInputMhdFileExist(const QString& inputFilePath) {
+	return isInputFileExist(inputFilePath, ".mhd");
+}
+bool ProcessVolumeData::isInputFeimosFileExist(const QString& inputFilePath) {
+	return isInputFileExist(inputFilePath, ".feimos");
 }
 bool ProcessVolumeData::checkOutputDir_Mhd(const QString& outputDir, const QString& outName) {
 	QDir dir;
@@ -315,9 +310,325 @@ bool DcmFilePosCompare(const DcmFilePixelData &f1, const DcmFilePixelData &f2) {
 
 bool ProcessVolumeData::GenerateInput_GDCM(const std::vector<QString>& fileList, ImportFormat& importFormat) {
 	
+	std::vector<DcmFilePixelData> dcmFileVec;
+	unsigned int width, height, imageNum;
+	double pixelSpacing_X, pixelSpacing_Y, pixelSpacing_Z;
+	unsigned int bits_perPixel;
 
+	std::vector<unsigned int> correctImagesNum;
+	for (int i = 0; i < fileList.size(); i++) {
+		gdcm::Reader reader;
 
-	return false;
+		QString file_Path = fileList[i];
+		reader.SetFileName(file_Path.toStdString().c_str());
+		if (!reader.Read()) continue;
+		// The output of gdcm::Reader is a gdcm::File
+		gdcm::File &file = reader.GetFile();
+		// the dataset is the the set of element we are interested in:
+		gdcm::DataSet &ds = file.GetDataSet();
+
+		const gdcm::Global& g = gdcm::Global::GetInstance();
+		const gdcm::Dicts &dicts = g.GetDicts();
+		const gdcm::Dict &pubdict = dicts.GetPublicDict();
+
+		// Rows
+		{
+			gdcm::Attribute<0x0028, 0x0010> at_rows;
+			at_rows.SetFromDataSet(ds);
+			gdcm::Attribute<0x0028, 0x0010>::ArrayType v_rows = at_rows.GetValue();
+			unsigned int height_t = v_rows;
+
+			if (correctImagesNum.size() != 0 && height != height_t) {
+				emit PrintError(("The height of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			else if (correctImagesNum.size() == 0) {
+				height = height_t;
+				importFormat.yResolution = height;
+			}
+		}
+
+		// Columns
+		{
+			gdcm::Attribute<0x0028, 0x0011> at_columns;
+			at_columns.SetFromDataSet(ds);
+			gdcm::Attribute<0x0028, 0x0011>::ArrayType v_columns = at_columns.GetValue();
+			unsigned int width_t = v_columns;
+
+			if (correctImagesNum.size() != 0 && width != width_t) {
+				emit PrintError(("The width of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			else if (correctImagesNum.size() == 0) {
+				width = width_t;
+				importFormat.xResolution = width;
+			}
+		}
+
+		// Spacing between slices
+		{
+			gdcm::Attribute<0x0018, 0x0050> at_Spacing_slices;
+			at_Spacing_slices.SetFromDataSet(ds);
+			gdcm::Attribute<0x0018, 0x0050>::ArrayType v_Spacing_slices = at_Spacing_slices.GetValue();
+
+			double pixelSpacing_Z_t = v_Spacing_slices;
+
+			if (correctImagesNum.size() != 0 && pixelSpacing_Z != pixelSpacing_Z_t) {
+				emit PrintError(("The slice thickness of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			else if (correctImagesNum.size() == 0) {
+				pixelSpacing_Z = pixelSpacing_Z_t;
+				importFormat.zPixelSpace = pixelSpacing_Z;
+			}
+		}
+
+		// Spacing between pixels  Unit:mm
+		{
+			gdcm::Attribute<0x0028, 0x0030> at_Pixel_Spacing;
+			at_Pixel_Spacing.SetFromDataSet(ds);
+			gdcm::Attribute<0x0028, 0x0030>::ArrayType vv_Pixel_Spacing = at_Pixel_Spacing.GetValue();
+
+			double pixelSpacing_X_t = vv_Pixel_Spacing;
+
+			if (correctImagesNum.size() != 0 && pixelSpacing_X != pixelSpacing_X_t) {
+				emit PrintError(("The pixel spacing of the image sequence is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+			else if (correctImagesNum.size() == 0) {
+				pixelSpacing_X = pixelSpacing_X_t;
+				pixelSpacing_Y = pixelSpacing_X_t;
+				importFormat.xPixelSpace = pixelSpacing_X;
+				importFormat.yPixelSpace = pixelSpacing_Y;
+			}
+		}
+
+		// bits per pixel
+		{
+			gdcm::Attribute<0x0028, 0x0100> at_bit;
+			at_bit.SetFromDataSet(ds);
+			gdcm::Attribute<0x0028, 0x0100>::ArrayType v_bit = at_bit.GetValue();
+			unsigned int bits_perPixel_t = v_bit;
+			if (correctImagesNum.size() == 0) {
+				bits_perPixel = v_bit;
+			}
+			else if (bits_perPixel_t != bits_perPixel) {
+				emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+		}
+
+		// format
+		{
+			gdcm::ImageReader imageReader;
+			imageReader.SetFileName(file_Path.toStdString().c_str());
+			if (!imageReader.Read()) {
+				emit PrintError(("Unable to read image data from file" + file_Path).toStdString().c_str());
+				continue;
+			}
+
+			gdcm::Image &image = imageReader.GetImage();
+			gdcm::PixelFormat pixelFormat = image.GetPixelFormat();
+
+			bool formatFlag = true;
+			switch (pixelFormat.GetScalarType())
+			{
+			case gdcm::PixelFormat::INT8:
+				if (correctImagesNum.size() == 0) 
+					importFormat.format = Dez_SignedChar;
+				else if (importFormat.format != Dez_SignedChar) formatFlag = false;
+				break;
+			case gdcm::PixelFormat::UINT8:
+				if (correctImagesNum.size() == 0) 
+					importFormat.format = Dez_UnsignedChar;
+				else if (importFormat.format != Dez_UnsignedChar) formatFlag = false;
+				break;
+			case gdcm::PixelFormat::INT16:
+				if (correctImagesNum.size() == 0)
+					importFormat.format = Dez_SignedShort;
+				else if (importFormat.format != Dez_SignedShort) formatFlag = false;
+				break;
+			case gdcm::PixelFormat::UINT16:
+				if (correctImagesNum.size() == 0)
+					importFormat.format = Dez_UnsignedShort;
+				else if (importFormat.format != Dez_UnsignedShort) formatFlag = false;
+				break;
+			case gdcm::PixelFormat::INT32:
+				if (correctImagesNum.size() == 0)
+					importFormat.format = Dez_SignedLong;
+				else if (importFormat.format != Dez_SignedLong) formatFlag = false;
+				break;
+			case gdcm::PixelFormat::UINT32:
+				if (correctImagesNum.size() == 0)
+					importFormat.format = Dez_UnsignedLong;
+				else if (importFormat.format != Dez_UnsignedLong) formatFlag = false;
+				break;
+			case gdcm::PixelFormat::FLOAT32:
+				if (correctImagesNum.size() == 0)
+					importFormat.format = Dez_Float;
+				else if (importFormat.format != Dez_Float) formatFlag = false;
+				break;
+			case gdcm::PixelFormat::FLOAT64:
+				if (correctImagesNum.size() == 0)
+					importFormat.format = Dez_Double;
+				else if (importFormat.format != Dez_Double) formatFlag = false;
+				break;
+			default:
+				emit PrintError(("Unknown pixel data type in File " + file_Path).toStdString().c_str());
+				formatFlag = false;
+				break;
+			}
+
+			if (!formatFlag) {
+				emit PrintError(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
+				continue;
+			}
+				
+		}
+
+		correctImagesNum.push_back(i);
+	}
+
+	if (correctImagesNum.size() == 0) {
+		emit PrintError("No suitable DCM images to read");
+		return false;
+	}
+
+	importFormat.zResolution = correctImagesNum.size();
+	imageNum = correctImagesNum.size();
+
+	// check data format
+	unsigned int bytesOnPixel = 0;
+	{
+		if (importFormat.format == Dez_Float) {
+			bytesOnPixel = sizeof(float);
+		}
+		else if (importFormat.format == Dez_Double) {
+			bytesOnPixel = sizeof(double);
+		}
+		else if (importFormat.format == Dez_UnsignedLong) {
+			bytesOnPixel = sizeof(unsigned long);
+		}
+		else if (importFormat.format == Dez_SignedLong) {
+			bytesOnPixel = sizeof(long);
+		}
+		else if (importFormat.format == Dez_UnsignedShort) {
+			if (bits_perPixel != 16) {
+				emit PrintError("Mismatched image format");
+				return false;
+			}
+			bytesOnPixel = sizeof(unsigned short);
+		}
+		else if (importFormat.format == Dez_SignedShort) {
+			if (bits_perPixel != 16) {
+				emit PrintError("Mismatched image format");
+				return false;
+			}
+			bytesOnPixel = sizeof(short);
+		}
+		else if (importFormat.format == Dez_UnsignedChar) {
+			if (bits_perPixel != 8) {
+				emit PrintError("Mismatched image format");
+				return false;
+			}
+			bytesOnPixel = sizeof(unsigned char);
+		}
+		else if (importFormat.format == Dez_SignedChar) {
+			if (bits_perPixel != 8) {
+				emit PrintError("Mismatched image format");
+				return false;
+			}
+			bytesOnPixel = sizeof(char);
+		}
+		else {
+			emit PrintError("Temporarily unsupported data format: error format");
+			return false;
+		}
+	}
+
+	// Print import data Info
+	emit PrintString(importFormat.toString().toStdString().c_str());
+
+	char * m_data = new char[width * height * imageNum * bytesOnPixel];
+	if (!m_data) {
+		emit PrintError("Unable to request sufficient amount of memory!");
+		return false;
+	}
+
+	bool readFlag = true;
+	for (int i = 0; i < correctImagesNum.size(); i++) {
+		
+		gdcm::Reader reader;
+		QString file_Path = fileList[correctImagesNum[i]];
+		reader.SetFileName(file_Path.toStdString().c_str());
+		if (!reader.Read()) continue;
+
+		// The output of gdcm::Reader is a gdcm::File
+		gdcm::File &file = reader.GetFile();
+		// the dataset is the the set of element we are interested in:
+		gdcm::DataSet &ds = file.GetDataSet();
+
+		const gdcm::Global& g = gdcm::Global::GetInstance();
+		const gdcm::Dicts &dicts = g.GetDicts();
+		const gdcm::Dict &pubdict = dicts.GetPublicDict();
+
+		// Image Position
+		double imagePos_temp;
+		{
+			gdcm::Attribute<0x0020, 0x1041> at_position;
+			at_position.SetFromDataSet(ds);
+			gdcm::Attribute<0x0020, 0x1041>::ArrayType v_position = at_position.GetValue();
+			imagePos_temp = v_position;
+		}
+
+		gdcm::ImageReader ir;
+		ir.SetFileName(file_Path.toStdString().c_str());
+		if (!ir.Read()) {
+			//Read failed
+			emit PrintError(("Unable to read image data from File " + file_Path).toStdString().c_str());
+			readFlag = false;
+			break;
+		}
+
+		const gdcm::Image &gimage = ir.GetImage();
+		std::vector<char> vbuffer;
+		vbuffer.resize(gimage.GetBufferLength());
+		char *buffer = &vbuffer[0];
+		gimage.GetBuffer(buffer);
+
+		DcmFilePixelData dcmfile;
+		dcmfile.position = imagePos_temp;
+		dcmfile.pixData = m_data + i * width * height * bytesOnPixel;
+		
+		memcpy(m_data + i * width * height * bytesOnPixel, buffer, width * height * bytesOnPixel);
+
+		dcmFileVec.push_back(dcmfile);
+	}
+
+	if (readFlag) {
+		std::sort(dcmFileVec.begin(), dcmFileVec.end(), DcmFilePosCompare);
+
+		importFormat.data = new char[width * height * imageNum * bytesOnPixel];
+		if (!importFormat.data) {
+			emit PrintError("Unable to request sufficient amount of memory!");
+			readFlag = false;
+		}
+
+		if (readFlag)
+			for (int i = 0; i < imageNum; i++) {
+				if (dcmFileVec[i].pixData == nullptr) {
+					emit PrintError("(dcmFileVec[i].pixData16 == nullptr) ");
+					readFlag = false;
+					break;
+				}
+				memcpy((char*)importFormat.data + i * width * height * bytesOnPixel, 
+					dcmFileVec[i].pixData, 
+					width * height * bytesOnPixel);
+			}
+	}
+
+	delete[] m_data;
+	return readFlag;
 }
 
 bool ProcessVolumeData::GenerateInput_DCMTK(const std::vector<QString>& fileList, ImportFormat& importFormat) {
@@ -370,7 +681,7 @@ bool ProcessVolumeData::GenerateInput_DCMTK(const std::vector<QString>& fileList
 			}
 			else if (correctImagesNum.size() == 0) {
 				width = static_cast<unsigned int>(atoi(ImageWidth.data()));
-				importFormat.xLength = width;
+				importFormat.xResolution = width;
 			}
 		}
 
@@ -387,7 +698,7 @@ bool ProcessVolumeData::GenerateInput_DCMTK(const std::vector<QString>& fileList
 			}
 			else if (correctImagesNum.size() == 0) {
 				height = static_cast<unsigned int>(atoi(ImageHeight.data()));
-				importFormat.yLength = height;
+				importFormat.yResolution = height;
 			}
 		}
 
@@ -566,6 +877,9 @@ bool ProcessVolumeData::GenerateInput_DCMTK(const std::vector<QString>& fileList
 			}
 			bytesOnPixel = sizeof(unsigned short);
 		}
+		// When using DCMTK, there may be a mismatch between signed and unsigned values. 
+		// It is reasonable to use pixelRepresentation and bitsStored to determine the accurate result, 
+		// which is consistent with GDCM parsing. The results determined by getVR() are inconsistent.
 		else if (importFormat.format == Dez_SignedShort) {
 			if (bitsAllocated != 16) {
 				emit PrintError("Mismatched image format");
@@ -587,11 +901,11 @@ bool ProcessVolumeData::GenerateInput_DCMTK(const std::vector<QString>& fileList
 		}
 	}
 
+	unsigned int imageNum = correctImagesNum.size();
+	importFormat.zResolution = imageNum;
+
 	// Print import data Info
 	emit PrintString(importFormat.toString().toStdString().c_str());
-
-	unsigned int imageNum = correctImagesNum.size();
-	importFormat.zLength = imageNum;
 
 	void * m_data = new char[width * height * imageNum * bytesOnPixel];
 	if (!m_data) {
@@ -667,6 +981,7 @@ bool ProcessVolumeData::GenerateInput_DCMTK(const std::vector<QString>& fileList
 		dcmFileVec.push_back(dcmF);
 	}
 
+	// sort images by their positions and save to importFormat.data
 	if (readDataFlag) {
 		// Sort by image position
 		std::sort(dcmFileVec.begin(), dcmFileVec.end(), DcmFilePosCompare);
@@ -701,12 +1016,12 @@ bool ProcessVolumeData::CopyUncompressedRawData(const T* data, ImportFormat& imp
 {
 	if (!data) return false;
 	
-	importFormat.data = new T[importFormat.xLength * importFormat.yLength * importFormat.zLength];
+	importFormat.data = new T[importFormat.xResolution * importFormat.yResolution * importFormat.zResolution];
 	if (!importFormat.data) return false;
-	for (int i = 0; i < importFormat.zLength; i++) {
-		memcpy((T*)importFormat.data + i * importFormat.xLength * importFormat.yLength,
-			(T*)data + i * importFormat.xLength * importFormat.yLength, 
-			importFormat.xLength * importFormat.yLength * sizeof(T));
+	for (int i = 0; i < importFormat.zResolution; i++) {
+		memcpy((T*)importFormat.data + i * importFormat.xResolution * importFormat.yResolution,
+			(T*)data + i * importFormat.xResolution * importFormat.yResolution, 
+			importFormat.xResolution * importFormat.yResolution * sizeof(T));
 	}
 	return true;
 }
@@ -726,9 +1041,9 @@ bool ProcessVolumeData::GenerateInput_Mhd(const QString& inputFilePath, ImportFo
 	ImageCast->Update();
 
 	int * volumeData = ImageCast->GetOutput()->GetExtent();
-	importFormat.xLength = volumeData[1] + 1;
-	importFormat.yLength = volumeData[3] + 1;
-	importFormat.zLength = volumeData[5] + 1;
+	importFormat.xResolution = volumeData[1] + 1;
+	importFormat.yResolution = volumeData[3] + 1;
+	importFormat.zResolution = volumeData[5] + 1;
 
 	double* spacing = ImageCast->GetOutput()->GetSpacing();
 	importFormat.xPixelSpace = spacing[0];
@@ -817,9 +1132,9 @@ bool ProcessVolumeData::GenerateInput_Mhd(const QString& inputFilePath, ImportFo
 }
 
 bool ReadUncompressedRawData(std::string filename, unsigned int bytesOneScalar, ImportFormat& importFormat) {
-	unsigned int width = importFormat.xLength, height = importFormat.yLength, imageNUm = importFormat.zLength;
+	unsigned int width = importFormat.xResolution, height = importFormat.yResolution, imageNUm = importFormat.zResolution;
 
-	importFormat.data = new char[importFormat.xLength * importFormat.yLength * importFormat.zLength * bytesOneScalar];
+	importFormat.data = new char[importFormat.xResolution * importFormat.yResolution * importFormat.zResolution * bytesOneScalar];
 	if (!importFormat.data) return false;
 
 	std::ifstream file(filename, std::ios::binary);
@@ -843,37 +1158,43 @@ bool ProcessVolumeData::GenerateInput_Feimos(const QString& inputFilePath, Impor
 	std::string rawDataFileName;
 
 	while (file >> name) {
-
-		if (name == "xLength") {
-			file >> importFormat.xLength;
+		QString qName = name.c_str();
+		if (qName.compare("xResolution", Qt::CaseInsensitive) == 0) {
+			file >> importFormat.xResolution;
 		}
-		else if (name == "yLength") {
-			file >> importFormat.yLength;
+		else if (qName.compare("yResolution", Qt::CaseInsensitive) == 0) {
+			file >> importFormat.yResolution;
 		}
-		else if (name == "zLength") {
-			file >> importFormat.zLength;
+		else if (qName.compare("zResolution", Qt::CaseInsensitive) == 0) {
+			file >> importFormat.zResolution;
 		}
-		else if (name == "xPixelSpace") {
+		else if (qName.compare("xPixelSpace", Qt::CaseInsensitive) == 0) {
 			file >> importFormat.xPixelSpace;
 		}
-		else if (name == "yPixelSpace") {
+		else if (qName.compare("yPixelSpace", Qt::CaseInsensitive) == 0) {
 			file >> importFormat.yPixelSpace;
 		}
-		else if (name == "zPixelSpace") {
+		else if (qName.compare("zPixelSpace", Qt::CaseInsensitive) == 0) {
 			file >> importFormat.zPixelSpace;
 		}
-		else if (name == "format") {
+		else if (qName.compare("format", Qt::CaseInsensitive) == 0) {
 			file >> name;
 			if (!importFormat.setFormatUsingString(name.c_str())) {
 				emit PrintError("Non compliant format input when parsing (.feimos) file!");
 				return false;
 			}
 		}
-		else if (name == "Raw") {
+		else if (qName.compare("Raw", Qt::CaseInsensitive) == 0) {
 			std::getline(file, name);
 			name.erase(name.begin());
 			rawDataFileName = name;
 		}
+	}
+
+	size_t dataSize = (size_t)importFormat.xResolution * (size_t)importFormat.yResolution * (size_t)importFormat.zResolution;
+	if (dataSize > (size_t)1024 * (size_t)1024 * (size_t)1024) {
+		emit PrintError("The image size read in is too large and currently not supported. Please use other reading functions.");
+		return false;
 	}
 
 	QFileInfo fileInfo(inputFilePath);
@@ -974,20 +1295,20 @@ bool ProcessVolumeData::Resize(ImportFormat& importFormat, float scale) {
 
 template <typename T, typename U>
 bool __DataFormatConvert(const T* data, U* aimdata, ImportFormat& importFormat) {
-	unsigned int width = importFormat.xLength, height = importFormat.yLength, images = importFormat.zLength;
+	unsigned int width = importFormat.xResolution, height = importFormat.yResolution, images = importFormat.zResolution;
 
 	aimdata = new U[width * height * images];
 	if (!aimdata) return false;
 
-	for (unsigned int k = 0; k < importFormat.zLength; k++) {
+	for (unsigned int k = 0; k < importFormat.zResolution; k++) {
 
 		T* imageP = (T *)data + k * width * height;
 		U* imageAimP = (U *)aimdata + k * width * height;
 
-		for (unsigned int i = 0; i < importFormat.xLength; i++) {
-			for (unsigned int j = 0; j < importFormat.yLength; j++) {
-				imageAimP[i + j * importFormat.xLength] = 
-					static_cast<U>(imageP[i + j * importFormat.xLength]);
+		for (unsigned int i = 0; i < importFormat.xResolution; i++) {
+			for (unsigned int j = 0; j < importFormat.yResolution; j++) {
+				imageAimP[i + j * importFormat.xResolution] = 
+					static_cast<U>(imageP[i + j * importFormat.xResolution]);
 			}
 		}
 	}
@@ -1045,7 +1366,7 @@ bool ProcessVolumeData::GenerateOutput_Mhd(const QString& outputDir, const QStri
 		return false;
 	}
 
-	int dimM[3] = { importFormat.xLength, importFormat.yLength, importFormat.zLength };
+	int dimM[3] = { importFormat.xResolution, importFormat.yResolution, importFormat.zResolution };
 	double PixelSpace[3] = { importFormat.xPixelSpace, importFormat.yPixelSpace, importFormat.zPixelSpace};
 
 	vtkSmartPointer<vtkImageImport> imageImport = vtkSmartPointer<vtkImageImport>::New();
@@ -1107,7 +1428,7 @@ bool ProcessVolumeData::GenerateOutput_Mhd(const QString& outputDir, const QStri
 }
 
 bool SaveUncompressedRawData(std::string filename, unsigned int bytesOneScalar, const ImportFormat& importFormat) {
-	unsigned int width = importFormat.xLength, height = importFormat.yLength, imageNUm = importFormat.zLength;
+	unsigned int width = importFormat.xResolution, height = importFormat.yResolution, imageNUm = importFormat.zResolution;
 
 	std::ofstream file(filename, std::ios::binary);
 	if (!file.is_open()) return false;
@@ -1202,9 +1523,9 @@ bool ProcessVolumeData::GenerateOutput_Feimos(const QString& outputDir, const QS
 			emit PrintError("Fail to write to info file");
 			return false;
 		}
-		fileInfo << "xLength " << importFormat.xLength << std::endl;
-		fileInfo << "yLength " << importFormat.yLength << std::endl;
-		fileInfo << "zLength " << importFormat.zLength << std::endl;
+		fileInfo << "xResolution " << importFormat.xResolution << std::endl;
+		fileInfo << "yResolution " << importFormat.yResolution << std::endl;
+		fileInfo << "zResolution " << importFormat.zResolution << std::endl;
 		fileInfo << "xPixelSpace " << importFormat.xPixelSpace << std::endl;
 		fileInfo << "yPixelSpace " << importFormat.yPixelSpace << std::endl;
 		fileInfo << "zPixelSpace " << importFormat.zPixelSpace << std::endl;
@@ -1221,10 +1542,227 @@ bool ProcessVolumeData::GenerateOutput_Feimos(const QString& outputDir, const QS
 // *** Special functions that cannot be performed in steps *** //
 // **********************************************//
 
-bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath, const QString& outputDir, const QString& outName,
-	int Interval) {
 
+void ProcessVolumeData::DownSamplingMhdFile(const QString& filePath, const QString& outputDir, const QString& outName, int Interval) {
+	emit PrintError("Unrealized features - Down Sampling Mhd");
+}
+
+void ProcessVolumeData::DownSamplingFeimosFile(const QString& filePath, const QString& outputDir, const QString& outName, int Interval) {
+	emit PrintError("Unrealized features - Down Sampling Feimos");
+}
+
+template <typename T>
+bool DownSamplingInOneImage(
+	const T* data, const unsigned int width, const unsigned int height,
+	T* data_aim, const unsigned int resizedWidth, const unsigned int resizedHeight,
+	const unsigned int Interval) {
+
+	for (int i = 0; i < resizedWidth; i++) {
+		for (int j = 0; j < resizedHeight; j++) {
+			unsigned int off_data = (Interval * i) + (Interval * j) * width;
+			unsigned int off_data_aim = (i) + (j) * resizedWidth;
+			data_aim[off_data_aim] = data[off_data];
+		}
+	}
 	return true;
+}
+
+bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath, const QString& outputDir, const QString& outName,
+	unsigned int Interval) {
+	// check input and output
+	if (!isInputFeimosFileExist(inputFilePath)) return false;
+	if (!checkOutputDir_Feimos(outputDir, outName)) return false;
+
+	if (Interval <= 0) {
+		emit PrintError("Illegal value of Interval");
+		return false;
+	}
+
+	std::ifstream file(inputFilePath.toStdString());
+	std::string name;
+	std::string rawDataFileName;
+
+	ImportFormat importFormat;
+
+	while (file >> name) {
+
+		if (name == "xResolution") {
+			file >> importFormat.xResolution;
+		}
+		else if (name == "yResolution") {
+			file >> importFormat.yResolution;
+		}
+		else if (name == "zResolution") {
+			file >> importFormat.zResolution;
+		}
+		else if (name == "xPixelSpace") {
+			file >> importFormat.xPixelSpace;
+		}
+		else if (name == "yPixelSpace") {
+			file >> importFormat.yPixelSpace;
+		}
+		else if (name == "zPixelSpace") {
+			file >> importFormat.zPixelSpace;
+		}
+		else if (name == "format") {
+			file >> name;
+			if (!importFormat.setFormatUsingString(name.c_str())) {
+				emit PrintError("Non compliant format input when parsing (.feimos) file!");
+				return false;
+			}
+		}
+		else if (name == "Raw") {
+			std::getline(file, name);
+			name.erase(name.begin());
+			rawDataFileName = name;
+		}
+	}
+
+	QFileInfo fileInfo(inputFilePath);
+	QString absoluteFilePath = fileInfo.absoluteFilePath();
+	QString absoluteDirPath = fileInfo.absolutePath();
+
+	if (!isInputFileExist(absoluteDirPath + "/" + rawDataFileName.c_str())) {
+		emit PrintError("Raw data does not exist when parsing (.feimos) file!");
+		return false;
+	}
+
+	unsigned int 
+		resizedWidth = importFormat.xResolution / Interval, 
+		resizedHeight = importFormat.yResolution / Interval, 
+		resizedImageNum = importFormat.zResolution / Interval;
+
+	double
+		resizedPixelSpace_x = importFormat.xPixelSpace * Interval,
+		resizedPixelSpace_y = importFormat.yPixelSpace * Interval,
+		resizedPixelSpace_z = importFormat.zPixelSpace * Interval;
+
+	int bytesOnePixel = importFormat.getFormatOnePixelBytes();
+	if (bytesOnePixel <= 0) {
+		emit PrintError("Bytes per pixel that do not comply!");
+		return false;
+	}
+
+	// down sampling
+	bool downsamplingFlag = true;
+	{
+		std::ifstream inputFile((absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), std::ios::binary);
+		std::ofstream outputFile((outputDir + "/" + outName + ".raw").toStdString(), std::ios::binary);
+		if (!inputFile.is_open() || !outputFile.is_open()) {
+			emit PrintError("Cannot open raw input and output file!");
+			return false;
+		}
+
+		const std::streamsize readImageSize = importFormat.xResolution * importFormat.yResolution * (unsigned int)bytesOnePixel;
+		void* readBuffer = new char[readImageSize];
+
+		const std::streamsize writeImageSize = resizedWidth * resizedHeight * bytesOnePixel;
+		void* writeBuffer = new char[writeImageSize];
+
+		int currentNum = 0;
+		int writeImageNum = 0;
+		
+		while (inputFile.read(static_cast<char*>(readBuffer), readImageSize)) {
+
+			if (0 == currentNum % Interval) {
+
+				switch (importFormat.format)
+				{
+				case Dez_Origin:
+					downsamplingFlag = false;
+					break;
+				case Dez_UnsignedLong:
+					DownSamplingInOneImage(
+						static_cast<unsigned long*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<unsigned long*>(writeBuffer), resizedWidth, resizedHeight,
+						Interval);
+					break;
+				case Dez_SignedLong:
+					DownSamplingInOneImage(
+						static_cast<signed long*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<signed long*>(writeBuffer), resizedWidth, resizedHeight,
+						Interval);
+					break;
+				case Dez_UnsignedShort:
+					DownSamplingInOneImage(
+						static_cast<unsigned short*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<unsigned short*>(writeBuffer), resizedWidth, resizedHeight,
+						Interval);
+					break;
+				case Dez_SignedShort:
+					DownSamplingInOneImage(
+						static_cast<signed short*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<signed short*>(writeBuffer), resizedWidth, resizedHeight,
+						Interval);
+					break;
+				case Dez_UnsignedChar:
+					DownSamplingInOneImage(
+						static_cast<unsigned char*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<unsigned char*>(writeBuffer), resizedWidth, resizedHeight,
+						Interval);
+					break;
+				case Dez_SignedChar:
+					DownSamplingInOneImage(
+						static_cast<char*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<char*>(writeBuffer), resizedWidth, resizedHeight,
+						Interval);
+					break;
+				case Dez_Float:
+					DownSamplingInOneImage(
+						static_cast<float*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<float*>(writeBuffer), resizedWidth, resizedHeight,
+						Interval);
+					break;
+				case Dez_Double:
+					DownSamplingInOneImage(
+						static_cast<double*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<double*>(writeBuffer), resizedWidth, resizedHeight,
+						Interval);
+					break;
+				default:
+					downsamplingFlag = false;
+					break;
+				}
+
+				writeImageNum++;
+				outputFile.write(static_cast<char*>(writeBuffer), writeImageSize);
+			}
+			currentNum++;
+		}
+
+		if (writeImageNum > resizedImageNum + 1 || writeImageNum < resizedImageNum-1) {
+			emit PrintError(("The amount of data does not match the file description! resized required:[" + 
+				std::to_string(resizedImageNum) + "], now[" + 
+				std::to_string(writeImageNum) + "]").c_str());
+			downsamplingFlag = false;
+		}
+
+		resizedImageNum = writeImageNum;
+
+		delete [] writeBuffer;
+		delete [] readBuffer;
+	}
+
+	if (downsamplingFlag)
+	{
+		std::ofstream fileInfo((outputDir + "/" + outName + ".feimos").toStdString());
+		if (!fileInfo.is_open()) {
+			emit PrintError("Fail to write to info file");
+			return false;
+		}
+		std::string format = importFormat.getFormatString().toStdString();
+		fileInfo << "xResolution " << resizedWidth << std::endl;
+		fileInfo << "yResolution " << resizedHeight << std::endl;
+		fileInfo << "zResolution " << resizedImageNum << std::endl;
+		fileInfo << "xPixelSpace " << resizedPixelSpace_x << std::endl;
+		fileInfo << "yPixelSpace " << resizedPixelSpace_y << std::endl;
+		fileInfo << "zPixelSpace " << resizedPixelSpace_z << std::endl;
+		fileInfo << "format " << format << std::endl;
+		fileInfo << "Raw " << (outName.toStdString() + ".raw") << std::endl;
+		fileInfo.close();
+	}
+
+	return downsamplingFlag;
 }
 
 // **********************************************//
@@ -1286,7 +1824,7 @@ void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString
 void ProcessVolumeData::MhdMakeFeimosFile(const QString& inputFilePath, const QString& outputDir, const QString& outName,
 	const GenerateFormat& generateFormat) {
 	// check input and output
-	if (!isInputFileExist(inputFilePath)) return;
+	if (!isInputMhdFileExist(inputFilePath)) return;
 	if (!checkOutputDir_Feimos(outputDir, outName)) return;
 
 	ImportFormat importFormat;
@@ -1303,7 +1841,7 @@ void ProcessVolumeData::MhdMakeFeimosFile(const QString& inputFilePath, const QS
 void ProcessVolumeData::FeimosMakeMhdFile(const QString& inputFilePath, const QString& outputDir, const QString& outName,
 	const GenerateFormat& generateFormat) {
 	// check input and output
-	if (!isInputFileExist(inputFilePath)) return;
+	if (!isInputFeimosFileExist(inputFilePath)) return;
 	if (!checkOutputDir_Mhd(outputDir, outName)) return;
 
 	ImportFormat importFormat;
@@ -1316,6 +1854,8 @@ void ProcessVolumeData::FeimosMakeMhdFile(const QString& inputFilePath, const QS
 	}
 	importFormat.clear();
 }
+
+
 
 // **********************************************//
 // *** Old Dicom Functions *** //
@@ -1408,7 +1948,7 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QStri
 			}
 			else if (correctImagesNum.size() == 0) {
 				width = static_cast<unsigned int>(atoi(ImageWidth.data()));
-				importFormat.xLength = width;
+				importFormat.xResolution = width;
 			}
 		}
 
@@ -1425,7 +1965,7 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QStri
 			}
 			else if (correctImagesNum.size() == 0) {
 				height = static_cast<unsigned int>(atoi(ImageHeight.data()));
-				importFormat.yLength = height;
+				importFormat.yResolution = height;
 			}
 		}
 
@@ -1443,8 +1983,8 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QStri
 			else if (correctImagesNum.size() == 0) {
 				pixelSpacing_X = atof(PixelSpacing.data());
 				pixelSpacing_Y = pixelSpacing_X;
-				importFormat.xLength = pixelSpacing_X;
-				importFormat.yLength = pixelSpacing_Y;
+				importFormat.xResolution = pixelSpacing_X;
+				importFormat.yResolution = pixelSpacing_Y;
 			}
 		}
 
@@ -1461,7 +2001,7 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK(const QString& dirPath, const QStri
 			}
 			else if (correctImagesNum.size() == 0) {
 				pixelSpacing_Z = atof(SliceThickness.data());
-				importFormat.zLength = pixelSpacing_Z;
+				importFormat.zResolution = pixelSpacing_Z;
 			}
 		}
 
