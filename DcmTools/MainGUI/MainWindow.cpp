@@ -169,9 +169,6 @@ void MainWindow::getPredefinedInfo() {
 	
 	// down sampling
 	m_DisplayWidget->interval = m_InteractionDockWidget->VolumeDownSampling_Frame->getIntervalValue();
-
-
-
 }
 
 // volume file type convert

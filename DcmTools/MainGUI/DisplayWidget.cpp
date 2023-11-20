@@ -113,23 +113,29 @@ void DisplayWidget::Process(int index) {
 		processVolumeData.process();
 	// convert
 	if (1 == index) {
-		processVolumeData.DcmMakeMhdFile(InputFolder, OutputFolder, OutputFileName, generateFormat);
+		processVolumeData.DcmMakeMhdFile(InputFolder, OutputFolder, OutputFileName, 
+			generateFormat);
 	}
 	if (2 == index) {
-		processVolumeData.DcmMakeFeimosFile(InputFolder, OutputFolder, OutputFileName, generateFormat);
+		processVolumeData.DcmMakeFeimosFile(InputFolder, OutputFolder, OutputFileName, 
+			generateFormat);
 	}
 	if (3 == index) {
-		processVolumeData.MhdMakeFeimosFile(InputFilePath, OutputFolder, OutputFileName, generateFormat);
+		processVolumeData.MhdMakeFeimosFile(InputFilePath, OutputFolder, OutputFileName, 
+			generateFormat);
 	}
 	if (4 == index) {
-		processVolumeData.FeimosMakeMhdFile(InputFilePath, OutputFolder, OutputFileName, generateFormat);
+		processVolumeData.FeimosMakeMhdFile(InputFilePath, OutputFolder, OutputFileName, 
+			generateFormat);
 	}
 	// downsampling
 	if (5 == index) {
-		processVolumeData.DownSamplingMhdFile(InputFolder, OutputFolder, OutputFileName, interval);
+		processVolumeData.DownSamplingMhdFile(InputFilePath, OutputFolder, OutputFileName,
+			generateFormat, interval);
 	}
 	if (6 == index) {
-		processVolumeData.DownSamplingFeimosFile(InputFolder, OutputFolder, OutputFileName, interval);
+		processVolumeData.DownSamplingFeimosFile(InputFilePath, OutputFolder, OutputFileName,
+			generateFormat, interval);
 	}
 	if (7 == index) {
 		processVolumeData.DownSamplingLargeFeimosData(InputFilePath, OutputFolder, OutputFileName, interval);

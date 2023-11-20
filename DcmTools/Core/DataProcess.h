@@ -485,9 +485,11 @@ public:
 	* outName: Output File Name */
 	/*******************************************************/
 
-	void DownSamplingMhdFile(const QString& filePath, const QString& outputDir, const QString& outName, int Interval = 2);
+	void DownSamplingMhdFile(const QString& filePath, const QString& outputDir, const QString& outName, 
+		const GenerateFormat& generateFormat, int Interval = 2);
 
-	void DownSamplingFeimosFile(const QString& filePath, const QString& outputDir, const QString& outName, int Interval = 2);
+	void DownSamplingFeimosFile(const QString& filePath, const QString& outputDir, const QString& outName, 
+		const GenerateFormat& generateFormat, int Interval = 2);
 
 	/**
 	* Special functions: cannot be performed in steps

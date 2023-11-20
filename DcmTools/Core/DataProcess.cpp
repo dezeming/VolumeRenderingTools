@@ -1542,13 +1542,171 @@ bool ProcessVolumeData::GenerateOutput_Feimos(const QString& outputDir, const QS
 // *** Special functions that cannot be performed in steps *** //
 // **********************************************//
 
-
-void ProcessVolumeData::DownSamplingMhdFile(const QString& filePath, const QString& outputDir, const QString& outName, int Interval) {
-	emit PrintError("Unrealized features - Down Sampling Mhd");
+template <typename T>
+inline void set_Array(T* data, T dat, unsigned int dim[3], unsigned int pos[3]) {
+	unsigned int offset = pos[0] + dim[0] * pos[1] + dim[0] * dim[1] * pos[2];
+	data[offset] = dat;
+}
+template <typename T>
+inline T at_Array(T* data, unsigned int dim[3], unsigned int pos[3]) {
+	unsigned int offset = pos[0] + dim[0] * pos[1] + dim[0] * dim[1] * pos[2];
+	return data[offset];
 }
 
-void ProcessVolumeData::DownSamplingFeimosFile(const QString& filePath, const QString& outputDir, const QString& outName, int Interval) {
-	emit PrintError("Unrealized features - Down Sampling Feimos");
+template <typename T>
+bool downSampling(T* data, ImportFormat& importFormat, unsigned int dimM[3], unsigned int dim_Down[3], unsigned int Interval) {
+
+	T * data_aim = new T[dim_Down[0] * dim_Down[1] * dim_Down[2]];
+	if (!data_aim) return false;
+	for (int i = 0; i < dim_Down[0]; i++) {
+		for (int j = 0; j < dim_Down[1]; j++) {
+			for (int k = 0; k < dim_Down[2]; k++) {
+				unsigned int pos_aim[3] = { i,j,k };
+				unsigned int pos_m[3] = { i * Interval, j * Interval, k * Interval };
+				T dat = at_Array(data, dimM, pos_m);
+				set_Array(data_aim, dat, dim_Down, pos_aim);
+			}
+		}
+	}
+
+	delete[] static_cast<T*>(importFormat.data);
+
+	importFormat.data = data_aim;
+
+	importFormat.xResolution = dim_Down[0];
+	importFormat.yResolution = dim_Down[1];
+	importFormat.zResolution = dim_Down[2];
+
+	importFormat.xPixelSpace = importFormat.xPixelSpace * Interval;
+	importFormat.yPixelSpace = importFormat.yPixelSpace * Interval;
+	importFormat.zPixelSpace = importFormat.zPixelSpace * Interval;
+	return true;
+}
+
+void ProcessVolumeData::DownSamplingMhdFile(const QString& inputFilePath, const QString& outputDir, const QString& outName, 
+	const GenerateFormat& generateFormat, int Interval) {
+	// check input and output
+	if (!isInputMhdFileExist(inputFilePath)) return;
+	if (!checkOutputDir_Feimos(outputDir, outName)) return;
+
+	ImportFormat importFormat;
+
+	bool parseFlag = GenerateInput_Mhd(inputFilePath, importFormat);
+	emit PrintString(importFormat.toString().toStdString().c_str());
+	if (!importFormat.data) {
+		parseFlag = false;
+	}
+	if (parseFlag) {
+		unsigned int dimM[3] = { importFormat.xResolution, importFormat.yResolution, importFormat.zResolution };
+		unsigned int dim_Down[3] = { importFormat.xResolution / Interval, importFormat.yResolution / Interval, importFormat.zResolution / Interval };
+
+		switch (importFormat.format)
+		{
+		case Dez_Origin:
+			emit PrintError("Non compliant image data format");
+			parseFlag = false;
+			break;
+		case Dez_UnsignedLong:
+			parseFlag = downSampling(static_cast<unsigned long*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_SignedLong:
+			parseFlag = downSampling(static_cast<signed long*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_UnsignedShort:
+			parseFlag = downSampling(static_cast<unsigned short*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_SignedShort:
+			parseFlag = downSampling(static_cast<signed short*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_UnsignedChar:
+			parseFlag = downSampling(static_cast<unsigned char*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_SignedChar:
+			parseFlag = downSampling(static_cast<signed char*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_Float:
+			parseFlag = downSampling(static_cast<float*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_Double:
+			parseFlag = downSampling(static_cast<double*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		default:
+			emit PrintError("Non compliant image data format");
+			parseFlag = false;
+			break;
+		}
+	}
+
+	if (parseFlag) 
+		parseFlag = GenerateOutput_Mhd(outputDir, outName, generateFormat, importFormat);
+	else 
+		emit PrintError("Downsampling failed");
+	
+	importFormat.clear();
+}
+
+void ProcessVolumeData::DownSamplingFeimosFile(const QString& inputFilePath, const QString& outputDir, const QString& outName, 
+	const GenerateFormat& generateFormat, int Interval) {
+	// check input and output
+	if (!isInputFeimosFileExist(inputFilePath)) return;
+	if (!checkOutputDir_Feimos(outputDir, outName)) return;
+
+	ImportFormat importFormat;
+
+	bool parseFlag = GenerateInput_Feimos(inputFilePath, importFormat);
+	emit PrintString(importFormat.toString().toStdString().c_str());
+	if (!importFormat.data) {
+		parseFlag = false;
+	}
+	if (parseFlag) {
+		unsigned int dimM[3] = { importFormat.xResolution, importFormat.yResolution, importFormat.zResolution };
+		unsigned int dim_Down[3] = { importFormat.xResolution / Interval, importFormat.yResolution / Interval, importFormat.zResolution / Interval };
+
+		switch (importFormat.format)
+		{
+		case Dez_Origin:
+			emit PrintError("Non compliant image data format");
+			parseFlag = false;
+			break;
+		case Dez_UnsignedLong:
+			parseFlag = downSampling(static_cast<unsigned long*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_SignedLong:
+			parseFlag = downSampling(static_cast<signed long*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_UnsignedShort:
+			parseFlag = downSampling(static_cast<unsigned short*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_SignedShort:
+			parseFlag = downSampling(static_cast<signed short*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_UnsignedChar:
+			parseFlag = downSampling(static_cast<unsigned char*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_SignedChar:
+			parseFlag = downSampling(static_cast<signed char*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_Float:
+			parseFlag = downSampling(static_cast<float*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		case Dez_Double:
+			parseFlag = downSampling(static_cast<double*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			break;
+		default:
+			emit PrintError("Non compliant image data format");
+			parseFlag = false;
+			break;
+		}
+	}
+
+	if (parseFlag) {
+		parseFlag = GenerateOutput_Feimos(outputDir, outName, generateFormat, importFormat);
+	}
+	else {
+		emit PrintError("Downsampling failed");
+	}
+
+	importFormat.clear();
 }
 
 template <typename T>
@@ -1765,6 +1923,7 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 	return downsamplingFlag;
 }
 
+
 // **********************************************//
 // *** Call type function *** //
 // **********************************************//
@@ -1854,7 +2013,6 @@ void ProcessVolumeData::FeimosMakeMhdFile(const QString& inputFilePath, const QS
 	}
 	importFormat.clear();
 }
-
 
 
 // **********************************************//
@@ -2539,14 +2697,7 @@ void ProcessVolumeData::MhdFlipAxis(const QString& filePath, const QString& outp
 	delete[] data_m;
 }
 
-inline void set_shortArray(short* data, short dat, int dim[3], int pos[3]) {
-	int offset = pos[0] + dim[0] * pos[1] + dim[0] * dim[1] * pos[2];
-	data[offset] = dat;
-}
-inline short At_shortArray(short* data, int dim[3], int pos[3]) {
-	int offset = pos[0] + dim[0] * pos[1] + dim[0] * dim[1] * pos[2];
-	return data[offset];
-}
+
 void ProcessVolumeData::MhdClip(const QString& filePath, const QString& outputDir, const QString& outName, double center[3], double bound[3]) {
 	emit PrintString("Clip (.mhd)-(.raw) file.");
 	vtkSmartPointer<vtkMetaImageReader> reader =
@@ -2563,7 +2714,7 @@ void ProcessVolumeData::MhdClip(const QString& filePath, const QString& outputDi
 	int width = volumeData[1] + 1;
 	int height = volumeData[3] + 1;
 	int imageNum = volumeData[5] + 1;
-	int dimM[3] = { width, height, imageNum };
+	unsigned int dimM[3] = { width, height, imageNum };
 	double* spacing = ImageCast->GetOutput()->GetSpacing();
 	double PixelSpace_x = (double)spacing[0];
 	double PixelSpace_y = (double)spacing[1];
@@ -2576,15 +2727,15 @@ void ProcessVolumeData::MhdClip(const QString& filePath, const QString& outputDi
 	int xRange[2] = { (int)((center[0] - bound[0] + 0.5) * width), (int)((center[0] + bound[0] + 0.5) * width) };
 	int yRange[2] = { (int)((center[1] - bound[1] + 0.5) * height), (int)((center[1] + bound[1] + 0.5) * height) };
 	int zRange[2] = { (int)((center[2] - bound[2] + 0.5) * imageNum), (int)((center[2] + bound[2] + 0.5) * imageNum) };
-	int dimLength[3] = { xRange[1] - xRange[0], yRange[1] - yRange[0], zRange[1] - zRange[0] };
+	unsigned int dimLength[3] = { xRange[1] - xRange[0], yRange[1] - yRange[0], zRange[1] - zRange[0] };
 	short * data_aim = new short[dimLength[0] * dimLength[1] * dimLength[2]];
 	for (int i = 0; i < dimLength[0]; i++) {
 		for (int j = 0; j < dimLength[1]; j++) {
 			for (int k = 0; k < dimLength[2]; k++) {
-				int pos_aim[3] = { i,j,k };
-				int pos_m[3] = { i + xRange[0],j + yRange[0],k + zRange[0] };
-				short dat = At_shortArray(data_m, dimM, pos_m);
-				set_shortArray(data_aim, dat, dimLength, pos_aim);
+				unsigned int pos_aim[3] = { i,j,k };
+				unsigned int pos_m[3] = { i + xRange[0],j + yRange[0],k + zRange[0] };
+				short dat = at_Array(data_m, dimM, pos_m);
+				set_Array(data_aim, dat, dimLength, pos_aim);
 			}
 		}
 	}
@@ -2627,7 +2778,7 @@ void ProcessVolumeData::DownSamplingMhdWithInterval(const QString& filePath, con
 	int width = volumeData[1] + 1;
 	int height = volumeData[3] + 1;
 	int imageNum = volumeData[5] + 1;
-	int dimM[3] = { width, height, imageNum };
+	unsigned int dimM[3] = { width, height, imageNum };
 	double* spacing = ImageCast->GetOutput()->GetSpacing();
 	double PixelSpace_x = (double)spacing[0];
 	double PixelSpace_y = (double)spacing[1];
@@ -2637,15 +2788,15 @@ void ProcessVolumeData::DownSamplingMhdWithInterval(const QString& filePath, con
 		memcpy(data_m + i * width * height, (short*)ImageCast->GetOutput()->GetScalarPointer() + i * width * height, width * height * sizeof(short));
 	}
 
-	int dimLength[3] = { width / Interval, height / Interval, imageNum / Interval };
+	unsigned int dimLength[3] = { width / Interval, height / Interval, imageNum / Interval };
 	short * data_aim = new short[dimLength[0] * dimLength[1] * dimLength[2]];
 	for (int i = 0; i < dimLength[0]; i++) {
 		for (int j = 0; j < dimLength[1]; j++) {
 			for (int k = 0; k < dimLength[2]; k++) {
-				int pos_aim[3] = { i,j,k };
-				int pos_m[3] = { i * Interval, j * Interval, k * Interval };
-				short dat = At_shortArray(data_m, dimM, pos_m);
-				set_shortArray(data_aim, dat, dimLength, pos_aim);
+				unsigned int pos_aim[3] = { i,j,k };
+				unsigned int pos_m[3] = { i * Interval, j * Interval, k * Interval };
+				short dat = at_Array(data_m, dimM, pos_m);
+				set_Array(data_aim, dat, dimLength, pos_aim);
 			}
 		}
 	}
