@@ -25,15 +25,14 @@
 #include <QtWidgets/QGridLayout>
 #include <QCloseEvent>
 
-#include "IMAGraphicsView.h"
+#include "IMAGraphicsView.hpp"
 
-#include "Core/FrameBuffer.h"
-#include "Core/RenderThread.h"
-#include "Core/DataProcess.h"
+#include "FrameBuffer.hpp"
+#include "RenderThread.hpp"
+#include "Process/DataProcess.hpp"
 
 class DisplayWidget : public QGroupBox {
 	Q_OBJECT
-
 
 public:
 	DisplayWidget(QGroupBox * parent = Q_NULLPTR);
@@ -45,23 +44,6 @@ public:
 	void startRenderThread(int index = 0);
 	void killRenderThread();
 
-	ProcessVolumeData processVolumeData;
-	void Process(int index = 0);
-
-	// process setting
-	QString InputFolder;
-	QString OutputFolder;
-	QString OutputFileName;
-	QString InputFilePath;
-
-	GenerateFormat generateFormat;
-
-	int permute[3];
-	int flip[3];
-	double clipCenter[3], clipBound[3];
-	double clipLower[3], clipUpper[3];
-	int interval;
-
 	// display buffer
 	FrameBuffer framebuffer;
 
@@ -72,14 +54,6 @@ private:
 	IMAGraphicsView m_IMAGraphicsView;
 
 	void closeEvent(QCloseEvent *event);
-
-private slots:
-	void PrintString(const char* s);
-	void PrintQString(const QString s);
-	void PrintDataD(const char* s, const double data);
-
-	void PrintErrorString(const char* s);
-	void PrintWarningString(const char* s);
 
 };
 

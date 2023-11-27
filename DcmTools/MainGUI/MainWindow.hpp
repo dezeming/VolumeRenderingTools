@@ -26,8 +26,8 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QCloseEvent>
 
-#include "DisplayWidget.h"
-#include "InteractionDockWidget.h"
+#include "Display/DisplayWidget.hpp"
+#include "Process/ProcessDockWidget.hpp"
 #include "InfoPresent/DataPresentDockWidget.hpp"
 
 class MainWindow : public QMainWindow
@@ -46,42 +46,19 @@ private:
 
 	DisplayWidget* m_DisplayWidget;
 
-	InteractionDockWidget* m_InteractionDockWidget;
+	ProcessDockWidget* m_ProcessDockWidget;
 
 	DataPresentDockWidget* m_DataPresentDockWidget;
 
 private:
 	void setMenu(void);
-	void setWidget(void);
-	void setDock(void);
+	void setWidgetAndDock(void);
 	void closeEvent(QCloseEvent *event);
-
-	void getPredefinedInfo();
 
 private slots:
 	void setRendering();
 
-	// test
-	void setProcess();
-
-	// volume file type convert
-	void process_DcmToMhd();
-	void process_DcmToFeimos();
-	void process_MhdToFeimos();
-	void process_FeimosToMhd();
-
-	// down sampling
-	void process_MhdDownSampling();
-	void process_FeimosDownSampling();
-	void process_LargeFeimosDownSampling();
-
-	// volume process
-	void process_MhdRotateAxis();
-	void process_MhdFlipAxis();
-	void process_MhdClip();
 	
-
-
 };
 
 

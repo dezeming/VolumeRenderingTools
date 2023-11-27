@@ -17,28 +17,6 @@
 	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
-#pragma once
-#include "FrameBuffer.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#include "AdjustmentDockWidget.hpp"
 

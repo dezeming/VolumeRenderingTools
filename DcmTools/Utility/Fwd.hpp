@@ -21,7 +21,7 @@
 #ifndef __FWD_H__
 #define __FWD_H__
 
-#include "MainGUI\DebugText.hpp"
+#include "DebugText.hpp"
 
 namespace DcmTools {
 

@@ -17,5 +17,12 @@
 	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
-#include "DicomUtility.h"
+#ifndef __AdjustmentDockWidget_h__
+#define __AdjustmentDockWidget_h__
+
+
+
+#endif
+
+
 

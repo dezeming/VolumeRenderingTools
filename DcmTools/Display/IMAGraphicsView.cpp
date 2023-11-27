@@ -17,8 +17,8 @@
 	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
-#include "IMAGraphicsView.h"
-#include "DebugText.hpp"
+#include "IMAGraphicsView.hpp"
+#include "Utility/DebugText.hpp"
 
 
 IMAGraphicsView::IMAGraphicsView(QGraphicsView * parent) {
@@ -94,7 +94,7 @@ void IMAGraphicsView::wheelEvent(QWheelEvent *event)
 	scale(_scale, _scale); 
 }
 
-void IMAGraphicsView::PaintBuffer(DcmTools::Uchar* buffer, int width, int height, int channals) {
+void IMAGraphicsView::PaintBuffer(unsigned char* buffer, int width, int height, int channals) {
 	QImage::Format format;
 	if (channals == 4) format = QImage::Format_ARGB32;
 	else if (channals == 3) format = QImage::Format_RGB888;

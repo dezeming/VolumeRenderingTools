@@ -59,38 +59,58 @@ INCLUDE_DIRECTORIES(
 # Main GUI files
 set(MainGUI
 	MainGUI/main.cpp
-	MainGUI/MainWindow.h
+	MainGUI/MainWindow.hpp
 	MainGUI/mainWindow.cpp
-	MainGUI/DebugText.hpp
-	MainGUI/DebugText.cpp
-	MainGUI/DisplayWidget.h
-	MainGUI/DisplayWidget.cpp
-	MainGUI/IMAGraphicsView.h
-	MainGUI/IMAGraphicsView.cpp
-	MainGUI/InteractionDockWidget.h
-	MainGUI/InteractionDockWidget.cpp
-	MainGUI/DicomUtility.h
-	MainGUI/DicomUtility.cpp
-	MainGUI/QSliderDoubleRange.hpp
-	MainGUI/QSliderDoubleRange.cpp
 	)
 # Make the MainGUI group
 SOURCE_GROUP("MainGUI" FILES ${MainGUI})
 
-# Core files
-set(Core
-	# 头文件与Utility
-	Core/Fwd.h
-	# 数据存储
-	Core/FrameBuffer.h
-	Core/FrameBuffer.cpp
-	Core/RenderThread.h
-	Core/RenderThread.cpp
-	Core/DataProcess.h
-	Core/DataProcess.cpp
+# Display files
+set(Display
+	Display/FrameBuffer.hpp
+	Display/FrameBuffer.cpp
+	Display/DisplayWidget.hpp
+	Display/DisplayWidget.cpp
+	Display/IMAGraphicsView.hpp
+	Display/IMAGraphicsView.cpp
+	Display/RenderThread.hpp
+	Display/RenderThread.cpp
 )
-# Make the Core group
-SOURCE_GROUP("Core" FILES ${Core})
+# Make the Display group
+SOURCE_GROUP("Display" FILES ${Display})
+
+# Utility files
+set(Utility
+	Utility/Fwd.hpp
+	Utility/DicomCommon.hpp
+	Utility/DicomCommon.cpp
+	Utility/DebugText.hpp
+	Utility/DebugText.cpp
+	Utility/QSliderDoubleRange.hpp
+	Utility/QSliderDoubleRange.cpp
+)
+# Make the Utility group
+SOURCE_GROUP("Utility" FILES ${Utility})
+
+# Process files
+set(Process
+	Process/DataProcess.hpp
+	Process/DataProcess.cpp
+	Process/DataReaderAndWriter.hpp
+	Process/DataReaderAndWriter.cpp
+	Process/ProcessDockWidget.hpp
+	Process/ProcessDockWidget.cpp
+)
+# Make the Process group
+SOURCE_GROUP("Process" FILES ${Process})
+
+# Adjustment files
+set(Adjustment
+	Adjustment/AdjustmentDockWidget.hpp
+	Adjustment/AdjustmentDockWidget.cpp
+)
+# Make the Adjustment group
+SOURCE_GROUP("Adjustment" FILES ${Adjustment})
 
 # InfoPresent files
 set(InfoPresent
@@ -109,7 +129,10 @@ SOURCE_GROUP("InfoPresent" FILES ${InfoPresent})
 add_executable(DcmTools
 	WIN32
 	${MainGUI}
-	${Core}
+	${Display}
+	${Utility}
+	${Process}
+	${Adjustment}
 	${InfoPresent}
 )
 

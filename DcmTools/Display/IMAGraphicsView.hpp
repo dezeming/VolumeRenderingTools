@@ -26,7 +26,6 @@
 #include <QPixmap>
 #include <QMouseEvent>
 
-#include "Core\Fwd.h"
 
 class IMAGraphicsView : public QGraphicsView {
 	Q_OBJECT
@@ -48,7 +47,7 @@ signals:
 	
 
 private slots:
-	void PaintBuffer(DcmTools::Uchar* buffer, int width, int height, int channals);
+	void PaintBuffer(unsigned char* buffer, int width, int height, int channals);
 
 protected:
 	void mouseMoveEvent(QMouseEvent *event);

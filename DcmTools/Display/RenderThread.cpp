@@ -17,8 +17,8 @@
 	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
-#include "RenderThread.h"
-#include "MainGUI/DebugText.hpp"
+#include "RenderThread.hpp"
+#include "Utility/DebugText.hpp"
 
 // DCMTK
 #include "dcmdata/dcfilefo.h"

@@ -22,9 +22,9 @@
 #ifndef __FrameBuffer_H__
 #define __FrameBuffer_H__
 
-#include "Fwd.h"
+#include "Utility/Fwd.hpp"
 
-#include "MainGUI\DebugText.hpp"
+#include "Utility/DebugText.hpp"
 
 #include <QObject>
 

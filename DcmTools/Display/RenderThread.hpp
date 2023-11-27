@@ -17,18 +17,52 @@
 	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
-#include "MainWindow.hpp"
-#include <QtWidgets/QApplication>
+#ifndef __RenderThread_h__
+#define __RenderThread_h__
 
-int main(int argc, char *argv[])
-{
-    QApplication a(argc, argv);
+#include <QThread>
 
-    MainWindow w;
-    w.show();
+#include <QString>
+#include <QStringList>
 
-    return a.exec();
-}
+#include <vector>
+
+#include "Display/FrameBuffer.hpp"
+#include "Display/IMAGraphicsView.hpp"
+
+class RenderThread :public QThread {
+
+	Q_OBJECT
+public:
+	RenderThread();
+	~RenderThread();
+
+public:
+	bool renderFlag;
+	bool paintFlag;
+	FrameBuffer* p_framebuffer;
+
+signals:
+	void PrintString(const char* s);
+	void PrintDataD(const char* s, const double data);
+
+	void PrintError(const char* s);
+	void PrintWarning(const char* s);
+
+	void PaintBuffer(DcmTools::Uchar* buffer, int width, int height, int channals);
+
+private slots:
+	
+public:
+	void run();
+
+};
+
+
+
+#endif
+
+
 
 
 

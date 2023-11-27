@@ -35,11 +35,11 @@
 #include <QSlider>
 #include <QSpinBox>
 
-#include "QSliderDoubleRange.hpp"
-#include "DebugText.hpp"
+#include "Utility/QSliderDoubleRange.hpp"
+#include "Utility/DebugText.hpp"
 
-#include "Core/RenderThread.h"
-#include "Core/DataProcess.h"
+#include "Display/RenderThread.hpp"
+#include "Process/DataProcess.hpp"
 
 // convert
 
@@ -47,7 +47,7 @@ class QVolumeConvert_Frame : public QGroupBox {
 	Q_OBJECT
 public:
 	QVolumeConvert_Frame(QWidget * parent = Q_NULLPTR) {
-		setTitle("DCM To MHD-RAW");
+		setTitle("DCM Sequence to Volume");
 		setMinimumWidth(200);
 
 		VolumeConvert_Layoput = new QVBoxLayout;
@@ -86,7 +86,7 @@ class QVolumeDownSampling_Frame : public QGroupBox {
 	Q_OBJECT
 public:
 	QVolumeDownSampling_Frame(QWidget * parent = Q_NULLPTR) {
-		setTitle("Resize MHD");
+		setTitle("DownSampling Volume");
 		setMinimumWidth(200);
 
 		DownSampling_Layoput = new QVBoxLayout;
@@ -143,7 +143,7 @@ public:
 	QVBoxLayout *DownSampling_Layoput;
 };
 
-//
+// Process
 
 class QMhdRotateAxis_Frame : public QGroupBox {
 	Q_OBJECT
@@ -373,6 +373,7 @@ public:
 	DcmParseLib getParseSet() {
 		if (ParseDcmLib_Radio_GDCM->isChecked()) return Dez_GDCM;
 		if (ParseDcmLib_Radio_DCMTK->isChecked()) return Dez_DCMTK;
+		return Dez_GDCM;
 	}
 
 	QGridLayout * ParseDcmLibLayout;
@@ -519,14 +520,12 @@ public:
 };
 
 
-
-
-class InteractionDockWidget : public QDockWidget {
+class ProcessDockWidget : public QDockWidget {
 	Q_OBJECT
 
 public:
-	InteractionDockWidget(QWidget * parent = Q_NULLPTR);
-	~InteractionDockWidget();
+	ProcessDockWidget(QWidget * parent = Q_NULLPTR);
+	~ProcessDockWidget();
 
 	QVolumeConvert_Frame *VolumeConvert_Frame;
 
@@ -554,8 +553,28 @@ public:
 		return m_QParseDcmLibFormat_Frame->getParseSet();
 	}
 	void updataDirFromPresetFile(QString filename);
+
+	void getPredefinedInfo();
+
+public:
+	ProcessVolumeData processVolumeData;
+
+	// process setting
+	QString InputFolder;
+	QString OutputFolder;
+	QString OutputFileName;
+	QString InputFilePath;
+
+	GenerateFormat generateFormat;
+
+	int permute[3];
+	int flip[3];
+	double clipCenter[3], clipBound[3];
+	double clipLower[3], clipUpper[3];
+	int interval;
+
 private:
-	void setupDock();
+	void setupProcessFunc();
 
 private:
 	QVBoxLayout *centerLayout;
@@ -598,13 +617,29 @@ private slots :
 	void OpenOutputDir();
 	void OpenIconsDir();
 	
+private slots:
+
+	// test
+	void setProcess();
+
+	// volume file type convert
+	void process_DcmToMhd();
+	void process_DcmToFeimos();
+	void process_MhdToFeimos();
+	void process_FeimosToMhd();
+
+	// down sampling
+	void process_MhdDownSampling();
+	void process_FeimosDownSampling();
+	void process_LargeFeimosDownSampling();
+
+	// volume process
+	void process_MhdRotateAxis();
+	void process_MhdFlipAxis();
+	void process_MhdClip();
+
+
 };
-
-
-
-
-	
-
 
 
 
@@ -612,6 +647,7 @@ private slots :
 
 	
 #endif
+
 
 
 
