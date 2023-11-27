@@ -41,6 +41,10 @@ MainWindow::MainWindow(QWidget *parent)
 
 }
 
+MainWindow::~MainWindow() {
+	disconnect(m_DisplayDockWidget, SIGNAL(getFileAndDirPathInDisplay()), this, SLOT(getDisplayFileAndDirPath()));
+}
+
 void MainWindow::closeEvent(QCloseEvent *event) {
 	m_DisplayWidget->killRenderThread();
 
@@ -63,13 +67,18 @@ void MainWindow::setWidgetAndDock(void) {
 	m_DataPresentDockWidget = new DataPresentDockWidget;
 	addDockWidget(Qt::RightDockWidgetArea, m_DataPresentDockWidget);
 
+	m_DisplayDockWidget = new DisplayDockWidget;
+	addDockWidget(Qt::RightDockWidgetArea, m_DisplayDockWidget);
+
+	tabifyDockWidget(m_DataPresentDockWidget, m_DisplayDockWidget);
+	m_DataPresentDockWidget->raise();
+
 	showMemoryInfo();
 }
 
 void MainWindow::setRendering() {
 	if (!m_DisplayWidget->renderFlag) {
 		// start rendering
-		m_ProcessDockWidget->processButton->setText("Processing");
 		m_DisplayWidget->startRenderThread();
 	}
 }

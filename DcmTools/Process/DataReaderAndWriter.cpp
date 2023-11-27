@@ -196,7 +196,7 @@ bool DataReaderAndWriter::getInputDcmFileList(const QString& inputDir, std::vect
 
 
 // **********************************************//
-// *** Generate input data to ImportFormat object *** //
+// *** Generate input data to VolumeData object *** //
 // **********************************************//
 
 
@@ -205,7 +205,7 @@ bool DcmFilePosCompare(const DcmFilePixelData &f1, const DcmFilePixelData &f2) {
 	else return false;
 }
 
-bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileList, ImportFormat& importFormat) {
+bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileList, VolumeData& volumeData) {
 	
 	std::vector<DcmFilePixelData> dcmFileVec;
 	unsigned int width, height, imageNum;
@@ -241,7 +241,7 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 			}
 			else if (correctImagesNum.size() == 0) {
 				height = height_t;
-				importFormat.yResolution = height;
+				volumeData.yResolution = height;
 			}
 		}
 
@@ -258,7 +258,7 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 			}
 			else if (correctImagesNum.size() == 0) {
 				width = width_t;
-				importFormat.xResolution = width;
+				volumeData.xResolution = width;
 			}
 		}
 
@@ -276,7 +276,7 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 			}
 			else if (correctImagesNum.size() == 0) {
 				pixelSpacing_Z = pixelSpacing_Z_t;
-				importFormat.zPixelSpace = pixelSpacing_Z;
+				volumeData.zPixelSpace = pixelSpacing_Z;
 			}
 		}
 
@@ -295,8 +295,8 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 			else if (correctImagesNum.size() == 0) {
 				pixelSpacing_X = pixelSpacing_X_t;
 				pixelSpacing_Y = pixelSpacing_X_t;
-				importFormat.xPixelSpace = pixelSpacing_X;
-				importFormat.yPixelSpace = pixelSpacing_Y;
+				volumeData.xPixelSpace = pixelSpacing_X;
+				volumeData.yPixelSpace = pixelSpacing_Y;
 			}
 		}
 
@@ -332,43 +332,43 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 			{
 			case gdcm::PixelFormat::INT8:
 				if (correctImagesNum.size() == 0) 
-					importFormat.format = Dez_SignedChar;
-				else if (importFormat.format != Dez_SignedChar) formatFlag = false;
+					volumeData.format = Dez_SignedChar;
+				else if (volumeData.format != Dez_SignedChar) formatFlag = false;
 				break;
 			case gdcm::PixelFormat::UINT8:
 				if (correctImagesNum.size() == 0) 
-					importFormat.format = Dez_UnsignedChar;
-				else if (importFormat.format != Dez_UnsignedChar) formatFlag = false;
+					volumeData.format = Dez_UnsignedChar;
+				else if (volumeData.format != Dez_UnsignedChar) formatFlag = false;
 				break;
 			case gdcm::PixelFormat::INT16:
 				if (correctImagesNum.size() == 0)
-					importFormat.format = Dez_SignedShort;
-				else if (importFormat.format != Dez_SignedShort) formatFlag = false;
+					volumeData.format = Dez_SignedShort;
+				else if (volumeData.format != Dez_SignedShort) formatFlag = false;
 				break;
 			case gdcm::PixelFormat::UINT16:
 				if (correctImagesNum.size() == 0)
-					importFormat.format = Dez_UnsignedShort;
-				else if (importFormat.format != Dez_UnsignedShort) formatFlag = false;
+					volumeData.format = Dez_UnsignedShort;
+				else if (volumeData.format != Dez_UnsignedShort) formatFlag = false;
 				break;
 			case gdcm::PixelFormat::INT32:
 				if (correctImagesNum.size() == 0)
-					importFormat.format = Dez_SignedLong;
-				else if (importFormat.format != Dez_SignedLong) formatFlag = false;
+					volumeData.format = Dez_SignedLong;
+				else if (volumeData.format != Dez_SignedLong) formatFlag = false;
 				break;
 			case gdcm::PixelFormat::UINT32:
 				if (correctImagesNum.size() == 0)
-					importFormat.format = Dez_UnsignedLong;
-				else if (importFormat.format != Dez_UnsignedLong) formatFlag = false;
+					volumeData.format = Dez_UnsignedLong;
+				else if (volumeData.format != Dez_UnsignedLong) formatFlag = false;
 				break;
 			case gdcm::PixelFormat::FLOAT32:
 				if (correctImagesNum.size() == 0)
-					importFormat.format = Dez_Float;
-				else if (importFormat.format != Dez_Float) formatFlag = false;
+					volumeData.format = Dez_Float;
+				else if (volumeData.format != Dez_Float) formatFlag = false;
 				break;
 			case gdcm::PixelFormat::FLOAT64:
 				if (correctImagesNum.size() == 0)
-					importFormat.format = Dez_Double;
-				else if (importFormat.format != Dez_Double) formatFlag = false;
+					volumeData.format = Dez_Double;
+				else if (volumeData.format != Dez_Double) formatFlag = false;
 				break;
 			default:
 				DebugTextPrintErrorString(("Unknown pixel data type in File " + file_Path).toStdString().c_str());
@@ -391,46 +391,46 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 		return false;
 	}
 
-	importFormat.zResolution = correctImagesNum.size();
+	volumeData.zResolution = correctImagesNum.size();
 	imageNum = correctImagesNum.size();
 
 	// check data format
 	unsigned int bytesOnPixel = 0;
 	{
-		if (importFormat.format == Dez_Float) {
+		if (volumeData.format == Dez_Float) {
 			bytesOnPixel = sizeof(float);
 		}
-		else if (importFormat.format == Dez_Double) {
+		else if (volumeData.format == Dez_Double) {
 			bytesOnPixel = sizeof(double);
 		}
-		else if (importFormat.format == Dez_UnsignedLong) {
+		else if (volumeData.format == Dez_UnsignedLong) {
 			bytesOnPixel = sizeof(unsigned long);
 		}
-		else if (importFormat.format == Dez_SignedLong) {
+		else if (volumeData.format == Dez_SignedLong) {
 			bytesOnPixel = sizeof(long);
 		}
-		else if (importFormat.format == Dez_UnsignedShort) {
+		else if (volumeData.format == Dez_UnsignedShort) {
 			if (bits_perPixel != 16) {
 				DebugTextPrintErrorString("Mismatched image format");
 				return false;
 			}
 			bytesOnPixel = sizeof(unsigned short);
 		}
-		else if (importFormat.format == Dez_SignedShort) {
+		else if (volumeData.format == Dez_SignedShort) {
 			if (bits_perPixel != 16) {
 				DebugTextPrintErrorString("Mismatched image format");
 				return false;
 			}
 			bytesOnPixel = sizeof(short);
 		}
-		else if (importFormat.format == Dez_UnsignedChar) {
+		else if (volumeData.format == Dez_UnsignedChar) {
 			if (bits_perPixel != 8) {
 				DebugTextPrintErrorString("Mismatched image format");
 				return false;
 			}
 			bytesOnPixel = sizeof(unsigned char);
 		}
-		else if (importFormat.format == Dez_SignedChar) {
+		else if (volumeData.format == Dez_SignedChar) {
 			if (bits_perPixel != 8) {
 				DebugTextPrintErrorString("Mismatched image format");
 				return false;
@@ -444,7 +444,7 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 	}
 
 	// Print import data Info
-	DebugTextPrintString(importFormat.toString().toStdString().c_str());
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
 
 	char * m_data = new char[width * height * imageNum * bytesOnPixel];
 	if (!m_data) {
@@ -505,8 +505,8 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 	if (readFlag) {
 		std::sort(dcmFileVec.begin(), dcmFileVec.end(), DcmFilePosCompare);
 
-		importFormat.data = new char[width * height * imageNum * bytesOnPixel];
-		if (!importFormat.data) {
+		volumeData.data = new char[width * height * imageNum * bytesOnPixel];
+		if (!volumeData.data) {
 			DebugTextPrintErrorString("Unable to request sufficient amount of memory!");
 			readFlag = false;
 		}
@@ -518,7 +518,7 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 					readFlag = false;
 					break;
 				}
-				memcpy((char*)importFormat.data + i * width * height * bytesOnPixel, 
+				memcpy((char*)volumeData.data + i * width * height * bytesOnPixel, 
 					dcmFileVec[i].pixData, 
 					width * height * bytesOnPixel);
 			}
@@ -528,7 +528,7 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 	return readFlag;
 }
 
-bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileList, ImportFormat& importFormat) {
+bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileList, VolumeData& volumeData) {
 
 	unsigned int width = 0, height = 0;
 	double pixelSpacing_X, pixelSpacing_Y, pixelSpacing_Z;
@@ -578,7 +578,7 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 			}
 			else if (correctImagesNum.size() == 0) {
 				width = static_cast<unsigned int>(atoi(ImageWidth.data()));
-				importFormat.xResolution = width;
+				volumeData.xResolution = width;
 			}
 		}
 
@@ -595,7 +595,7 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 			}
 			else if (correctImagesNum.size() == 0) {
 				height = static_cast<unsigned int>(atoi(ImageHeight.data()));
-				importFormat.yResolution = height;
+				volumeData.yResolution = height;
 			}
 		}
 
@@ -613,8 +613,8 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 			else if (correctImagesNum.size() == 0) {
 				pixelSpacing_X = atof(PixelSpacing.data());
 				pixelSpacing_Y = pixelSpacing_X;
-				importFormat.xPixelSpace = pixelSpacing_X;
-				importFormat.yPixelSpace = pixelSpacing_Y;
+				volumeData.xPixelSpace = pixelSpacing_X;
+				volumeData.yPixelSpace = pixelSpacing_Y;
 			}
 		}
 
@@ -631,7 +631,7 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 			}
 			else if (correctImagesNum.size() == 0) {
 				pixelSpacing_Z = atof(SliceThickness.data());
-				importFormat.zPixelSpace = pixelSpacing_Z;
+				volumeData.zPixelSpace = pixelSpacing_Z;
 			}
 		}
 
@@ -688,47 +688,47 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 
 				// Float
 				if (valueRepresentation == EVR_FL) {
-					if (correctImagesNum.size() == 0) importFormat.format = Dez_Float;
-					else if (importFormat.format != Dez_Float) {
+					if (correctImagesNum.size() == 0) volumeData.format = Dez_Float;
+					else if (volumeData.format != Dez_Float) {
 						DebugTextPrintErrorString(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
 						continue;
 					}
 				}
 				// Double
 				else if (valueRepresentation == EVR_FD) {
-					if (correctImagesNum.size() == 0) importFormat.format = Dez_Double;
-					else if (importFormat.format != Dez_Double) {
+					if (correctImagesNum.size() == 0) volumeData.format = Dez_Double;
+					else if (volumeData.format != Dez_Double) {
 						DebugTextPrintErrorString(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
 						continue;
 					}
 				}
 				// signed short
 				else if (valueRepresentation == EVR_SS) {
-					if (correctImagesNum.size() == 0) importFormat.format = Dez_SignedShort;
-					else if (importFormat.format != Dez_SignedShort) {
+					if (correctImagesNum.size() == 0) volumeData.format = Dez_SignedShort;
+					else if (volumeData.format != Dez_SignedShort) {
 						DebugTextPrintErrorString(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
 					}
 				}
 				// unsigned short
 				else if (valueRepresentation == EVR_US) {
-					if (correctImagesNum.size() == 0) importFormat.format = Dez_UnsignedShort;
-					else if (importFormat.format != Dez_UnsignedShort) {
+					if (correctImagesNum.size() == 0) volumeData.format = Dez_UnsignedShort;
+					else if (volumeData.format != Dez_UnsignedShort) {
 						DebugTextPrintErrorString(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
 						continue;
 					}
 				}
 				// signed long
 				else if (valueRepresentation == EVR_SL) {
-					if (correctImagesNum.size() == 0) importFormat.format = Dez_SignedLong;
-					else if (importFormat.format != Dez_SignedLong) {
+					if (correctImagesNum.size() == 0) volumeData.format = Dez_SignedLong;
+					else if (volumeData.format != Dez_SignedLong) {
 						DebugTextPrintErrorString(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
 						continue;
 					}
 				}
 				// unsigned long
 				else if (valueRepresentation == EVR_UL) {
-					if (correctImagesNum.size() == 0) importFormat.format = Dez_UnsignedLong;
-					else if (importFormat.format != Dez_UnsignedLong) {
+					if (correctImagesNum.size() == 0) volumeData.format = Dez_UnsignedLong;
+					else if (volumeData.format != Dez_UnsignedLong) {
 						DebugTextPrintErrorString(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
 						continue;
 					}
@@ -755,19 +755,19 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 	// check data format
 	unsigned int bytesOnPixel = 0;
 	{
-		if (importFormat.format == Dez_Float) {
+		if (volumeData.format == Dez_Float) {
 			bytesOnPixel = sizeof(float);
 		}
-		else if (importFormat.format == Dez_Double) {
+		else if (volumeData.format == Dez_Double) {
 			bytesOnPixel = sizeof(double);
 		}
-		else if (importFormat.format == Dez_UnsignedLong) {
+		else if (volumeData.format == Dez_UnsignedLong) {
 			bytesOnPixel = sizeof(unsigned long);
 		}
-		else if (importFormat.format == Dez_SignedLong) {
+		else if (volumeData.format == Dez_SignedLong) {
 			bytesOnPixel = sizeof(long);
 		}
-		else if (importFormat.format == Dez_UnsignedShort) {
+		else if (volumeData.format == Dez_UnsignedShort) {
 			if (bitsAllocated != 16) {
 				DebugTextPrintErrorString("Mismatched image format");
 				return false;
@@ -777,18 +777,18 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 		// When using DCMTK, there may be a mismatch between signed and unsigned values. 
 		// It is reasonable to use pixelRepresentation and bitsStored to determine the accurate result, 
 		// which is consistent with GDCM parsing. The results determined by getVR() are inconsistent.
-		else if (importFormat.format == Dez_SignedShort) {
+		else if (volumeData.format == Dez_SignedShort) {
 			if (bitsAllocated != 16) {
 				DebugTextPrintErrorString("Mismatched image format");
 				return false;
 			}
 			bytesOnPixel = sizeof(short);
 		}
-		else if (importFormat.format == Dez_UnsignedChar) {
+		else if (volumeData.format == Dez_UnsignedChar) {
 			DebugTextPrintErrorString("Temporarily unsupported data format: unsigend char");
 			return false;
 		}
-		else if (importFormat.format == Dez_SignedChar) {
+		else if (volumeData.format == Dez_SignedChar) {
 			DebugTextPrintErrorString("Temporarily unsupported data format: char");
 			return false;
 		}
@@ -799,10 +799,10 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 	}
 
 	unsigned int imageNum = correctImagesNum.size();
-	importFormat.zResolution = imageNum;
+	volumeData.zResolution = imageNum;
 
 	// Print import data Info
-	DebugTextPrintString(importFormat.toString().toStdString().c_str());
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
 
 	void * m_data = new char[width * height * imageNum * bytesOnPixel];
 	if (!m_data) {
@@ -847,22 +847,22 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 		OFString ImagePos;
 		data->findAndGetOFString(DCM_SliceLocation, ImagePos);
 
-		if (importFormat.format == Dez_UnsignedShort) {
+		if (volumeData.format == Dez_UnsignedShort) {
 			Uint16* dat_t;
 			element->getUint16Array(dat_t);
 			memcpy(static_cast<char*>(m_data) + i * width * height * bytesOnPixel, dat_t, width * height * sizeof(Uint16));
 		}
-		else if (importFormat.format == Dez_SignedShort) {
+		else if (volumeData.format == Dez_SignedShort) {
 			Sint16* dat_t;
 			element->getSint16Array(dat_t);
 			memcpy(static_cast<char*>(m_data) + i * width * height * bytesOnPixel, dat_t, width * height * sizeof(Sint16));
 		}
-		else if (importFormat.format == Dez_Float) {
+		else if (volumeData.format == Dez_Float) {
 			Float32* dat_t;
 			element->getFloat32Array(dat_t);
 			memcpy(static_cast<char*>(m_data) + i * width * height * bytesOnPixel, dat_t, width * height * sizeof(Float32));
 		}
-		else if (importFormat.format == Dez_Double) {
+		else if (volumeData.format == Dez_Double) {
 			Float64* dat_t;
 			element->getFloat64Array(dat_t);
 			memcpy(static_cast<char*>(m_data) + i * width * height * bytesOnPixel, dat_t, width * height * sizeof(Float64));
@@ -878,13 +878,13 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 		dcmFileVec.push_back(dcmF);
 	}
 
-	// sort images by their positions and save to importFormat.data
+	// sort images by their positions and save to volumeData.data
 	if (readDataFlag) {
 		// Sort by image position
 		std::sort(dcmFileVec.begin(), dcmFileVec.end(), DcmFilePosCompare);
 
-		importFormat.data = new char[width * height * imageNum * bytesOnPixel];
-		if (!importFormat.data) {
+		volumeData.data = new char[width * height * imageNum * bytesOnPixel];
+		if (!volumeData.data) {
 			DebugTextPrintErrorString("Unable to request sufficient amount of memory!");
 		}
 		else {
@@ -895,7 +895,7 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 					break;
 				}
 				else {
-					memcpy(static_cast<char*>(importFormat.data) + i * width * height * bytesOnPixel,
+					memcpy(static_cast<char*>(volumeData.data) + i * width * height * bytesOnPixel,
 						dcmFileVec[i].pixData,
 						width * height * bytesOnPixel);
 				}
@@ -909,21 +909,21 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 }
 
 template <typename T>
-bool DataReaderAndWriter::CopyUncompressedRawData(const T* data, ImportFormat& importFormat)
+bool DataReaderAndWriter::CopyUncompressedRawData(const T* data, VolumeData& volumeData)
 {
 	if (!data) return false;
 	
-	importFormat.data = new T[importFormat.xResolution * importFormat.yResolution * importFormat.zResolution];
-	if (!importFormat.data) return false;
-	for (unsigned int i = 0; i < importFormat.zResolution; i++) {
-		memcpy((T*)importFormat.data + i * importFormat.xResolution * importFormat.yResolution,
-			(T*)data + i * importFormat.xResolution * importFormat.yResolution, 
-			importFormat.xResolution * importFormat.yResolution * sizeof(T));
+	volumeData.data = new T[volumeData.xResolution * volumeData.yResolution * volumeData.zResolution];
+	if (!volumeData.data) return false;
+	for (unsigned int i = 0; i < volumeData.zResolution; i++) {
+		memcpy((T*)volumeData.data + i * volumeData.xResolution * volumeData.yResolution,
+			(T*)data + i * volumeData.xResolution * volumeData.yResolution, 
+			volumeData.xResolution * volumeData.yResolution * sizeof(T));
 	}
 	return true;
 }
  
-bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, ImportFormat& importFormat) {
+bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, VolumeData& volumeData) {
 
 	vtkSmartPointer<vtkMetaImageReader> reader =
 		vtkSmartPointer<vtkMetaImageReader>::New();
@@ -937,81 +937,81 @@ bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, Import
 	ImageCast->SetInputData(imageData);
 	ImageCast->Update();
 
-	int * volumeData = ImageCast->GetOutput()->GetExtent();
-	importFormat.xResolution = volumeData[1] + 1;
-	importFormat.yResolution = volumeData[3] + 1;
-	importFormat.zResolution = volumeData[5] + 1;
+	int * volumeDataShape = ImageCast->GetOutput()->GetExtent();
+	volumeData.xResolution = volumeDataShape[1] + 1;
+	volumeData.yResolution = volumeDataShape[3] + 1;
+	volumeData.zResolution = volumeDataShape[5] + 1;
 
 	double* spacing = ImageCast->GetOutput()->GetSpacing();
-	importFormat.xPixelSpace = spacing[0];
-	importFormat.yPixelSpace = spacing[1];
-	importFormat.zPixelSpace = spacing[2];
+	volumeData.xPixelSpace = spacing[0];
+	volumeData.yPixelSpace = spacing[1];
+	volumeData.zPixelSpace = spacing[2];
 
 	bool flag = true;
 	const bool DebugCopyInfo = true;
 	switch (dataType)
 	{
 	case VTK_UNSIGNED_CHAR:
-		importFormat.format = Dez_UnsignedChar;
+		volumeData.format = Dez_UnsignedChar;
 		flag = flag && CopyUncompressedRawData(
 			static_cast<unsigned char*>(ImageCast->GetOutput()->GetScalarPointer()),
-			importFormat);
+			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy unsigned char data from Mhd to array");
 		break;
 	case VTK_SIGNED_CHAR:
-		importFormat.format = Dez_SignedChar;
+		volumeData.format = Dez_SignedChar;
 		flag = flag && CopyUncompressedRawData(
 			static_cast<signed char*>(ImageCast->GetOutput()->GetScalarPointer()),
-			importFormat);
+			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy signed char data from Mhd to array");
 		break;
 	case VTK_UNSIGNED_SHORT:
-		importFormat.format = Dez_UnsignedShort;
+		volumeData.format = Dez_UnsignedShort;
 		flag = flag && CopyUncompressedRawData(
 			static_cast<unsigned short*>(ImageCast->GetOutput()->GetScalarPointer()),
-			importFormat);
+			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy unsigned short data from Mhd to array");
 		break;
 	case VTK_SHORT:
-		importFormat.format = Dez_SignedShort;
+		volumeData.format = Dez_SignedShort;
 		flag = flag && CopyUncompressedRawData(
 			static_cast<signed short*>(ImageCast->GetOutput()->GetScalarPointer()),
-			importFormat);
+			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy signed short data from Mhd to array");
 		break;
 	case VTK_UNSIGNED_INT:
-		importFormat.format = Dez_UnsignedLong;
+		volumeData.format = Dez_UnsignedLong;
 		flag = flag && CopyUncompressedRawData(
 			static_cast<unsigned int*>(ImageCast->GetOutput()->GetScalarPointer()),
-			importFormat);
+			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy unsigned long data from Mhd to array");
 		break;
 	case VTK_INT:
-		importFormat.format = Dez_SignedLong;
+		volumeData.format = Dez_SignedLong;
 		flag = flag && CopyUncompressedRawData(
 			static_cast<signed int*>(ImageCast->GetOutput()->GetScalarPointer()),
-			importFormat);
+			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy signed long data from Mhd to array");
 		break;
 	case VTK_FLOAT:
-		importFormat.format = Dez_Float;
+		volumeData.format = Dez_Float;
 		flag = flag && CopyUncompressedRawData(
 			static_cast<float*>(ImageCast->GetOutput()->GetScalarPointer()),
-			importFormat);
+			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy [float] data from Mhd to array");
 		break;
 	case VTK_DOUBLE:
-		importFormat.format = Dez_Double;
+		volumeData.format = Dez_Double;
 		flag = flag && CopyUncompressedRawData(
 			static_cast<double*>(ImageCast->GetOutput()->GetScalarPointer()),
-			importFormat);
+			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy [double] data from Mhd to array");
 		break;
@@ -1028,16 +1028,16 @@ bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, Import
 	return flag;
 }
 
-bool ReadUncompressedRawData(std::string filename, unsigned int bytesOneScalar, ImportFormat& importFormat) {
-	unsigned int width = importFormat.xResolution, height = importFormat.yResolution, imageNUm = importFormat.zResolution;
+bool ReadUncompressedRawData(std::string filename, unsigned int bytesOneScalar, VolumeData& volumeData) {
+	unsigned int width = volumeData.xResolution, height = volumeData.yResolution, imageNUm = volumeData.zResolution;
 
-	importFormat.data = new char[importFormat.xResolution * importFormat.yResolution * importFormat.zResolution * bytesOneScalar];
-	if (!importFormat.data) return false;
+	volumeData.data = new char[volumeData.xResolution * volumeData.yResolution * volumeData.zResolution * bytesOneScalar];
+	if (!volumeData.data) return false;
 
 	std::ifstream file(filename, std::ios::binary);
 	if (!file.is_open()) return false;
 	try {
-		file.read(reinterpret_cast<char*>(importFormat.data), bytesOneScalar * width * height * imageNUm);
+		file.read(reinterpret_cast<char*>(volumeData.data), bytesOneScalar * width * height * imageNUm);
 	}
 	catch (const std::exception& e) {
 		std::cerr << "Exception caught: " << e.what() << std::endl;
@@ -1048,7 +1048,7 @@ bool ReadUncompressedRawData(std::string filename, unsigned int bytesOneScalar, 
 	return true;
 }
 
-bool DataReaderAndWriter::GenerateInput_Feimos(const QString& inputFilePath, ImportFormat& importFormat) {
+bool DataReaderAndWriter::GenerateInput_Feimos(const QString& inputFilePath, VolumeData& volumeData) {
 
 	std::ifstream file(inputFilePath.toStdString());
 	std::string name;
@@ -1057,26 +1057,26 @@ bool DataReaderAndWriter::GenerateInput_Feimos(const QString& inputFilePath, Imp
 	while (file >> name) {
 		QString qName = name.c_str();
 		if (qName.compare("xResolution", Qt::CaseInsensitive) == 0) {
-			file >> importFormat.xResolution;
+			file >> volumeData.xResolution;
 		}
 		else if (qName.compare("yResolution", Qt::CaseInsensitive) == 0) {
-			file >> importFormat.yResolution;
+			file >> volumeData.yResolution;
 		}
 		else if (qName.compare("zResolution", Qt::CaseInsensitive) == 0) {
-			file >> importFormat.zResolution;
+			file >> volumeData.zResolution;
 		}
 		else if (qName.compare("xPixelSpace", Qt::CaseInsensitive) == 0) {
-			file >> importFormat.xPixelSpace;
+			file >> volumeData.xPixelSpace;
 		}
 		else if (qName.compare("yPixelSpace", Qt::CaseInsensitive) == 0) {
-			file >> importFormat.yPixelSpace;
+			file >> volumeData.yPixelSpace;
 		}
 		else if (qName.compare("zPixelSpace", Qt::CaseInsensitive) == 0) {
-			file >> importFormat.zPixelSpace;
+			file >> volumeData.zPixelSpace;
 		}
 		else if (qName.compare("format", Qt::CaseInsensitive) == 0) {
 			file >> name;
-			if (!importFormat.setFormatUsingString(name.c_str())) {
+			if (!volumeData.setFormatUsingString(name.c_str())) {
 				DebugTextPrintErrorString("Non compliant format input when parsing (.feimos) file!");
 				return false;
 			}
@@ -1088,7 +1088,7 @@ bool DataReaderAndWriter::GenerateInput_Feimos(const QString& inputFilePath, Imp
 		}
 	}
 
-	size_t dataSize = (size_t)importFormat.xResolution * (size_t)importFormat.yResolution * (size_t)importFormat.zResolution;
+	size_t dataSize = (size_t)volumeData.xResolution * (size_t)volumeData.yResolution * (size_t)volumeData.zResolution;
 	if (dataSize > (size_t)1024 * (size_t)1024 * (size_t)1024) {
 		DebugTextPrintErrorString("The image size read in is too large and currently not supported. Please use other reading functions.");
 		return false;
@@ -1104,7 +1104,7 @@ bool DataReaderAndWriter::GenerateInput_Feimos(const QString& inputFilePath, Imp
 	}
 
 	bool readbinaryFlag = true;
-	switch (importFormat.format)
+	switch (volumeData.format)
 	{
 	case Dez_Origin:
 		DebugTextPrintErrorString("Non compliant data format");
@@ -1113,42 +1113,42 @@ bool DataReaderAndWriter::GenerateInput_Feimos(const QString& inputFilePath, Imp
 	case Dez_UnsignedLong:
 		readbinaryFlag = readbinaryFlag &&
 			ReadUncompressedRawData(
-			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(unsigned long), importFormat);
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(unsigned long), volumeData);
 		break;
 	case Dez_SignedLong:
 		readbinaryFlag = readbinaryFlag &&
 			ReadUncompressedRawData(
-			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(signed long), importFormat);
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(signed long), volumeData);
 		break;
 	case Dez_UnsignedShort:
 		readbinaryFlag = readbinaryFlag &&
 			ReadUncompressedRawData(
-			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(unsigned short), importFormat);
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(unsigned short), volumeData);
 		break;
 	case Dez_SignedShort:
 		readbinaryFlag = readbinaryFlag &&
 			ReadUncompressedRawData(
-			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(signed short), importFormat);
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(signed short), volumeData);
 		break;
 	case Dez_UnsignedChar:
 		readbinaryFlag = readbinaryFlag &&
 			ReadUncompressedRawData(
-			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(unsigned char), importFormat);
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(unsigned char), volumeData);
 		break;
 	case Dez_SignedChar:
 		readbinaryFlag = readbinaryFlag &&
 			ReadUncompressedRawData(
-			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(signed char), importFormat);
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(signed char), volumeData);
 		break;
 	case Dez_Float:
 		readbinaryFlag = readbinaryFlag &&
 			ReadUncompressedRawData(
-			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(float), importFormat);
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(float), volumeData);
 		break;
 	case Dez_Double:
 		readbinaryFlag = readbinaryFlag &&
 			ReadUncompressedRawData(
-			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(double), importFormat);
+			(absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), sizeof(double), volumeData);
 		break;
 	default:
 		DebugTextPrintErrorString("Non compliant data output format");
@@ -1170,39 +1170,39 @@ bool DataReaderAndWriter::GenerateInput_Feimos(const QString& inputFilePath, Imp
 // ********************************************** //
 
 template <typename T, typename U>
-bool __DataFormatConvert(const T* data, U* aimdata, ImportFormat& importFormat) {
-	unsigned int width = importFormat.xResolution, height = importFormat.yResolution, images = importFormat.zResolution;
+bool __DataFormatConvert(const T* data, U* aimdata, VolumeData& volumeData) {
+	unsigned int width = volumeData.xResolution, height = volumeData.yResolution, images = volumeData.zResolution;
 
 	aimdata = new U[width * height * images];
 	if (!aimdata) return false;
 
-	for (unsigned int k = 0; k < importFormat.zResolution; k++) {
+	for (unsigned int k = 0; k < volumeData.zResolution; k++) {
 
 		T* imageP = (T *)data + k * width * height;
 		U* imageAimP = (U *)aimdata + k * width * height;
 
-		for (unsigned int i = 0; i < importFormat.xResolution; i++) {
-			for (unsigned int j = 0; j < importFormat.yResolution; j++) {
-				imageAimP[i + j * importFormat.xResolution] = 
-					static_cast<U>(imageP[i + j * importFormat.xResolution]);
+		for (unsigned int i = 0; i < volumeData.xResolution; i++) {
+			for (unsigned int j = 0; j < volumeData.yResolution; j++) {
+				imageAimP[i + j * volumeData.xResolution] = 
+					static_cast<U>(imageP[i + j * volumeData.xResolution]);
 			}
 		}
 	}
 	return true;
 }
 
-bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat, ImportFormat& importFormat) {
+bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat, VolumeData& volumeData) {
 
 	// To ensure data accuracy, only a small number of conversions are supported.
 
-	if (!importFormat.data) {
-		DebugTextPrintErrorString("importFormat has no data");
+	if (!volumeData.data) {
+		DebugTextPrintErrorString("volumeData has no data");
 		return false;
 	}
 
 	if (generateFormat.format == Dez_Origin) {
-		importFormat.data_aim = importFormat.data;
-		importFormat.format_aim = importFormat.format;
+		volumeData.data_aim = volumeData.data;
+		volumeData.format_aim = volumeData.format;
 		DebugTextPrintString("No need to convert data format.");
 		return true;
 	}
@@ -1211,23 +1211,23 @@ bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat
 	}
 
 	bool convertFlag = true;
-	if (importFormat.format == Dez_SignedShort && generateFormat.format == Dez_Float) {
+	if (volumeData.format == Dez_SignedShort && generateFormat.format == Dez_Float) {
 		
 		convertFlag = convertFlag && 
 			__DataFormatConvert(
-				static_cast<signed short*>(importFormat.data),
-				static_cast<float*>(importFormat.data_aim),
-				importFormat);
+				static_cast<signed short*>(volumeData.data),
+				static_cast<float*>(volumeData.data_aim),
+				volumeData);
 		return convertFlag;
 	}
 
-	if (importFormat.format == Dez_UnsignedShort && generateFormat.format == Dez_Float) {
+	if (volumeData.format == Dez_UnsignedShort && generateFormat.format == Dez_Float) {
 		
 		convertFlag = convertFlag &&
 			__DataFormatConvert(
-				static_cast<unsigned short*>(importFormat.data),
-				static_cast<float*>(importFormat.data_aim),
-				importFormat);
+				static_cast<unsigned short*>(volumeData.data),
+				static_cast<float*>(volumeData.data_aim),
+				volumeData);
 		return convertFlag;
 	}
 
@@ -1236,14 +1236,14 @@ bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat
 }
 
 bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QString& outName,
-	const GenerateFormat& generateFormat, ImportFormat& importFormat) {
+	const GenerateFormat& generateFormat, VolumeData& volumeData) {
 
-	if (!DataFormatConvert(generateFormat, importFormat)) {
+	if (!DataFormatConvert(generateFormat, volumeData)) {
 		return false;
 	}
 
-	int dimM[3] = { importFormat.xResolution, importFormat.yResolution, importFormat.zResolution };
-	double PixelSpace[3] = { importFormat.xPixelSpace, importFormat.yPixelSpace, importFormat.zPixelSpace};
+	int dimM[3] = { volumeData.xResolution, volumeData.yResolution, volumeData.zResolution };
+	double PixelSpace[3] = { volumeData.xPixelSpace, volumeData.yPixelSpace, volumeData.zPixelSpace};
 
 	vtkSmartPointer<vtkImageImport> imageImport = vtkSmartPointer<vtkImageImport>::New();
 	imageImport->SetDataSpacing(PixelSpace[0], PixelSpace[1], PixelSpace[2]);
@@ -1251,7 +1251,7 @@ bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QSt
 	imageImport->SetWholeExtent(0, dimM[0] - 1, 0, dimM[1] - 1, 0, dimM[2] - 1);
 	imageImport->SetDataExtentToWholeExtent();
 
-	switch (importFormat.format_aim)
+	switch (volumeData.format_aim)
 	{
 	case Dez_Origin:
 		DebugTextPrintErrorString("Error Mhd output format");
@@ -1290,7 +1290,7 @@ bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QSt
 	}
 	
 	imageImport->SetNumberOfScalarComponents(1); // channel
-	imageImport->SetImportVoidPointer(importFormat.data_aim);
+	imageImport->SetImportVoidPointer(volumeData.data_aim);
 	imageImport->Update();
 	vtkSmartPointer<vtkMetaImageWriter> writer =
 		vtkSmartPointer<vtkMetaImageWriter>::New();
@@ -1303,13 +1303,13 @@ bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QSt
 	return true;
 }
 
-bool SaveUncompressedRawData(std::string filename, unsigned int bytesOneScalar, const ImportFormat& importFormat) {
-	unsigned int width = importFormat.xResolution, height = importFormat.yResolution, imageNUm = importFormat.zResolution;
+bool SaveUncompressedRawData(std::string filename, unsigned int bytesOneScalar, const VolumeData& volumeData) {
+	unsigned int width = volumeData.xResolution, height = volumeData.yResolution, imageNUm = volumeData.zResolution;
 
 	std::ofstream file(filename, std::ios::binary);
 	if (!file.is_open()) return false;
 	try {
-		file.write(reinterpret_cast<const char*>(importFormat.data_aim), bytesOneScalar * width * height * imageNUm);
+		file.write(reinterpret_cast<const char*>(volumeData.data_aim), bytesOneScalar * width * height * imageNUm);
 	}
 	catch (const std::exception& e) {
 		std::cerr << "Exception caught: " << e.what() << std::endl;
@@ -1321,14 +1321,14 @@ bool SaveUncompressedRawData(std::string filename, unsigned int bytesOneScalar, 
 }
 
 bool DataReaderAndWriter::GenerateOutput_Feimos(const QString& outputDir, const QString& outName,
-	const GenerateFormat& generateFormat, ImportFormat& importFormat) {
+	const GenerateFormat& generateFormat, VolumeData& volumeData) {
 
-	if (!DataFormatConvert(generateFormat, importFormat)) {
+	if (!DataFormatConvert(generateFormat, volumeData)) {
 		return false;
 	}
 
 	std::string format; bool writebinaryFlag = true;
-	switch (importFormat.format_aim)
+	switch (volumeData.format_aim)
 	{
 	case Dez_Origin:
 		format = "Error";
@@ -1339,49 +1339,49 @@ bool DataReaderAndWriter::GenerateOutput_Feimos(const QString& outputDir, const 
 		format = "UnsignedLong";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(unsigned long), importFormat);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(unsigned long), volumeData);
 		break;
 	case Dez_SignedLong:
 		format = "SignedLong";
 		writebinaryFlag = writebinaryFlag &&
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(signed long), importFormat);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(signed long), volumeData);
 		break;
 	case Dez_UnsignedShort:
 		format = "UnsignedShort";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(unsigned short), importFormat);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(unsigned short), volumeData);
 		break;
 	case Dez_SignedShort:
 		format = "SignedShort";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(signed short), importFormat);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(signed short), volumeData);
 		break;
 	case Dez_UnsignedChar:
 		format = "UnsignedChar";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(unsigned char), importFormat);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(unsigned char), volumeData);
 		break;
 	case Dez_SignedChar:
 		format = "SignedChar";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(signed char), importFormat);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(signed char), volumeData);
 		break;
 	case Dez_Float:
 		format = "Float";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(float), importFormat);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(float), volumeData);
 		break;
 	case Dez_Double:
 		format = "Double";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(double), importFormat);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(double), volumeData);
 		break;
 	default:
 		DebugTextPrintErrorString("Non compliant data output format");
@@ -1399,12 +1399,12 @@ bool DataReaderAndWriter::GenerateOutput_Feimos(const QString& outputDir, const 
 			DebugTextPrintErrorString("Fail to write to info file");
 			return false;
 		}
-		fileInfo << "xResolution " << importFormat.xResolution << std::endl;
-		fileInfo << "yResolution " << importFormat.yResolution << std::endl;
-		fileInfo << "zResolution " << importFormat.zResolution << std::endl;
-		fileInfo << "xPixelSpace " << importFormat.xPixelSpace << std::endl;
-		fileInfo << "yPixelSpace " << importFormat.yPixelSpace << std::endl;
-		fileInfo << "zPixelSpace " << importFormat.zPixelSpace << std::endl;
+		fileInfo << "xResolution " << volumeData.xResolution << std::endl;
+		fileInfo << "yResolution " << volumeData.yResolution << std::endl;
+		fileInfo << "zResolution " << volumeData.zResolution << std::endl;
+		fileInfo << "xPixelSpace " << volumeData.xPixelSpace << std::endl;
+		fileInfo << "yPixelSpace " << volumeData.yPixelSpace << std::endl;
+		fileInfo << "zPixelSpace " << volumeData.zPixelSpace << std::endl;
 		fileInfo << "format " << format << std::endl;
 		fileInfo << "Raw " << (outName.toStdString() + ".raw") << std::endl;
 		fileInfo.close();

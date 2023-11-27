@@ -17,61 +17,56 @@
 	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
-#pragma once
-#ifndef __DisplayWidget_h__
-#define __DisplayWidget_h__
+#ifndef __DisplayDockWidget_h__
+#define __DisplayDockWidget_h__
 
-#include <QtWidgets/QGroupBox>
-#include <QtWidgets/QGridLayout>
-#include <QCloseEvent>
+#include <QDockWidget>
+#include <QFrame>
+#include <QVBoxLayout>
+#include <QGridLayout>
+#include <QGroupBox>
+#include <QPushButton>
+#include <QLineEdit>
 
-#include "IMAGraphicsView.hpp"
-
-#include "FrameBuffer.hpp"
-#include "RenderThread.hpp"
-#include "Process/DataProcess.hpp"
-
+#include "Utility/WidgetsCommon.hpp"
 #include "Process/DataReaderAndWriter.hpp"
+#include "Utility/DicomCommon.hpp"
 
-class DisplayWidget : public QGroupBox {
+class DisplayDockWidget : public QDockWidget {
 	Q_OBJECT
 
 public:
-	DisplayWidget(QGroupBox * parent = Q_NULLPTR);
-	~DisplayWidget();
+
+	DisplayDockWidget(QWidget * parent = Q_NULLPTR);
+	~DisplayDockWidget();
 
 public:
-	bool renderFlag;
-	RenderThread * rThread;
-	void startRenderThread(int index = 0);
-	void killRenderThread();
+	void getPredefinedInfo();
 
-	// display buffer
-	FrameBuffer framebuffer;
+private:
+	QVBoxLayout *centerLayout;
+	QFrame *dockCentralWidget;
 
+	FileDirSet_Widget *m_FileDirSet_Widget;
+	void setpuWidgets();
+
+private:
+	VolumeData volumeData;
+
+	DataReaderAndWriter m_DataRW;
+
+	// process setting
+	QString InputFolder;
+	QString OutputFolder;
+	QString OutputFileName;
+	QString InputFilePath;
+	
 
 private:
 
-	QGridLayout displayWidgetLayout;
-
-	IMAGraphicsView m_IMAGraphicsView;
-
-	void closeEvent(QCloseEvent *event);
-
 };
 
-
-
-
-
-
-
 #endif
-
-
-
-
-
 
 
 

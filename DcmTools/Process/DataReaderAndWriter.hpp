@@ -77,37 +77,37 @@ public:
 
 
 	/*******************************************************/
-	/* Generate input data to ImportFormat object
+	/* Generate input data to VolumeData object
 	*
 	* inputDir: Input Folder
 	* inputFilePath: Input File Path */
 	/*******************************************************/
 
 	/**
-	* Generate ImportFormat Object From (.dcm) files Using GDCM
+	* Generate VolumeData Object From (.dcm) files Using GDCM
 	*/
-	bool GenerateInput_GDCM(const std::vector<QString>& fileList, ImportFormat& importFormat);
+	bool GenerateInput_GDCM(const std::vector<QString>& fileList, VolumeData& volumeData);
 
 	/**
-	* Generate ImportFormat Object From (.dcm) files Using DCMTK
+	* Generate VolumeData Object From (.dcm) files Using DCMTK
 	*/
-	bool GenerateInput_DCMTK(const std::vector<QString>& fileList, ImportFormat& importFormat);
+	bool GenerateInput_DCMTK(const std::vector<QString>& fileList, VolumeData& volumeData);
 
 	/**
-	* Copy data to importFormat.data with format T
+	* Copy data to volumeData.data with format T
 	*/
 	template <typename T>
-	bool CopyUncompressedRawData(const T* data, ImportFormat& importFormat);
+	bool CopyUncompressedRawData(const T* data, VolumeData& volumeData);
 
 	/**
-	* Generate ImportFormat Object From (.mhd,.raw) file Using VTK
+	* Generate VolumeData Object From (.mhd,.raw) file Using VTK
 	*/
-	bool GenerateInput_Mhd(const QString& inputFilePath, ImportFormat& importFormat);
+	bool GenerateInput_Mhd(const QString& inputFilePath, VolumeData& volumeData);
 
 	/**
-	* Generate ImportFormat Object From (.feimos,.raw) file
+	* Generate VolumeData Object From (.feimos,.raw) file
 	*/
-	bool GenerateInput_Feimos(const QString& inputFilePath, ImportFormat& importFormat);
+	bool GenerateInput_Feimos(const QString& inputFilePath, VolumeData& volumeData);
 
 
 	/*******************************************************/
@@ -117,19 +117,19 @@ public:
 	* outName: Output File Name */
 	/*******************************************************/
 
-	bool DataFormatConvert(const GenerateFormat& generateFormat, ImportFormat& importFormat);
+	bool DataFormatConvert(const GenerateFormat& generateFormat, VolumeData& volumeData);
 
 	/**
 	* Generate .mhd file
 	*/
 	bool GenerateOutput_Mhd(const QString& outputDir, const QString& outName,
-		const GenerateFormat& generateFormat, ImportFormat& importFormat);
+		const GenerateFormat& generateFormat, VolumeData& volumeData);
 
 	/**
 	* Generate .feimos file
 	*/
 	bool GenerateOutput_Feimos(const QString& outputDir, const QString& outName,
-		const GenerateFormat& generateFormat, ImportFormat& importFormat);
+		const GenerateFormat& generateFormat, VolumeData& volumeData);
 
 
 };

@@ -37,6 +37,7 @@
 
 #include "Utility/QSliderDoubleRange.hpp"
 #include "Utility/DebugText.hpp"
+#include "Utility/WidgetsCommon.hpp"
 
 #include "Display/RenderThread.hpp"
 #include "Process/DataProcess.hpp"
@@ -324,201 +325,6 @@ public:
 	QVBoxLayout *MhdClip_Layoput;
 };
 
-// Preset
-
-class QParseDcmLibFormat_Frame : public QGroupBox {
-	Q_OBJECT
-public:
-	QParseDcmLibFormat_Frame(QWidget * parent = Q_NULLPTR) {
-		setTitle("Parse Lib");
-		setMinimumWidth(200);
-
-		ParseDcmLibLayout = new QGridLayout;
-		setLayout(ParseDcmLibLayout);
-
-		ParseDcmLib_Label_GDCM = new QLabel;
-		ParseDcmLib_Label_GDCM->setText("GDCM");
-		ParseDcmLib_Label_DCMTK = new QLabel;
-		ParseDcmLib_Label_DCMTK->setText("DCMTK");
-
-		Label_Null1 = new QLabel;
-
-		Label_Null2 = new QLabel;
-		
-		Label_Null3 = new QLabel;
-		
-		Label_Null4 = new QLabel;
-
-
-		ParseDcmLib_Radio_GDCM = new QRadioButton;
-		ParseDcmLib_Radio_DCMTK = new QRadioButton;
-		ParseDcmLib_ButtonGroup = new QButtonGroup;
-		ParseDcmLib_ButtonGroup->addButton(ParseDcmLib_Radio_GDCM);
-		ParseDcmLib_ButtonGroup->addButton(ParseDcmLib_Radio_DCMTK);
-
-		ParseDcmLibLayout->addWidget(ParseDcmLib_Label_GDCM, 0, 0);
-		ParseDcmLibLayout->addWidget(ParseDcmLib_Radio_GDCM, 0, 1);
-		ParseDcmLibLayout->addWidget(ParseDcmLib_Label_DCMTK, 0, 2);
-		ParseDcmLibLayout->addWidget(ParseDcmLib_Radio_DCMTK, 0, 3);
-
-		ParseDcmLib_Radio_GDCM->setChecked(true);
-
-		ParseDcmLibLayout->addWidget(Label_Null1, 0, 4);
-		ParseDcmLibLayout->addWidget(Label_Null2, 0, 5);
-		ParseDcmLibLayout->addWidget(Label_Null3, 0, 6);
-		ParseDcmLibLayout->addWidget(Label_Null4, 0, 7);
-	}
-	~QParseDcmLibFormat_Frame() { }
-
-	DcmParseLib getParseSet() {
-		if (ParseDcmLib_Radio_GDCM->isChecked()) return Dez_GDCM;
-		if (ParseDcmLib_Radio_DCMTK->isChecked()) return Dez_DCMTK;
-		return Dez_GDCM;
-	}
-
-	QGridLayout * ParseDcmLibLayout;
-	QRadioButton *ParseDcmLib_Radio_DCMTK, *ParseDcmLib_Radio_GDCM;
-	QButtonGroup* ParseDcmLib_ButtonGroup;
-	QLabel *ParseDcmLib_Label_DCMTK, *ParseDcmLib_Label_GDCM;
-	QLabel *Label_Null1, *Label_Null2, *Label_Null3, *Label_Null4;
-};
-
-class QGenerateFormat_Frame : public QGroupBox {
-	Q_OBJECT
-public:
-	QGenerateFormat_Frame(QWidget * parent = Q_NULLPTR) {
-		setTitle("Generate Format");
-		setMinimumWidth(200);
-
-		GenerateFormatLayout = new QGridLayout;
-		setLayout(GenerateFormatLayout);
-
-		Label_Origin = new QLabel;
-		Label_UnsignedInt = new QLabel;
-		Label_SignedInt = new QLabel; 
-		Label_UnsignedShort = new QLabel;
-		Label_SignedShort = new QLabel;
-		Label_UnsignedChar = new QLabel;
-		Label_SignedChar = new QLabel;
-		Label_Float = new QLabel;
-		Label_Double = new QLabel;
-
-		Label_Origin->setText("Origin");
-		Label_UnsignedInt->setText("Unsigned Int");
-		Label_SignedInt->setText("Signed Int");
-		Label_UnsignedShort->setText("Unsigned Short");
-		Label_SignedShort->setText("Signed Short");
-		Label_UnsignedChar->setText("Unsigned Char");
-		Label_SignedChar->setText("Signed Char");
-		Label_Float->setText("Float");
-		Label_Double->setText("Double");
-
-		RadioButton_Origin = new QRadioButton;
-		RadioButton_UnsignedInt = new QRadioButton;
-		RadioButton_SignedInt = new QRadioButton;
-		RadioButton_UnsignedShort = new QRadioButton;
-		RadioButton_SignedShort = new QRadioButton;
-		RadioButton_UnsignedChar = new QRadioButton;
-		RadioButton_SignedChar = new QRadioButton;
-		RadioButton_Float = new QRadioButton;
-		RadioButton_Double = new QRadioButton;
-
-		ButtonGroup = new QButtonGroup;
-		ButtonGroup->addButton(RadioButton_Origin);
-		ButtonGroup->addButton(RadioButton_UnsignedInt);
-		ButtonGroup->addButton(RadioButton_SignedInt);
-		ButtonGroup->addButton(RadioButton_UnsignedShort);
-		ButtonGroup->addButton(RadioButton_SignedShort);
-		ButtonGroup->addButton(RadioButton_UnsignedChar);
-		ButtonGroup->addButton(RadioButton_SignedChar);
-		ButtonGroup->addButton(RadioButton_Float);
-		ButtonGroup->addButton(RadioButton_Double);
-
-		RadioButton_Origin->setChecked(true);
-
-		GenerateFormatLayout->addWidget(Label_UnsignedInt, 0, 0);
-		GenerateFormatLayout->addWidget(Label_SignedInt, 0, 2);
-		GenerateFormatLayout->addWidget(Label_UnsignedShort, 0, 4);
-		GenerateFormatLayout->addWidget(Label_SignedShort, 0, 6);
-
-		GenerateFormatLayout->addWidget(RadioButton_UnsignedInt, 0, 1);
-		GenerateFormatLayout->addWidget(RadioButton_SignedInt, 0, 3);
-		GenerateFormatLayout->addWidget(RadioButton_UnsignedShort, 0, 5);
-		GenerateFormatLayout->addWidget(RadioButton_SignedShort, 0, 7);
-
-		GenerateFormatLayout->addWidget(Label_UnsignedChar, 1, 0);
-		GenerateFormatLayout->addWidget(Label_SignedChar, 1, 2);
-		GenerateFormatLayout->addWidget(Label_Float, 1, 4);
-		GenerateFormatLayout->addWidget(Label_Double, 1, 6);
-
-		GenerateFormatLayout->addWidget(RadioButton_UnsignedChar, 1, 1);
-		GenerateFormatLayout->addWidget(RadioButton_SignedChar, 1, 3);
-		GenerateFormatLayout->addWidget(RadioButton_Float, 1, 5);
-		GenerateFormatLayout->addWidget(RadioButton_Double, 1, 7);
-
-		GenerateFormatLayout->addWidget(Label_Origin, 3, 0);
-		GenerateFormatLayout->addWidget(RadioButton_Origin, 3, 1);
-
-	}
-	~QGenerateFormat_Frame() { }
-
-	DataFormat getDataFormatSet() {
-		if (RadioButton_Origin->isChecked()) return Dez_Origin;
-		if (RadioButton_UnsignedInt->isChecked()) return Dez_UnsignedLong;
-		if (RadioButton_SignedInt->isChecked()) return Dez_SignedLong;
-		if (RadioButton_UnsignedShort->isChecked()) return Dez_UnsignedShort;
-		if (RadioButton_SignedShort->isChecked()) return Dez_SignedShort;
-		if (RadioButton_UnsignedChar->isChecked()) return Dez_UnsignedChar;
-		if (RadioButton_SignedChar->isChecked()) return Dez_SignedChar;
-		if (RadioButton_Float->isChecked()) return Dez_Float;
-		if (RadioButton_Double->isChecked()) return Dez_Double;
-	}
-
-	QGridLayout * GenerateFormatLayout;
-
-	QButtonGroup* ButtonGroup;
-
-	QRadioButton *RadioButton_Origin, *RadioButton_UnsignedInt, *RadioButton_SignedInt, *RadioButton_UnsignedShort;
-	QRadioButton *RadioButton_SignedShort, *RadioButton_UnsignedChar, *RadioButton_SignedChar, *RadioButton_Float;
-	QRadioButton *RadioButton_Double;
-
-	QLabel *Label_Origin, *Label_UnsignedInt, *Label_SignedInt, *Label_UnsignedShort;
-	QLabel *Label_SignedShort, *Label_UnsignedChar, *Label_SignedChar, *Label_Float;
-	QLabel *Label_Double;
-};
-
-class OpenPresetPath_Frame : public QGroupBox {
-	Q_OBJECT
-public:
-	OpenPresetPath_Frame(QWidget * parent = Q_NULLPTR) {
-		setTitle("Dir Open");
-		setMinimumWidth(200);
-
-		Layout = new QGridLayout;
-		setLayout(Layout);
-
-		OpenInputDirButton = new QPushButton;
-		OpenOutputDirButton = new QPushButton;
-		OpenInputFileDirButton = new QPushButton;
-		OpenIconsDirButton = new QPushButton;
-
-		OpenInputDirButton->setText("Open InputDir");
-		OpenInputFileDirButton->setText("Open InputFile Dir");
-		OpenOutputDirButton->setText("Open OutputDir");
-		OpenIconsDirButton->setText("Open IconsDir");
-
-		Layout->addWidget(OpenInputDirButton, 0, 0);
-		Layout->addWidget(OpenInputFileDirButton, 0, 1);
-		Layout->addWidget(OpenOutputDirButton, 0, 2);
-		Layout->addWidget(OpenIconsDirButton, 0, 3);
-	}
-	~OpenPresetPath_Frame() { }
-
-	QGridLayout * Layout;
-	QPushButton *OpenInputDirButton, *OpenOutputDirButton, 
-		* OpenInputFileDirButton, *OpenIconsDirButton;
-};
-
 
 class ProcessDockWidget : public QDockWidget {
 	Q_OBJECT
@@ -527,34 +333,15 @@ public:
 	ProcessDockWidget(QWidget * parent = Q_NULLPTR);
 	~ProcessDockWidget();
 
-	QVolumeConvert_Frame *VolumeConvert_Frame;
+public:
+	void getPredefinedInfo();
 
-	QMhdRotateAxis_Frame * MhdRotateAxis_Frame;
-	QMhdFlipAxis_Frame *MhdFlipAxis_Frame;
-	QMhdClip_Frame *MhdClip_Frame;
-	QVolumeDownSampling_Frame *VolumeDownSampling_Frame;
-
-	QString getInputFolder() {
-		return InputFolderEdit->text();
-	}
-	QString getInputFilePath() {
-		return InputFilePathEdit->text();
-	}
-	QString getOutputFolder() {
-		return OutputFolderEdit->text();
-	}
-	QString getOutputFileName() {
-		return OutputFileNameEdit->text();
-	}
 	DataFormat getGenerateDataFormat() {
-		return m_QGenerateFormat_Frame->getDataFormatSet();
+		return m_QSetFormat_Widget->getDataFormatSet();
 	}
 	DcmParseLib getDcmParseLib() {
-		return m_QParseDcmLibFormat_Frame->getParseSet();
+		return m_QParseDcmLibSet_Widget->getParseSet();
 	}
-	void updataDirFromPresetFile(QString filename);
-
-	void getPredefinedInfo();
 
 public:
 	ProcessVolumeData processVolumeData;
@@ -574,48 +361,30 @@ public:
 	int interval;
 
 private:
+	void setupWidget();
+	void setupFrames();
 	void setupProcessFunc();
 
 private:
 	QVBoxLayout *centerLayout;
 	QFrame *dockCentralWidget;
-
-	QGridLayout * FolderLayout;
-	QPushButton * InputFolderButton;
-	QLineEdit * InputFolderEdit;
-	QPushButton * InputFilePathButton;
-	QLineEdit * InputFilePathEdit;
-	QPushButton * OutputFolderButton;
-	QLineEdit * OutputFolderEdit;
-	QPushButton * OutputFileNameButton;
-	QLineEdit * OutputFileNameEdit;
-	
-	QString InputFolderStr;
-	QString InputFilePathStr;
-	QString OutputFolderStr;
-	QString OutputFileNameStr;
-
-	QParseDcmLibFormat_Frame * m_QParseDcmLibFormat_Frame;
-	QGenerateFormat_Frame * m_QGenerateFormat_Frame;
-	OpenPresetPath_Frame * m_OpenPresetPath_Frame;
-
-	void setupInputOutput();
-
-	QGridLayout * framesLayout;
-
-	void setupFrames();
-
-public:
 	QPushButton *processButton;
 
+	FileDirSet_Widget * m_FileDirSet_Widget;
+	QSetFormat_Widget * m_QSetFormat_Widget;
+	QParseDcmLibSet_Widget * m_QParseDcmLibSet_Widget;
+	
+	QVolumeConvert_Frame *VolumeConvert_Frame;
+	QVolumeDownSampling_Frame *VolumeDownSampling_Frame;
+
+	QMhdRotateAxis_Frame * MhdRotateAxis_Frame;
+	QMhdFlipAxis_Frame *MhdFlipAxis_Frame;
+	QMhdClip_Frame *MhdClip_Frame;
+
+	QGridLayout * framesLayout;
+	
 protected:
 	void closeEvent(QCloseEvent *event);
-	
-private slots :
-	void OpenInputDir();
-	void OpenInputFileDir();
-	void OpenOutputDir();
-	void OpenIconsDir();
 	
 private slots:
 

@@ -75,6 +75,8 @@ set(Display
 	Display/IMAGraphicsView.cpp
 	Display/RenderThread.hpp
 	Display/RenderThread.cpp
+	Display/DisplayDockWidget.hpp
+	Display/DisplayDockWidget.cpp
 )
 # Make the Display group
 SOURCE_GROUP("Display" FILES ${Display})
@@ -88,6 +90,8 @@ set(Utility
 	Utility/DebugText.cpp
 	Utility/QSliderDoubleRange.hpp
 	Utility/QSliderDoubleRange.cpp
+	Utility/WidgetsCommon.hpp
+	Utility/WidgetsCommon.cpp
 )
 # Make the Utility group
 SOURCE_GROUP("Utility" FILES ${Utility})

@@ -102,7 +102,7 @@ struct DcmFilePixelData {
 	float position = 0.0f;
 };
 
-struct ImportFormat {
+struct VolumeData {
 	unsigned int xResolution, yResolution, zResolution;
 	float xPixelSpace, yPixelSpace, zPixelSpace;
 
@@ -113,12 +113,12 @@ struct ImportFormat {
 	void * data_aim;
 	DataFormat format_aim;
 
-	ImportFormat() {
+	VolumeData() {
 		data = nullptr;
 		data_aim = nullptr;
 		format = Dez_Origin;
 	}
-	~ImportFormat() {
+	~VolumeData() {
 		clear();
 	}
 	void clear() {

@@ -27,6 +27,8 @@
 #include <QCloseEvent>
 
 #include "Display/DisplayWidget.hpp"
+#include "Display/DisplayDockWidget.hpp"
+
 #include "Process/ProcessDockWidget.hpp"
 #include "InfoPresent/DataPresentDockWidget.hpp"
 
@@ -36,7 +38,7 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow(QWidget *parent = Q_NULLPTR);
-
+	~MainWindow();
 public:
 
 
@@ -47,7 +49,7 @@ private:
 	DisplayWidget* m_DisplayWidget;
 
 	ProcessDockWidget* m_ProcessDockWidget;
-
+	DisplayDockWidget * m_DisplayDockWidget;
 	DataPresentDockWidget* m_DataPresentDockWidget;
 
 private:

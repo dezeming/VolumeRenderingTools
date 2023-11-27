@@ -43,26 +43,26 @@ public:
 	/** Rotate the volume data in MHD format according to the axis set by permute
 	* Fill 0,1,2 into the permute array
 	*/
-	bool RotateAxis(ImportFormat& importFormat, int permute[3]);
+	bool RotateAxis(VolumeData& volumeData, int permute[3]);
 
 	/** MHD Flip up, down, left, and right based on the selected axis
 	*/
-	bool FlipAxis(ImportFormat& importFormat, int flip[3]);
+	bool FlipAxis(VolumeData& volumeData, int flip[3]);
 
 	/** Clip the MHD file according to the boundary
 	* All three axes of the original boundary are [-bound,bound]=[-0.5,0.5], The center is [center]=[0]¡£
 	* Cutting needs to ensure that the range of each axis [center-round, center+bound] is within [-0.5,0.5]
 	*/
-	bool Clip(ImportFormat& importFormat, double center[3], double bound[3]);
+	bool Clip(VolumeData& volumeData, double center[3], double bound[3]);
 
 	/** DownSampling MHD files
 	* Interval: Reduce the sampling interval, which is equivalent to a resolution reduction of Interval times, and only supports integers.
 	*/
-	bool DownSamplingWithInterval(ImportFormat& importFormat, int Interval = 2);
+	bool DownSamplingWithInterval(VolumeData& volumeData, int Interval = 2);
 
 	/** Resize the volume data by scale
 	*/
-	bool Resize(ImportFormat& importFormat, float scale);
+	bool Resize(VolumeData& volumeData, float scale);
 
 
 	/*******************************************************/

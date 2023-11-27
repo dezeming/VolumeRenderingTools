@@ -84,19 +84,19 @@ ProcessVolumeData::~ProcessVolumeData() {
 // *** Process input data *** //
 // ********************************************** //
 
-bool ProcessVolumeData::RotateAxis(ImportFormat& importFormat, int permute[3]) {
+bool ProcessVolumeData::RotateAxis(VolumeData& volumeData, int permute[3]) {
 	return false;
 }
-bool ProcessVolumeData::FlipAxis(ImportFormat& importFormat, int flip[3]) {
+bool ProcessVolumeData::FlipAxis(VolumeData& volumeData, int flip[3]) {
 	return false;
 }
-bool ProcessVolumeData::Clip(ImportFormat& importFormat, double center[3], double bound[3]) {
+bool ProcessVolumeData::Clip(VolumeData& volumeData, double center[3], double bound[3]) {
 	return false;
 }
-bool ProcessVolumeData::DownSamplingWithInterval(ImportFormat& importFormat, int Interval) {
+bool ProcessVolumeData::DownSamplingWithInterval(VolumeData& volumeData, int Interval) {
 	return false;
 }
-bool ProcessVolumeData::Resize(ImportFormat& importFormat, float scale) {
+bool ProcessVolumeData::Resize(VolumeData& volumeData, float scale) {
 	return false;
 }
 
@@ -116,7 +116,7 @@ inline T at_Array(T* data, unsigned int dim[3], unsigned int pos[3]) {
 }
 
 template <typename T>
-bool downSampling(T* data, ImportFormat& importFormat, unsigned int dimM[3], unsigned int dim_Down[3], unsigned int Interval) {
+bool downSampling(T* data, VolumeData& volumeData, unsigned int dimM[3], unsigned int dim_Down[3], unsigned int Interval) {
 
 	T * data_aim = new T[dim_Down[0] * dim_Down[1] * dim_Down[2]];
 	if (!data_aim) return false;
@@ -131,17 +131,17 @@ bool downSampling(T* data, ImportFormat& importFormat, unsigned int dimM[3], uns
 		}
 	}
 
-	delete[] static_cast<T*>(importFormat.data);
+	delete[] static_cast<T*>(volumeData.data);
 
-	importFormat.data = data_aim;
+	volumeData.data = data_aim;
 
-	importFormat.xResolution = dim_Down[0];
-	importFormat.yResolution = dim_Down[1];
-	importFormat.zResolution = dim_Down[2];
+	volumeData.xResolution = dim_Down[0];
+	volumeData.yResolution = dim_Down[1];
+	volumeData.zResolution = dim_Down[2];
 
-	importFormat.xPixelSpace = importFormat.xPixelSpace * Interval;
-	importFormat.yPixelSpace = importFormat.yPixelSpace * Interval;
-	importFormat.zPixelSpace = importFormat.zPixelSpace * Interval;
+	volumeData.xPixelSpace = volumeData.xPixelSpace * Interval;
+	volumeData.yPixelSpace = volumeData.yPixelSpace * Interval;
+	volumeData.zPixelSpace = volumeData.zPixelSpace * Interval;
 	return true;
 }
 
@@ -151,46 +151,46 @@ void ProcessVolumeData::DownSamplingMhdFile(const QString& inputFilePath, const 
 	if (!data_rw.isInputMhdFileExist(inputFilePath)) return;
 	if (!data_rw.checkOutputDir_Feimos(outputDir, outName)) return;
 
-	ImportFormat importFormat;
+	VolumeData volumeData;
 
-	bool parseFlag = data_rw.GenerateInput_Mhd(inputFilePath, importFormat);
-	DebugTextPrintString(importFormat.toString().toStdString().c_str());
-	if (!importFormat.data) {
+	bool parseFlag = data_rw.GenerateInput_Mhd(inputFilePath, volumeData);
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
+	if (!volumeData.data) {
 		parseFlag = false;
 	}
 	if (parseFlag) {
-		unsigned int dimM[3] = { importFormat.xResolution, importFormat.yResolution, importFormat.zResolution };
-		unsigned int dim_Down[3] = { importFormat.xResolution / Interval, importFormat.yResolution / Interval, importFormat.zResolution / Interval };
+		unsigned int dimM[3] = { volumeData.xResolution, volumeData.yResolution, volumeData.zResolution };
+		unsigned int dim_Down[3] = { volumeData.xResolution / Interval, volumeData.yResolution / Interval, volumeData.zResolution / Interval };
 
-		switch (importFormat.format)
+		switch (volumeData.format)
 		{
 		case Dez_Origin:
 			DebugTextPrintErrorString("Non compliant image data format");
 			parseFlag = false;
 			break;
 		case Dez_UnsignedLong:
-			parseFlag = downSampling(static_cast<unsigned long*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<unsigned long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_SignedLong:
-			parseFlag = downSampling(static_cast<signed long*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<signed long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_UnsignedShort:
-			parseFlag = downSampling(static_cast<unsigned short*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<unsigned short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_SignedShort:
-			parseFlag = downSampling(static_cast<signed short*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<signed short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_UnsignedChar:
-			parseFlag = downSampling(static_cast<unsigned char*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<unsigned char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_SignedChar:
-			parseFlag = downSampling(static_cast<signed char*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<signed char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_Float:
-			parseFlag = downSampling(static_cast<float*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<float*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_Double:
-			parseFlag = downSampling(static_cast<double*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<double*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		default:
 			DebugTextPrintErrorString("Non compliant image data format");
@@ -200,11 +200,11 @@ void ProcessVolumeData::DownSamplingMhdFile(const QString& inputFilePath, const 
 	}
 
 	if (parseFlag) 
-		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, outName, generateFormat, importFormat);
+		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, outName, generateFormat, volumeData);
 	else 
 		DebugTextPrintErrorString("Downsampling failed");
 	
-	importFormat.clear();
+	volumeData.clear();
 }
 
 void ProcessVolumeData::DownSamplingFeimosFile(const QString& inputFilePath, const QString& outputDir, const QString& outName, 
@@ -213,46 +213,46 @@ void ProcessVolumeData::DownSamplingFeimosFile(const QString& inputFilePath, con
 	if (!data_rw.isInputFeimosFileExist(inputFilePath)) return;
 	if (!data_rw.checkOutputDir_Feimos(outputDir, outName)) return;
 
-	ImportFormat importFormat;
+	VolumeData volumeData;
 
-	bool parseFlag = data_rw.GenerateInput_Feimos(inputFilePath, importFormat);
-	DebugTextPrintString(importFormat.toString().toStdString().c_str());
-	if (!importFormat.data) {
+	bool parseFlag = data_rw.GenerateInput_Feimos(inputFilePath, volumeData);
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
+	if (!volumeData.data) {
 		parseFlag = false;
 	}
 	if (parseFlag) {
-		unsigned int dimM[3] = { importFormat.xResolution, importFormat.yResolution, importFormat.zResolution };
-		unsigned int dim_Down[3] = { importFormat.xResolution / Interval, importFormat.yResolution / Interval, importFormat.zResolution / Interval };
+		unsigned int dimM[3] = { volumeData.xResolution, volumeData.yResolution, volumeData.zResolution };
+		unsigned int dim_Down[3] = { volumeData.xResolution / Interval, volumeData.yResolution / Interval, volumeData.zResolution / Interval };
 
-		switch (importFormat.format)
+		switch (volumeData.format)
 		{
 		case Dez_Origin:
 			DebugTextPrintErrorString("Non compliant image data format");
 			parseFlag = false;
 			break;
 		case Dez_UnsignedLong:
-			parseFlag = downSampling(static_cast<unsigned long*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<unsigned long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_SignedLong:
-			parseFlag = downSampling(static_cast<signed long*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<signed long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_UnsignedShort:
-			parseFlag = downSampling(static_cast<unsigned short*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<unsigned short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_SignedShort:
-			parseFlag = downSampling(static_cast<signed short*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<signed short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_UnsignedChar:
-			parseFlag = downSampling(static_cast<unsigned char*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<unsigned char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_SignedChar:
-			parseFlag = downSampling(static_cast<signed char*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<signed char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_Float:
-			parseFlag = downSampling(static_cast<float*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<float*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_Double:
-			parseFlag = downSampling(static_cast<double*>(importFormat.data), importFormat, dimM, dim_Down, Interval);
+			parseFlag = downSampling(static_cast<double*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		default:
 			DebugTextPrintErrorString("Non compliant image data format");
@@ -262,13 +262,13 @@ void ProcessVolumeData::DownSamplingFeimosFile(const QString& inputFilePath, con
 	}
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, outName, generateFormat, importFormat);
+		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, outName, generateFormat, volumeData);
 	}
 	else {
 		DebugTextPrintErrorString("Downsampling failed");
 	}
 
-	importFormat.clear();
+	volumeData.clear();
 }
 
 template <typename T>
@@ -302,31 +302,31 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 	std::string name;
 	std::string rawDataFileName;
 
-	ImportFormat importFormat;
+	VolumeData volumeData;
 
 	while (file >> name) {
 
 		if (name == "xResolution") {
-			file >> importFormat.xResolution;
+			file >> volumeData.xResolution;
 		}
 		else if (name == "yResolution") {
-			file >> importFormat.yResolution;
+			file >> volumeData.yResolution;
 		}
 		else if (name == "zResolution") {
-			file >> importFormat.zResolution;
+			file >> volumeData.zResolution;
 		}
 		else if (name == "xPixelSpace") {
-			file >> importFormat.xPixelSpace;
+			file >> volumeData.xPixelSpace;
 		}
 		else if (name == "yPixelSpace") {
-			file >> importFormat.yPixelSpace;
+			file >> volumeData.yPixelSpace;
 		}
 		else if (name == "zPixelSpace") {
-			file >> importFormat.zPixelSpace;
+			file >> volumeData.zPixelSpace;
 		}
 		else if (name == "format") {
 			file >> name;
-			if (!importFormat.setFormatUsingString(name.c_str())) {
+			if (!volumeData.setFormatUsingString(name.c_str())) {
 				DebugTextPrintErrorString("Non compliant format input when parsing (.feimos) file!");
 				return false;
 			}
@@ -348,16 +348,16 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 	}
 
 	unsigned int 
-		resizedWidth = importFormat.xResolution / Interval, 
-		resizedHeight = importFormat.yResolution / Interval, 
-		resizedImageNum = importFormat.zResolution / Interval;
+		resizedWidth = volumeData.xResolution / Interval, 
+		resizedHeight = volumeData.yResolution / Interval, 
+		resizedImageNum = volumeData.zResolution / Interval;
 
 	double
-		resizedPixelSpace_x = importFormat.xPixelSpace * Interval,
-		resizedPixelSpace_y = importFormat.yPixelSpace * Interval,
-		resizedPixelSpace_z = importFormat.zPixelSpace * Interval;
+		resizedPixelSpace_x = volumeData.xPixelSpace * Interval,
+		resizedPixelSpace_y = volumeData.yPixelSpace * Interval,
+		resizedPixelSpace_z = volumeData.zPixelSpace * Interval;
 
-	int bytesOnePixel = importFormat.getFormatOnePixelBytes();
+	int bytesOnePixel = volumeData.getFormatOnePixelBytes();
 	if (bytesOnePixel <= 0) {
 		DebugTextPrintErrorString("Bytes per pixel that do not comply!");
 		return false;
@@ -373,7 +373,7 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 			return false;
 		}
 
-		const std::streamsize readImageSize = importFormat.xResolution * importFormat.yResolution * (unsigned int)bytesOnePixel;
+		const std::streamsize readImageSize = volumeData.xResolution * volumeData.yResolution * (unsigned int)bytesOnePixel;
 		void* readBuffer = new char[readImageSize];
 
 		const std::streamsize writeImageSize = resizedWidth * resizedHeight * bytesOnePixel;
@@ -386,56 +386,56 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 
 			if (0 == currentNum % Interval) {
 
-				switch (importFormat.format)
+				switch (volumeData.format)
 				{
 				case Dez_Origin:
 					downsamplingFlag = false;
 					break;
 				case Dez_UnsignedLong:
 					DownSamplingInOneImage(
-						static_cast<unsigned long*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<unsigned long*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<unsigned long*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_SignedLong:
 					DownSamplingInOneImage(
-						static_cast<signed long*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<signed long*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<signed long*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_UnsignedShort:
 					DownSamplingInOneImage(
-						static_cast<unsigned short*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<unsigned short*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<unsigned short*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_SignedShort:
 					DownSamplingInOneImage(
-						static_cast<signed short*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<signed short*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<signed short*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_UnsignedChar:
 					DownSamplingInOneImage(
-						static_cast<unsigned char*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<unsigned char*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<unsigned char*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_SignedChar:
 					DownSamplingInOneImage(
-						static_cast<char*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<char*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<char*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_Float:
 					DownSamplingInOneImage(
-						static_cast<float*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<float*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<float*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_Double:
 					DownSamplingInOneImage(
-						static_cast<double*>(readBuffer), importFormat.xResolution, importFormat.yResolution,
+						static_cast<double*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<double*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
@@ -470,7 +470,7 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 			DebugTextPrintErrorString("Fail to write to info file");
 			return false;
 		}
-		std::string format = importFormat.getFormatString().toStdString();
+		std::string format = volumeData.getFormatString().toStdString();
 		fileInfo << "xResolution " << resizedWidth << std::endl;
 		fileInfo << "yResolution " << resizedHeight << std::endl;
 		fileInfo << "zResolution " << resizedImageNum << std::endl;
@@ -501,19 +501,19 @@ void ProcessVolumeData::DcmMakeMhdFile(const QString& inputDir, const QString& o
 	bool parseFlag = data_rw.getInputDcmFileList(inputDir, fileList);
 	if (!parseFlag) return;
 
-	ImportFormat importFormat;
+	VolumeData volumeData;
 
 	if (generateFormat.parseLib == Dez_GDCM) {
-		parseFlag = data_rw.GenerateInput_GDCM(fileList, importFormat);
+		parseFlag = data_rw.GenerateInput_GDCM(fileList, volumeData);
 	}
 	else if (generateFormat.parseLib == Dez_DCMTK) {
-		parseFlag = data_rw.GenerateInput_DCMTK(fileList, importFormat);
+		parseFlag = data_rw.GenerateInput_DCMTK(fileList, volumeData);
 	}
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, outName, generateFormat, importFormat);
+		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, outName, generateFormat, volumeData);
 	}
-	importFormat.clear();
+	volumeData.clear();
 }
 
 void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString& outputDir, const QString& outName, 
@@ -527,19 +527,19 @@ void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString
 	bool parseFlag = data_rw.getInputDcmFileList(inputDir, fileList);
 	if (!parseFlag) return;
 
-	ImportFormat importFormat;
+	VolumeData volumeData;
 
 	if (generateFormat.parseLib == Dez_GDCM) {
-		parseFlag = data_rw.GenerateInput_GDCM(fileList, importFormat);
+		parseFlag = data_rw.GenerateInput_GDCM(fileList, volumeData);
 	}
 	else if (generateFormat.parseLib == Dez_DCMTK) {
-		parseFlag = data_rw.GenerateInput_DCMTK(fileList, importFormat);
+		parseFlag = data_rw.GenerateInput_DCMTK(fileList, volumeData);
 	}
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, outName, generateFormat, importFormat);
+		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, outName, generateFormat, volumeData);
 	}
-	importFormat.clear();
+	volumeData.clear();
 }
 
 void ProcessVolumeData::MhdMakeFeimosFile(const QString& inputFilePath, const QString& outputDir, const QString& outName,
@@ -548,15 +548,15 @@ void ProcessVolumeData::MhdMakeFeimosFile(const QString& inputFilePath, const QS
 	if (!data_rw.isInputMhdFileExist(inputFilePath)) return;
 	if (!data_rw.checkOutputDir_Feimos(outputDir, outName)) return;
 
-	ImportFormat importFormat;
+	VolumeData volumeData;
 
-	bool parseFlag = data_rw.GenerateInput_Mhd(inputFilePath, importFormat);
-	DebugTextPrintString(importFormat.toString().toStdString().c_str());
+	bool parseFlag = data_rw.GenerateInput_Mhd(inputFilePath, volumeData);
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, outName, generateFormat, importFormat);
+		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, outName, generateFormat, volumeData);
 	}
-	importFormat.clear();
+	volumeData.clear();
 }
 
 void ProcessVolumeData::FeimosMakeMhdFile(const QString& inputFilePath, const QString& outputDir, const QString& outName,
@@ -565,15 +565,15 @@ void ProcessVolumeData::FeimosMakeMhdFile(const QString& inputFilePath, const QS
 	if (!data_rw.isInputFeimosFileExist(inputFilePath)) return;
 	if (!data_rw.checkOutputDir_Mhd(outputDir, outName)) return;
 
-	ImportFormat importFormat;
+	VolumeData volumeData;
 
-	bool parseFlag = data_rw.GenerateInput_Feimos(inputFilePath, importFormat);
-	DebugTextPrintString(importFormat.toString().toStdString().c_str());
+	bool parseFlag = data_rw.GenerateInput_Feimos(inputFilePath, volumeData);
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, outName, generateFormat, importFormat);
+		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, outName, generateFormat, volumeData);
 	}
-	importFormat.clear();
+	volumeData.clear();
 }
 
 
@@ -621,7 +621,7 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK_OldFunc(const QString& dirPath, con
 		if (dirPath[dirPath.size() - 1] != '/') _DirPath = _DirPath + "/";
 	}
 
-	ImportFormat importFormat;
+	VolumeData volumeData;
 	unsigned int width = 0, height = 0;
 	double pixelSpacing_X, pixelSpacing_Y, pixelSpacing_Z;
 	Uint16 bitsAllocated, bitsStored;
@@ -669,7 +669,7 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK_OldFunc(const QString& dirPath, con
 			}
 			else if (correctImagesNum.size() == 0) {
 				width = static_cast<unsigned int>(atoi(ImageWidth.data()));
-				importFormat.xResolution = width;
+				volumeData.xResolution = width;
 			}
 		}
 
@@ -686,7 +686,7 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK_OldFunc(const QString& dirPath, con
 			}
 			else if (correctImagesNum.size() == 0) {
 				height = static_cast<unsigned int>(atoi(ImageHeight.data()));
-				importFormat.yResolution = height;
+				volumeData.yResolution = height;
 			}
 		}
 
@@ -704,8 +704,8 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK_OldFunc(const QString& dirPath, con
 			else if (correctImagesNum.size() == 0) {
 				pixelSpacing_X = atof(PixelSpacing.data());
 				pixelSpacing_Y = pixelSpacing_X;
-				importFormat.xResolution = pixelSpacing_X;
-				importFormat.yResolution = pixelSpacing_Y;
+				volumeData.xResolution = pixelSpacing_X;
+				volumeData.yResolution = pixelSpacing_Y;
 			}
 		}
 
@@ -722,7 +722,7 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK_OldFunc(const QString& dirPath, con
 			}
 			else if (correctImagesNum.size() == 0) {
 				pixelSpacing_Z = atof(SliceThickness.data());
-				importFormat.zResolution = pixelSpacing_Z;
+				volumeData.zResolution = pixelSpacing_Z;
 			}
 		}
 
@@ -769,43 +769,43 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK_OldFunc(const QString& dirPath, con
 
 				// Float
 				if (valueRepresentation == EVR_FL) {
-					if (correctImagesNum.size() == 0) importFormat.format = Dez_Float;
-					else if (importFormat.format != Dez_Float) {
+					if (correctImagesNum.size() == 0) volumeData.format = Dez_Float;
+					else if (volumeData.format != Dez_Float) {
 						DebugTextPrintErrorString(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
 					}
 				}
 				// Double
 				else if (valueRepresentation == EVR_FD) {
-					if (correctImagesNum.size() == 0) importFormat.format = Dez_Double;
-					else if (importFormat.format != Dez_Double) {
+					if (correctImagesNum.size() == 0) volumeData.format = Dez_Double;
+					else if (volumeData.format != Dez_Double) {
 						DebugTextPrintErrorString(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
 					}
 				}
 				// signed short
 				else if (valueRepresentation == EVR_SS) {
-					if (correctImagesNum.size() == 0) importFormat.format = Dez_SignedShort;
-					else if (importFormat.format != Dez_SignedShort) {
+					if (correctImagesNum.size() == 0) volumeData.format = Dez_SignedShort;
+					else if (volumeData.format != Dez_SignedShort) {
 						DebugTextPrintErrorString(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
 					}
 				}
 				// unsigned short
 				else if (valueRepresentation == EVR_US) {
-					if (correctImagesNum.size() == 0) importFormat.format = Dez_UnsignedShort;
-					else if (importFormat.format != Dez_UnsignedShort) {
+					if (correctImagesNum.size() == 0) volumeData.format = Dez_UnsignedShort;
+					else if (volumeData.format != Dez_UnsignedShort) {
 						DebugTextPrintErrorString(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
 					}
 				}
 				// signed long
 				else if (valueRepresentation == EVR_SL) {
-					if (correctImagesNum.size() == 0) importFormat.format = Dez_SignedLong;
-					else if (importFormat.format != Dez_SignedLong) {
+					if (correctImagesNum.size() == 0) volumeData.format = Dez_SignedLong;
+					else if (volumeData.format != Dez_SignedLong) {
 						DebugTextPrintErrorString(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
 					}
 				}
 				// unsigned long
 				else if (valueRepresentation == EVR_UL) {
-					if (correctImagesNum.size() == 0) importFormat.format = Dez_UnsignedLong;
-					else if (importFormat.format != Dez_UnsignedLong) {
+					if (correctImagesNum.size() == 0) volumeData.format = Dez_UnsignedLong;
+					else if (volumeData.format != Dez_UnsignedLong) {
 						DebugTextPrintErrorString(("The value representation is inconsistent in File " + file_Path).toStdString().c_str());
 					}
 				}
@@ -826,7 +826,7 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK_OldFunc(const QString& dirPath, con
 	unsigned int imageNum = correctImagesNum.size();
 
 	// Print import data Info
-	DebugTextPrintString(importFormat.toString().toStdString().c_str());
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
 
 	Uint16 * m_data = new Uint16[width * height * imageNum];
 	if (!m_data) {
