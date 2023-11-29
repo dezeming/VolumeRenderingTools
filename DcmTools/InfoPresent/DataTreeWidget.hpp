@@ -39,6 +39,7 @@ public:
 		QString& Value, const QString& Unit, const QString& Icon);
 
 	QTreeWidgetItem* FindItem(const QString& Name);
+	void deleteItem(const QString& Name);
 
 private slots:
 	void dataChanged(const QString& Group, const QString& Name,

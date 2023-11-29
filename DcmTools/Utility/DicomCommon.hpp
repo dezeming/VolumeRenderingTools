@@ -44,6 +44,10 @@ enum DcmParseLib {
 	Dez_DCMTK = 1
 };
 
+struct GenerateFormat {
+	DataFormat format = Dez_Origin;
+	DcmParseLib parseLib = Dez_GDCM;
+};
 
 inline int getFormatOnePixelBytes(const DataFormat form) {
 	int bytes = -1;
@@ -330,10 +334,7 @@ struct VolumeData {
 	}
 };
 
-struct GenerateFormat {
-	DataFormat format = Dez_Origin;
-	DcmParseLib parseLib = Dez_GDCM;
-};
+
 
 
 

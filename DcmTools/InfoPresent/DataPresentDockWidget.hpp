@@ -43,7 +43,7 @@ protected:
 	void closeEvent(QCloseEvent* event);
 
 private slots:
-
+	void deleteItem(QString itemName);
 
 };
 

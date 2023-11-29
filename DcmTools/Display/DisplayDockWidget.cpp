@@ -24,6 +24,7 @@
 #include <string>
 
 DisplayDockWidget::DisplayDockWidget(QWidget * parent) {
+
 	setWindowTitle("Display Interaction");
 
 	setFeatures(QDockWidget::DockWidgetMovable);
@@ -42,6 +43,8 @@ DisplayDockWidget::DisplayDockWidget(QWidget * parent) {
 
 DisplayDockWidget::~DisplayDockWidget() {
 
+	volumeData.clear();
+
 }
 
 void DisplayDockWidget::setpuWidgets()
@@ -49,6 +52,95 @@ void DisplayDockWidget::setpuWidgets()
 	m_FileDirSet_Widget = new FileDirSet_Widget;
 	centerLayout->addWidget(m_FileDirSet_Widget);
 
+	m_QVolumeReadWrite_Widget = new QVolumeReadWrite_Widget;
+	centerLayout->addWidget(m_QVolumeReadWrite_Widget);
+	connect(m_QVolumeReadWrite_Widget->readDcms_processButton,
+		SIGNAL(clicked()), this, SLOT(readDcmsData()));
+	connect(m_QVolumeReadWrite_Widget->readMhd_processButton,
+		SIGNAL(clicked()), this, SLOT(readMhdData()));
+	connect(m_QVolumeReadWrite_Widget->readFeimos_processButton,
+		SIGNAL(clicked()), this, SLOT(readFeimosData()));
+
+	m_QVolumeStatistics_Widget = new QVolumeStatistics_Widget;
+	centerLayout->addWidget(m_QVolumeStatistics_Widget);
+}
+
+#include "InfoPresent/Status.hpp"
+
+void DisplayDockWidget::readDcmsData() {
+	getPredefinedInfo();
+
+	// check input and output
+	if (!m_DataRW.isInputDirExist(InputFolder)) return;
+
+	volumeData.clear();
+
+	std::vector<QString> fileList;
+	bool parseFlag = m_DataRW.getInputDcmFileList(InputFolder, fileList);
+	if (!parseFlag) {
+		clearVolumeInfo();
+		return;
+	}
+	parseFlag = m_DataRW.GenerateInput_GDCM(fileList, volumeData);
+	if (parseFlag) {
+		displayVolumeInfo();
+	}
+}
+
+void DisplayDockWidget::readMhdData() {
+	getPredefinedInfo();
+
+	// check input and output
+	if (!m_DataRW.isInputMhdFileExist(InputFilePath)) return;
+
+	volumeData.clear();
+	bool parseFlag = m_DataRW.GenerateInput_Mhd(InputFilePath, volumeData);
+	if (!parseFlag) {
+		clearVolumeInfo();
+	}
+	else {
+		displayVolumeInfo();
+	}
+}
+
+void DisplayDockWidget::readFeimosData() {
+	getPredefinedInfo();
+
+	// check input and output
+	if (!m_DataRW.isInputFeimosFileExist(InputFilePath)) return;
+
+	volumeData.clear();
+	bool parseFlag = m_DataRW.GenerateInput_Feimos(InputFilePath, volumeData);
+	if (!parseFlag) {
+		clearVolumeInfo();
+	}
+	else {
+		displayVolumeInfo();
+	}
+}
+
+void DisplayDockWidget::clearVolumeInfo() {
+	m_GuiStatus.setDataChanged("Volume Data", "Resolution-x", "", "");
+	m_GuiStatus.setDataChanged("Volume Data", "Resolution-y", "", "");
+	m_GuiStatus.setDataChanged("Volume Data", "Resolution-z", "", "");
+
+	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-x", "", "mm");
+	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-y", "", "mm");
+	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-z", "", "mm");
+
+	m_GuiStatus.setDataChanged("Volume Data", "Data Format", "", "");
+}
+
+void DisplayDockWidget::displayVolumeInfo() {
+	m_GuiStatus.setDataChanged("Volume Data", "Resolution-x", QString::number(volumeData.xResolution), "");
+	m_GuiStatus.setDataChanged("Volume Data", "Resolution-y", QString::number(volumeData.yResolution), "");
+	m_GuiStatus.setDataChanged("Volume Data", "Resolution-z", QString::number(volumeData.zResolution), "");
+
+	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-x", QString::number(volumeData.xPixelSpace), "mm");
+	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-y", QString::number(volumeData.yPixelSpace), "mm");
+	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-z", QString::number(volumeData.zPixelSpace), "mm");
+
+	m_GuiStatus.setDataChanged("Volume Data", "Data Format", (volumeData.getFormatString()), "");
 }
 
 #include <QFileInfo>

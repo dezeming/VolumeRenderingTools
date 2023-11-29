@@ -117,7 +117,12 @@ void DataTreeWidget::dataChanged(const QString& Group, const QString& Name,
 	UpdateData(Group, Name, Value, Unit, Icon);
 }
 
+void DataTreeWidget::deleteItem(const QString& Name) {
+	QList<QTreeWidgetItem*> Items = findItems(Name, Qt::MatchRecursive, 0);
 
+	if (Items.size() > 0) delete Items[0];
+
+}
 
 
 

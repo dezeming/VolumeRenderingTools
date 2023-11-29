@@ -32,7 +32,6 @@ signals:
     void setDataChanged(const QString& Group, const QString& Name,
         const QString& Value, const QString& Unit = "", const QString& Icon = "");
 
-
 private slots:
 
 

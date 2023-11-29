@@ -48,7 +48,11 @@ DataPresentDockWidget::~DataPresentDockWidget() { }
 
 void DataPresentDockWidget::closeEvent(QCloseEvent* event) { }
 
+void DataPresentDockWidget::deleteItem(QString itemName) {
 
+	m_DataTreeWidget->deleteItem(itemName);
+
+}
 
 
 

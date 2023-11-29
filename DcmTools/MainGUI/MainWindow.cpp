@@ -25,6 +25,15 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent) {
     
+	QPalette pal;
+	pal.setColor(QPalette::Background, QColor(49, 54, 59));
+	setAutoFillBackground(true);
+	setPalette(pal);
+	pal.setColor(QPalette::Background, Qt::blue);
+
+	setStyleSheet("background-color: rgb(49,54,59);\
+		color:rgb(180,180,180);");
+
 	setMinimumSize(800, 800);
 
 	centralWidget = new QWidget;
@@ -42,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 MainWindow::~MainWindow() {
-	disconnect(m_DisplayDockWidget, SIGNAL(getFileAndDirPathInDisplay()), this, SLOT(getDisplayFileAndDirPath()));
+	
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -68,10 +77,10 @@ void MainWindow::setWidgetAndDock(void) {
 	addDockWidget(Qt::RightDockWidgetArea, m_DataPresentDockWidget);
 
 	m_DisplayDockWidget = new DisplayDockWidget;
-	addDockWidget(Qt::RightDockWidgetArea, m_DisplayDockWidget);
+	addDockWidget(Qt::LeftDockWidgetArea, m_DisplayDockWidget);
 
-	tabifyDockWidget(m_DataPresentDockWidget, m_DisplayDockWidget);
-	m_DataPresentDockWidget->raise();
+	tabifyDockWidget(m_ProcessDockWidget, m_DisplayDockWidget);
+	m_ProcessDockWidget->raise();
 
 	showMemoryInfo();
 }
