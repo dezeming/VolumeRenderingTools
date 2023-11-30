@@ -490,12 +490,12 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 // *** Call type function *** //
 // **********************************************//
 
-void ProcessVolumeData::DcmMakeMhdFile(const QString& inputDir, const QString& outputDir, const QString& outName,
+void ProcessVolumeData::DcmMakeMhdFile(const QString& inputDir, const QString& outputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 
 	// check input and output
 	if (!data_rw.isInputDirExist(inputDir)) return;
-	if (!data_rw.checkOutputDir_Mhd(outputDir, outName)) return;
+	if (!data_rw.checkOutputDir_Mhd(outputDir, OutputFileName)) return;
 
 	std::vector<QString> fileList;
 	bool parseFlag = data_rw.getInputDcmFileList(inputDir, fileList);
@@ -511,17 +511,17 @@ void ProcessVolumeData::DcmMakeMhdFile(const QString& inputDir, const QString& o
 	}
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, outName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, OutputFileName, generateFormat, volumeData);
 	}
 	volumeData.clear();
 }
 
-void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString& outputDir, const QString& outName, 
+void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString& outputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 
 	// check input and output
 	if (!data_rw.isInputDirExist(inputDir)) return;
-	if (!data_rw.checkOutputDir_Feimos(outputDir, outName)) return;
+	if (!data_rw.checkOutputDir_Feimos(outputDir, OutputFileName)) return;
 
 	std::vector<QString> fileList;
 	bool parseFlag = data_rw.getInputDcmFileList(inputDir, fileList);
@@ -537,16 +537,16 @@ void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString
 	}
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, outName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, OutputFileName, generateFormat, volumeData);
 	}
 	volumeData.clear();
 }
 
-void ProcessVolumeData::MhdMakeFeimosFile(const QString& inputFilePath, const QString& outputDir, const QString& outName,
+void ProcessVolumeData::MhdMakeFeimosFile(const QString& inputFilePath, const QString& outputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 	// check input and output
 	if (!data_rw.isInputMhdFileExist(inputFilePath)) return;
-	if (!data_rw.checkOutputDir_Feimos(outputDir, outName)) return;
+	if (!data_rw.checkOutputDir_Feimos(outputDir, OutputFileName)) return;
 
 	VolumeData volumeData;
 
@@ -554,16 +554,16 @@ void ProcessVolumeData::MhdMakeFeimosFile(const QString& inputFilePath, const QS
 	DebugTextPrintString(volumeData.toString().toStdString().c_str());
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, outName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, OutputFileName, generateFormat, volumeData);
 	}
 	volumeData.clear();
 }
 
-void ProcessVolumeData::FeimosMakeMhdFile(const QString& inputFilePath, const QString& outputDir, const QString& outName,
+void ProcessVolumeData::FeimosMakeMhdFile(const QString& inputFilePath, const QString& outputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 	// check input and output
 	if (!data_rw.isInputFeimosFileExist(inputFilePath)) return;
-	if (!data_rw.checkOutputDir_Mhd(outputDir, outName)) return;
+	if (!data_rw.checkOutputDir_Mhd(outputDir, OutputFileName)) return;
 
 	VolumeData volumeData;
 
@@ -571,7 +571,7 @@ void ProcessVolumeData::FeimosMakeMhdFile(const QString& inputFilePath, const QS
 	DebugTextPrintString(volumeData.toString().toStdString().c_str());
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, outName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, OutputFileName, generateFormat, volumeData);
 	}
 	volumeData.clear();
 }

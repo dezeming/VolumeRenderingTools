@@ -112,7 +112,7 @@ bool DataReaderAndWriter::isInputMhdFileExist(const QString& inputFilePath) {
 bool DataReaderAndWriter::isInputFeimosFileExist(const QString& inputFilePath) {
 	return isInputFileExist(inputFilePath, ".feimos");
 }
-bool DataReaderAndWriter::checkOutputDir_Mhd(const QString& outputDir, const QString& outName) {
+bool DataReaderAndWriter::checkOutputDir_Mhd(const QString& outputDir, const QString& OutputFileName) {
 	QDir dir;
 	if (!dir.exists(outputDir)) {
 		if (!dir.mkpath(outputDir)) {
@@ -121,12 +121,12 @@ bool DataReaderAndWriter::checkOutputDir_Mhd(const QString& outputDir, const QSt
 		}
 	}
 
-	QFile file_mhd(outputDir + "/" + outName + ".mhd");
+	QFile file_mhd(outputDir + "/" + OutputFileName + ".mhd");
 	if (file_mhd.exists()) {
 		DebugTextPrintErrorString("It is mandatory not to overwrite file with the same name.");
 		return false;
 	}
-	QFile file_raw(outputDir + "/" + outName + ".raw");
+	QFile file_raw(outputDir + "/" + OutputFileName + ".raw");
 	if (file_raw.exists()) {
 		DebugTextPrintErrorString("It is mandatory not to overwrite file with the same name.");
 		return false;
@@ -1201,8 +1201,8 @@ bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat
 	}
 
 	if (generateFormat.format == Dez_Origin) {
-		volumeData.data_aim = volumeData.data;
-		volumeData.format_aim = volumeData.format;
+		volumeData.data_toWrite = volumeData.data;
+		volumeData.format_toWrite = volumeData.format;
 		DebugTextPrintString("No need to convert data format.");
 		return true;
 	}
@@ -1216,7 +1216,7 @@ bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat
 		convertFlag = convertFlag && 
 			__DataFormatConvert(
 				static_cast<signed short*>(volumeData.data),
-				static_cast<float*>(volumeData.data_aim),
+				static_cast<float*>(volumeData.data_toWrite),
 				volumeData);
 		return convertFlag;
 	}
@@ -1226,7 +1226,7 @@ bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat
 		convertFlag = convertFlag &&
 			__DataFormatConvert(
 				static_cast<unsigned short*>(volumeData.data),
-				static_cast<float*>(volumeData.data_aim),
+				static_cast<float*>(volumeData.data_toWrite),
 				volumeData);
 		return convertFlag;
 	}
@@ -1251,7 +1251,7 @@ bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QSt
 	imageImport->SetWholeExtent(0, dimM[0] - 1, 0, dimM[1] - 1, 0, dimM[2] - 1);
 	imageImport->SetDataExtentToWholeExtent();
 
-	switch (volumeData.format_aim)
+	switch (volumeData.format_toWrite)
 	{
 	case Dez_Origin:
 		DebugTextPrintErrorString("Error Mhd output format");
@@ -1290,7 +1290,7 @@ bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QSt
 	}
 	
 	imageImport->SetNumberOfScalarComponents(1); // channel
-	imageImport->SetImportVoidPointer(volumeData.data_aim);
+	imageImport->SetImportVoidPointer(volumeData.data_toWrite);
 	imageImport->Update();
 	vtkSmartPointer<vtkMetaImageWriter> writer =
 		vtkSmartPointer<vtkMetaImageWriter>::New();
@@ -1299,7 +1299,7 @@ bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QSt
 	writer->SetRAWFileName((outputDir + "/" + outName + ".raw").toStdString().c_str());
 	writer->Write();
 
-
+	DebugTextPrintErrorString("Write to Mhd file successfully!");
 	return true;
 }
 
@@ -1309,7 +1309,7 @@ bool SaveUncompressedRawData(std::string filename, unsigned int bytesOneScalar, 
 	std::ofstream file(filename, std::ios::binary);
 	if (!file.is_open()) return false;
 	try {
-		file.write(reinterpret_cast<const char*>(volumeData.data_aim), bytesOneScalar * width * height * imageNUm);
+		file.write(reinterpret_cast<const char*>(volumeData.data_toWrite), bytesOneScalar * width * height * imageNUm);
 	}
 	catch (const std::exception& e) {
 		std::cerr << "Exception caught: " << e.what() << std::endl;
@@ -1328,7 +1328,7 @@ bool DataReaderAndWriter::GenerateOutput_Feimos(const QString& outputDir, const 
 	}
 
 	std::string format; bool writebinaryFlag = true;
-	switch (volumeData.format_aim)
+	switch (volumeData.format_toWrite)
 	{
 	case Dez_Origin:
 		format = "Error";
@@ -1410,7 +1410,7 @@ bool DataReaderAndWriter::GenerateOutput_Feimos(const QString& outputDir, const 
 		fileInfo.close();
 	}
 	
-
+	DebugTextPrintErrorString("Write to Feimos file successfully!");
 	return true;
 }
 

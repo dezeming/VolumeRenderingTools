@@ -18,6 +18,7 @@
 */
 
 #include "DisplayDockWidget.hpp"
+#include "Utility/DebugText.hpp"
 
 #include <QFile>
 #include <fstream>
@@ -60,6 +61,10 @@ void DisplayDockWidget::setpuWidgets()
 		SIGNAL(clicked()), this, SLOT(readMhdData()));
 	connect(m_QVolumeReadWrite_Widget->readFeimos_processButton,
 		SIGNAL(clicked()), this, SLOT(readFeimosData()));
+	connect(m_QVolumeReadWrite_Widget->writeMhd_processButton,
+		SIGNAL(clicked()), this, SLOT(writeMhdData()));
+	connect(m_QVolumeReadWrite_Widget->writeFeimos_processButton,
+		SIGNAL(clicked()), this, SLOT(writeFeimosData()));
 
 	m_QVolumeStatistics_Widget = new QVolumeStatistics_Widget;
 	centerLayout->addWidget(m_QVolumeStatistics_Widget);
@@ -68,6 +73,7 @@ void DisplayDockWidget::setpuWidgets()
 #include "InfoPresent/Status.hpp"
 
 void DisplayDockWidget::readDcmsData() {
+	DebugTextPrintLineBreak();
 	getPredefinedInfo();
 
 	// check input and output
@@ -88,6 +94,7 @@ void DisplayDockWidget::readDcmsData() {
 }
 
 void DisplayDockWidget::readMhdData() {
+	DebugTextPrintLineBreak();
 	getPredefinedInfo();
 
 	// check input and output
@@ -104,6 +111,7 @@ void DisplayDockWidget::readMhdData() {
 }
 
 void DisplayDockWidget::readFeimosData() {
+	DebugTextPrintLineBreak();
 	getPredefinedInfo();
 
 	// check input and output
@@ -117,6 +125,24 @@ void DisplayDockWidget::readFeimosData() {
 	else {
 		displayVolumeInfo();
 	}
+}
+
+void DisplayDockWidget::writeMhdData() {
+	DebugTextPrintLineBreak();
+	getPredefinedInfo();
+	if (!m_DataRW.checkOutputDir_Mhd(OutputFolder, OutputFileName)) return;
+	GenerateFormat generateFormat;
+	generateFormat.format = Dez_Origin;
+	bool parseFlag = m_DataRW.GenerateOutput_Mhd(OutputFolder, OutputFileName, generateFormat, volumeData);
+}
+
+void DisplayDockWidget::writeFeimosData() {
+	DebugTextPrintLineBreak();
+	getPredefinedInfo();
+	if (!m_DataRW.checkOutputDir_Feimos(OutputFolder, OutputFileName)) return;
+	GenerateFormat generateFormat;
+	generateFormat.format = Dez_Origin;
+	bool parseFlag = m_DataRW.GenerateOutput_Feimos(OutputFolder, OutputFileName, generateFormat, volumeData);
 }
 
 void DisplayDockWidget::clearVolumeInfo() {

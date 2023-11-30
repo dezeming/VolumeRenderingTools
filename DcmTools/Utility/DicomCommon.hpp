@@ -114,12 +114,12 @@ struct VolumeData {
 	DataFormat format;
 
 	// If the data format needs to be converted, use this pointer
-	void * data_aim;
-	DataFormat format_aim;
+	void * data_toWrite;
+	DataFormat format_toWrite;
 
 	VolumeData() {
 		data = nullptr;
-		data_aim = nullptr;
+		data_toWrite = nullptr;
 		format = Dez_Origin;
 	}
 	~VolumeData() {
@@ -161,77 +161,77 @@ struct VolumeData {
 		}
 		data = nullptr;
 
-		if (data_aim && format_aim != format) {
-			switch (format_aim)
+		if (data_toWrite && format_toWrite != format) {
+			switch (format_toWrite)
 			{
 			case Dez_Origin:
 				break;
 			case Dez_UnsignedLong:
-				delete[] static_cast<unsigned long*>(data_aim);
+				delete[] static_cast<unsigned long*>(data_toWrite);
 				break;
 			case Dez_SignedLong:
-				delete[] static_cast<signed long*>(data_aim);
+				delete[] static_cast<signed long*>(data_toWrite);
 				break;
 			case Dez_UnsignedShort:
-				delete[] static_cast<unsigned short*>(data_aim);
+				delete[] static_cast<unsigned short*>(data_toWrite);
 				break;
 			case Dez_SignedShort:
-				delete[] static_cast<signed short*>(data_aim);
+				delete[] static_cast<signed short*>(data_toWrite);
 				break;
 			case Dez_UnsignedChar:
-				delete[] static_cast<unsigned char*>(data_aim);
+				delete[] static_cast<unsigned char*>(data_toWrite);
 				break;
 			case Dez_SignedChar:
-				delete[] static_cast<signed char*>(data_aim);
+				delete[] static_cast<signed char*>(data_toWrite);
 				break;
 			case Dez_Float:
-				delete[] static_cast<float*>(data_aim);
+				delete[] static_cast<float*>(data_toWrite);
 				break;
 			case Dez_Double:
-				delete[] static_cast<double*>(data_aim);
+				delete[] static_cast<double*>(data_toWrite);
 				break;
 			default:
 				break;
 			}
 		}
-		data_aim = nullptr;
+		data_toWrite = nullptr;
 	}
 
 	void clearAim() {
-		if (data_aim && format_aim != format) {
-			switch (format_aim)
+		if (data_toWrite && format_toWrite != format) {
+			switch (format_toWrite)
 			{
 			case Dez_Origin:
 				break;
 			case Dez_UnsignedLong:
-				delete[] static_cast<unsigned long*>(data_aim);
+				delete[] static_cast<unsigned long*>(data_toWrite);
 				break;
 			case Dez_SignedLong:
-				delete[] static_cast<signed long*>(data_aim);
+				delete[] static_cast<signed long*>(data_toWrite);
 				break;
 			case Dez_UnsignedShort:
-				delete[] static_cast<unsigned short*>(data_aim);
+				delete[] static_cast<unsigned short*>(data_toWrite);
 				break;
 			case Dez_SignedShort:
-				delete[] static_cast<signed short*>(data_aim);
+				delete[] static_cast<signed short*>(data_toWrite);
 				break;
 			case Dez_UnsignedChar:
-				delete[] static_cast<unsigned char*>(data_aim);
+				delete[] static_cast<unsigned char*>(data_toWrite);
 				break;
 			case Dez_SignedChar:
-				delete[] static_cast<signed char*>(data_aim);
+				delete[] static_cast<signed char*>(data_toWrite);
 				break;
 			case Dez_Float:
-				delete[] static_cast<float*>(data_aim);
+				delete[] static_cast<float*>(data_toWrite);
 				break;
 			case Dez_Double:
-				delete[] static_cast<double*>(data_aim);
+				delete[] static_cast<double*>(data_toWrite);
 				break;
 			default:
 				break;
 			}
 		}
-		data_aim = nullptr;
+		data_toWrite = nullptr;
 	}
 
 	bool setFormatUsingString(const QString str) {

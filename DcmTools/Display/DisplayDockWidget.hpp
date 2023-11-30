@@ -137,7 +137,8 @@ private slots:
 	void readDcmsData();
 	void readMhdData();
 	void readFeimosData();
-
+	void writeMhdData();
+	void writeFeimosData();
 private:
 	VolumeData volumeData;
 
