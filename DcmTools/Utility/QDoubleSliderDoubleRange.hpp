@@ -17,7 +17,6 @@
 	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
-
 /*
 	This code is transplanted from <https://github.com/ThisIsClark/Qt-RangeSlider>
 
@@ -37,15 +36,15 @@
 
 */
 
-#ifndef __QSliderDoubleRange_hpp__
-#define __QSliderDoubleRange_hpp__
+#ifndef __QDoubleSliderDoubleRange_h__
+#define __QDoubleSliderDoubleRange_h__
 
-#pragma once
+
 #include <QWidget>
 #include <QPainter>
 #include <QMouseEvent>
 
-class QSliderDoubleRange : public QWidget
+class QDoubleSliderDoubleRange : public QWidget
 {
 	Q_OBJECT
 		Q_ENUMS(QSliderDoubleRangeTypes)
@@ -59,24 +58,24 @@ public:
 	};
 	Q_DECLARE_FLAGS(Options, Option)
 
-	QSliderDoubleRange(QWidget* aParent = Q_NULLPTR);
-	QSliderDoubleRange(Qt::Orientation ori, Options t = DoubleHandles, QWidget* aParent = Q_NULLPTR);
+		QDoubleSliderDoubleRange(QWidget* aParent = Q_NULLPTR);
+	QDoubleSliderDoubleRange(Qt::Orientation ori, Options t = DoubleHandles, QWidget* aParent = Q_NULLPTR);
 
 	QSize minimumSizeHint() const override;
 
-	int GetMinimun() const;
-	void SetMinimum(int aMinimum);
+	double GetMinimun() const;
+	void SetMinimum(double aMinimum);
 
 	int GetMaximun() const;
-	void SetMaximum(int aMaximum);
+	void SetMaximum(double aMaximum);
 
 	int GetLowerValue() const;
-	void SetLowerValue(int aLowerValue);
+	void SetLowerValue(double aLowerValue);
 
 	int GetUpperValue() const;
-	void SetUpperValue(int aUpperValue);
+	void SetUpperValue(double aUpperValue);
 
-	void SetRange(int aMinimum, int aMaximum);
+	void SetRange(double aMinimum, double aMaximum);
 	void SetTracking(bool enable);
 
 protected:
@@ -88,33 +87,33 @@ protected:
 
 	QRectF firstHandleRect() const;
 	QRectF secondHandleRect() const;
-	QRectF handleRect(int aValue) const;
+	QRectF handleRect(double aValue) const;
 
 signals:
-	void lowerValueChanged(int aLowerValue);
-	void upperValueChanged(int aUpperValue);
-	void rangeChanged(int aMin, int aMax);
+	void lowerValueChanged(double aLowerValue);
+	void upperValueChanged(double aUpperValue);
+	void rangeChanged(double aMin, double aMax);
 
 public slots:
-	void setLowerValue(int aLowerValue);
-	void setUpperValue(int aUpperValue);
-	void setMinimum(int aMinimum);
-	void setMaximum(int aMaximum);
+	void setLowerValue(double aLowerValue);
+	void setUpperValue(double aUpperValue);
+	void setMinimum(double aMinimum);
+	void setMaximum(double aMaximum);
 
 private:
-	Q_DISABLE_COPY(QSliderDoubleRange)
-	float currentPercentage();
-	int validLength() const;
+	Q_DISABLE_COPY(QDoubleSliderDoubleRange)
+		float currentPercentage();
+	double validLength() const;
 
-	int mMinimum;
-	int mMaximum;
-	int mLowerValue;
-	int mUpperValue;
+	double mMinimum;
+	double mMaximum;
+	double mLowerValue;
+	double mUpperValue;
 	bool mEnableTracking;
 	bool mFirstHandlePressed;
 	bool mSecondHandlePressed;
-	int mInterval;
-	int mDelta;
+	double mInterval;
+	double mDelta;
 	QColor mBackgroudColorEnabled;
 	QColor mBackgroudColorDisabled;
 	QColor mBackgroudColor;
@@ -122,13 +121,16 @@ private:
 	Options type;
 };
 
-Q_DECLARE_OPERATORS_FOR_FLAGS(QSliderDoubleRange::Options)
+Q_DECLARE_OPERATORS_FOR_FLAGS(QDoubleSliderDoubleRange::Options)
+
+
+
+
+
 
 
 
 #endif
-
-
 
 
 

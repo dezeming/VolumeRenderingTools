@@ -17,8 +17,8 @@
 	Github site: <https://github.com/dezeming/VolumeRenderingTools.git>
 */
 
+#include "QDoubleSliderDoubleRange.hpp"
 
-#include "QSliderDoubleRange.hpp"
 #include <QDebug>
 
 namespace
@@ -30,7 +30,7 @@ namespace
 
 }
 
-QSliderDoubleRange::QSliderDoubleRange(QWidget* aParent)
+QDoubleSliderDoubleRange::QDoubleSliderDoubleRange(QWidget* aParent)
 	: QWidget(aParent),
 	mMinimum(0),
 	mMaximum(100),
@@ -48,7 +48,7 @@ QSliderDoubleRange::QSliderDoubleRange(QWidget* aParent)
 	setMouseTracking(true);
 }
 
-QSliderDoubleRange::QSliderDoubleRange(Qt::Orientation ori, Options t, QWidget* aParent)
+QDoubleSliderDoubleRange::QDoubleSliderDoubleRange(Qt::Orientation ori, Options t, QWidget* aParent)
 	: QWidget(aParent),
 	mMinimum(0),
 	mMaximum(100),
@@ -67,7 +67,7 @@ QSliderDoubleRange::QSliderDoubleRange(Qt::Orientation ori, Options t, QWidget* 
 	setMouseTracking(true);
 }
 
-void QSliderDoubleRange::paintEvent(QPaintEvent* aEvent)
+void QDoubleSliderDoubleRange::paintEvent(QPaintEvent* aEvent)
 {
 	Q_UNUSED(aEvent);
 	QPainter painter(this);
@@ -118,19 +118,19 @@ void QSliderDoubleRange::paintEvent(QPaintEvent* aEvent)
 	painter.drawRect(selectedRect);
 }
 
-QRectF QSliderDoubleRange::firstHandleRect() const
+QRectF QDoubleSliderDoubleRange::firstHandleRect() const
 {
 	float percentage = (mLowerValue - mMinimum) * 1.0 / mInterval;
 	return handleRect(percentage * validLength() + scLeftRightMargin);
 }
 
-QRectF QSliderDoubleRange::secondHandleRect() const
+QRectF QDoubleSliderDoubleRange::secondHandleRect() const
 {
 	float percentage = (mUpperValue - mMinimum) * 1.0 / mInterval;
 	return handleRect(percentage * validLength() + scLeftRightMargin + (type.testFlag(LeftHandle) ? scHandleSideLength : 0));
 }
 
-QRectF QSliderDoubleRange::handleRect(int aValue) const
+QRectF QDoubleSliderDoubleRange::handleRect(double aValue) const
 {
 	if (orientation == Qt::Horizontal)
 		return QRect(aValue, (height() - scHandleSideLength) / 2, scHandleSideLength, scHandleSideLength);
@@ -138,7 +138,7 @@ QRectF QSliderDoubleRange::handleRect(int aValue) const
 		return QRect((width() - scHandleSideLength) / 2, aValue, scHandleSideLength, scHandleSideLength);
 }
 
-void QSliderDoubleRange::mousePressEvent(QMouseEvent* aEvent)
+void QDoubleSliderDoubleRange::mousePressEvent(QMouseEvent* aEvent)
 {
 	if (aEvent->buttons() & Qt::LeftButton)
 	{
@@ -186,7 +186,7 @@ void QSliderDoubleRange::mousePressEvent(QMouseEvent* aEvent)
 	}
 }
 
-void QSliderDoubleRange::mouseMoveEvent(QMouseEvent* aEvent)
+void QDoubleSliderDoubleRange::mouseMoveEvent(QMouseEvent* aEvent)
 {
 	if (aEvent->buttons() & Qt::LeftButton)
 	{
@@ -220,7 +220,7 @@ void QSliderDoubleRange::mouseMoveEvent(QMouseEvent* aEvent)
 	}
 }
 
-void QSliderDoubleRange::mouseReleaseEvent(QMouseEvent* aEvent)
+void QDoubleSliderDoubleRange::mouseReleaseEvent(QMouseEvent* aEvent)
 {
 	Q_UNUSED(aEvent);
 	int aHandleStateChangeIndex = 0;
@@ -232,7 +232,7 @@ void QSliderDoubleRange::mouseReleaseEvent(QMouseEvent* aEvent)
 	else if (aHandleStateChangeIndex == 2) setUpperValue(mUpperValue);
 }
 
-void QSliderDoubleRange::changeEvent(QEvent* aEvent)
+void QDoubleSliderDoubleRange::changeEvent(QEvent* aEvent)
 {
 	if (aEvent->type() == QEvent::EnabledChange)
 	{
@@ -248,52 +248,52 @@ void QSliderDoubleRange::changeEvent(QEvent* aEvent)
 	}
 }
 
-QSize QSliderDoubleRange::minimumSizeHint() const
+QSize QDoubleSliderDoubleRange::minimumSizeHint() const
 {
 	return QSize(scHandleSideLength * 2 + scLeftRightMargin * 2, scHandleSideLength);
 }
 
-int QSliderDoubleRange::GetMinimun() const
+double QDoubleSliderDoubleRange::GetMinimun() const
 {
 	return mMinimum;
 }
 
-void QSliderDoubleRange::SetMinimum(int aMinimum)
+void QDoubleSliderDoubleRange::SetMinimum(double aMinimum)
 {
 	setMinimum(aMinimum);
 }
 
-int QSliderDoubleRange::GetMaximun() const
+int QDoubleSliderDoubleRange::GetMaximun() const
 {
 	return mMaximum;
 }
 
-void QSliderDoubleRange::SetMaximum(int aMaximum)
+void QDoubleSliderDoubleRange::SetMaximum(double aMaximum)
 {
 	setMaximum(aMaximum);
 }
 
-int QSliderDoubleRange::GetLowerValue() const
+int QDoubleSliderDoubleRange::GetLowerValue() const
 {
 	return mLowerValue;
 }
 
-void QSliderDoubleRange::SetLowerValue(int aLowerValue)
+void QDoubleSliderDoubleRange::SetLowerValue(double aLowerValue)
 {
 	setLowerValue(aLowerValue);
 }
 
-int QSliderDoubleRange::GetUpperValue() const
+int QDoubleSliderDoubleRange::GetUpperValue() const
 {
 	return mUpperValue;
 }
 
-void QSliderDoubleRange::SetUpperValue(int aUpperValue)
+void QDoubleSliderDoubleRange::SetUpperValue(double aUpperValue)
 {
 	setUpperValue(aUpperValue);
 }
 
-void QSliderDoubleRange::setLowerValue(int aLowerValue)
+void QDoubleSliderDoubleRange::setLowerValue(double aLowerValue)
 {
 	if (aLowerValue > mMaximum)
 	{
@@ -315,7 +315,7 @@ void QSliderDoubleRange::setLowerValue(int aLowerValue)
 	update();
 }
 
-void QSliderDoubleRange::setUpperValue(int aUpperValue)
+void QDoubleSliderDoubleRange::setUpperValue(double aUpperValue)
 {
 	if (aUpperValue > mMaximum)
 	{
@@ -337,7 +337,7 @@ void QSliderDoubleRange::setUpperValue(int aUpperValue)
 	update();
 }
 
-void QSliderDoubleRange::setMinimum(int aMinimum)
+void QDoubleSliderDoubleRange::setMinimum(double aMinimum)
 {
 	if (aMinimum <= mMaximum)
 	{
@@ -358,7 +358,7 @@ void QSliderDoubleRange::setMinimum(int aMinimum)
 	emit rangeChanged(mMinimum, mMaximum);
 }
 
-void QSliderDoubleRange::setMaximum(int aMaximum)
+void QDoubleSliderDoubleRange::setMaximum(double aMaximum)
 {
 	if (aMaximum >= mMinimum)
 	{
@@ -379,21 +379,25 @@ void QSliderDoubleRange::setMaximum(int aMaximum)
 	emit rangeChanged(mMinimum, mMaximum);
 }
 
-int QSliderDoubleRange::validLength() const
+double QDoubleSliderDoubleRange::validLength() const
 {
 	int len = (orientation == Qt::Horizontal) ? width() : height();
 	return len - scLeftRightMargin * 2 - scHandleSideLength * (type.testFlag(DoubleHandles) ? 2 : 1);
 }
 
-void QSliderDoubleRange::SetRange(int aMinimum, int mMaximum)
+void QDoubleSliderDoubleRange::SetRange(double aMinimum, double mMaximum)
 {
 	setMinimum(aMinimum);
 	setMaximum(mMaximum);
 }
 
-void QSliderDoubleRange::SetTracking(bool enable) {
+void QDoubleSliderDoubleRange::SetTracking(bool enable) {
 	mEnableTracking = enable;
 }
+
+
+
+
 
 
 

@@ -28,9 +28,17 @@
 #include <QPushButton>
 #include <QLineEdit>
 
-#include "Utility/WidgetsCommon.hpp"
 #include "Process/DataReaderAndWriter.hpp"
+
+#include "Utility/WidgetsCommon.hpp"
 #include "Utility/DicomCommon.hpp"
+#include "Utility/QSliderDoubleRange.hpp"
+
+#include "Utility/QDoubleSlider.hpp"
+#include "Utility/QDoubleSliderDoubleRange.hpp"
+
+#include <QSlider>
+#include <QDoubleSpinBox>
 
 class QVolumeReadWrite_Widget : public QGroupBox {
 	Q_OBJECT
@@ -74,7 +82,6 @@ public:
 	QPushButton *writeFeimos_processButton;
 };
 
-
 class QVolumeStatistics_Widget : public QGroupBox {
 	Q_OBJECT
 public:
@@ -93,8 +100,18 @@ public:
 		GetStatisticsLayout->addWidget(getOriginInfo_processButton, 0, 0);
 		GetStatisticsLayout->addWidget(getGragientInfo_processButton, 0, 1);
 
+		ScaleTheDataValue_Layout = new QGridLayout;
+		Scale_processButton = new QPushButton;
+		Scale_Slider = new QDoubleSlider;
+		Scale_SpinBox = new QDoubleSpinBox;
+		ScaleTheDataValue_Layout->addWidget(Scale_processButton, 0, 0);
+		Scale_processButton->setText("Scale the value");
+		ScaleTheDataValue_Layout->addWidget(Scale_Slider, 0, 1);
+		ScaleTheDataValue_Layout->addWidget(Scale_SpinBox, 0, 2);
+
 		setLayout(centerLayout);
 		centerLayout->addLayout(GetStatisticsLayout);
+		centerLayout->addLayout(ScaleTheDataValue_Layout);
 	}
 	~QVolumeStatistics_Widget() { }
 
@@ -104,9 +121,118 @@ public:
 	QPushButton *getOriginInfo_processButton;
 	QPushButton *getGragientInfo_processButton;
 
+	QGridLayout *ScaleTheDataValue_Layout;
+	QPushButton *Scale_processButton;
+	QDoubleSlider * Scale_Slider;
+	QDoubleSpinBox * Scale_SpinBox;
 
 };
 
+class QVolumeWWWL_Widget : public QGroupBox {
+	Q_OBJECT
+public:
+	QVolumeWWWL_Widget(QWidget * parent = Q_NULLPTR) {
+		setTitle("Data Display Range");
+		setMinimumWidth(200);
+
+		centerLayout = new QVBoxLayout;
+
+		WWWL_Layout = new QGridLayout;
+		WW_Button = new QPushButton;
+		WW_Button->setText("Window Width");
+		WL_Button = new QPushButton;
+		WL_Button->setText("Window Level");
+
+		WWWL_Layout->addWidget(WW_Button, 0, 0);
+		WWWL_Layout->addWidget(WL_Button, 1, 0);
+
+		WW_Slider = new QDoubleSlider;
+		WW_SpinBox = new QDoubleSpinBox;
+		WL_Slider = new QDoubleSlider;
+		WL_SpinBox = new QDoubleSpinBox;
+
+		WWWL_Layout->addWidget(WW_Slider, 0, 1);
+		WWWL_Layout->addWidget(WW_SpinBox, 0, 2);
+		WWWL_Layout->addWidget(WL_Slider, 1, 1);
+		WWWL_Layout->addWidget(WL_SpinBox, 1, 2);
+
+		connect(WW_Slider, SIGNAL(valueChanged(double)), WW_SpinBox, SLOT(setValue(double)));
+		connect(WW_SpinBox, SIGNAL(valueChanged(double)), WW_Slider, SLOT(setValue(double)));
+		connect(WL_Slider, SIGNAL(valueChanged(double)), WL_SpinBox, SLOT(setValue(double)));
+		connect(WL_SpinBox, SIGNAL(valueChanged(double)), WL_Slider, SLOT(setValue(double)));
+
+		WW_Slider->setRange(100.0f, 3000.0f);
+		WW_SpinBox->setRange(100.0f, 3000.0f);
+		WW_Slider->setValue(1000.0f);
+		WL_Slider->setRange(-1000.0f, 1000.0f);
+		WL_SpinBox->setRange(-1000.0f, 1000.0f);
+		WL_Slider->setValue(0.0f);
+
+		DataRange_Layout = new QGridLayout;
+		dataRange_Button = new QPushButton;
+		dataRangeSlider = new QDoubleSliderDoubleRange(Qt::Horizontal, QDoubleSliderDoubleRange::Option::DoubleHandles, nullptr);
+		dataRange_Button->setText("Data Range");
+		dataRangeSlider->SetRange(-1000.0,3000.0);
+		dataRangeMin_SpinBox = new QDoubleSpinBox;
+		dataRangeMax_SpinBox = new QDoubleSpinBox;
+		DataRange_Layout->addWidget(dataRange_Button, 0, 0);
+		DataRange_Layout->addWidget(dataRangeMin_SpinBox, 0, 1);
+		DataRange_Layout->addWidget(dataRangeSlider, 0, 2);
+		DataRange_Layout->addWidget(dataRangeMax_SpinBox, 0, 3);
+		DataRange_Layout->setColumnStretch(0, 2);
+		DataRange_Layout->setColumnStretch(1, 1);
+		DataRange_Layout->setColumnStretch(2, 5);
+		DataRange_Layout->setColumnStretch(3, 1);
+		dataRangeMin_SpinBox->setRange(-1000.0, 3000.0);
+		dataRangeMax_SpinBox->setRange(-1000.0, 3000.0);
+		connect(dataRangeMin_SpinBox, SIGNAL(valueChanged(double)), dataRangeSlider, SLOT(setLowerValue(double)));
+		connect(dataRangeMax_SpinBox, SIGNAL(valueChanged(double)), dataRangeSlider, SLOT(setUpperValue(double)));
+		connect(dataRangeSlider, SIGNAL(lowerValueChanged(double)), dataRangeMin_SpinBox, SLOT(setValue(double)));
+		connect(dataRangeSlider, SIGNAL(upperValueChanged(double)), dataRangeMax_SpinBox, SLOT(setValue(double)));
+
+		setLayout(centerLayout);
+		centerLayout->addLayout(WWWL_Layout);
+		centerLayout->addLayout(DataRange_Layout);
+	}
+	~QVolumeWWWL_Widget() {
+		disconnect(WW_Slider, SIGNAL(valueChanged(double)), WW_SpinBox, SLOT(setValue(double)));
+		disconnect(WW_SpinBox, SIGNAL(valueChanged(double)), WW_Slider, SLOT(setValue(double)));
+		disconnect(WL_Slider, SIGNAL(valueChanged(double)), WL_SpinBox, SLOT(setValue(double)));
+		disconnect(WL_SpinBox, SIGNAL(valueChanged(double)), WL_Slider, SLOT(setValue(double)));
+	}
+
+	QVBoxLayout *centerLayout;
+
+	QGridLayout *WWWL_Layout;
+
+	void setDataRange(double ww, double wl, double min, double max) {
+		WW_Slider->setRange(min, max);
+		WW_SpinBox->setRange(min, max);
+		WW_Slider->setValue(max);
+		WL_Slider->setRange(min, max);
+		WL_SpinBox->setRange(min, max);
+		WL_Slider->setValue((0.5 * (max - min)));
+	}
+
+	int WindowWidth, WindowLevel;
+	int dataMin, dataMax;
+
+	QPushButton *WW_Button;
+	QDoubleSlider * WW_Slider;
+	QDoubleSpinBox * WW_SpinBox;
+	QPushButton *WL_Button;
+	QDoubleSlider * WL_Slider;
+	QDoubleSpinBox * WL_SpinBox;
+
+	QGridLayout *DataRange_Layout;
+	QPushButton *dataRange_Button;
+	QDoubleSliderDoubleRange *dataRangeSlider;
+	QDoubleSpinBox * dataRangeMin_SpinBox;
+	QDoubleSpinBox * dataRangeMax_SpinBox;
+
+
+
+};
 
 
 class DisplayDockWidget : public QDockWidget {
@@ -122,14 +248,15 @@ public:
 
 private:
 	QVBoxLayout *centerLayout;
+
 	QFrame *dockCentralWidget;
 
 	FileDirSet_Widget *m_FileDirSet_Widget;
 	QVolumeReadWrite_Widget * m_QVolumeReadWrite_Widget;
 	QVolumeStatistics_Widget * m_QVolumeStatistics_Widget;
+	QVolumeWWWL_Widget * m_QVolumeWWWL_Widget;
 
 	void setpuWidgets();
-
 	void displayVolumeInfo();
 	void clearVolumeInfo();
 
@@ -154,6 +281,7 @@ private:
 private:
 
 };
+
 
 #endif
 

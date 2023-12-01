@@ -117,7 +117,9 @@ public:
 	* outName: Output File Name */
 	/*******************************************************/
 
-	bool DataFormatConvert(const GenerateFormat& generateFormat, VolumeData& volumeData);
+	bool DataFormatConvertToInteract(const GenerateFormat& generateFormat, VolumeData& volumeData);
+
+	bool DataFormatConvertToWrite(const GenerateFormat& generateFormat, VolumeData& volumeData);
 
 	/**
 	* Generate .mhd file

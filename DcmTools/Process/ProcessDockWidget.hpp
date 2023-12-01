@@ -51,14 +51,14 @@ public:
 		setTitle("DCM Sequence to Volume");
 		setMinimumWidth(200);
 
-		VolumeConvert_Layoput = new QVBoxLayout;
+		VolumeConvert_Layoput = new QGridLayout;
 		setLayout(VolumeConvert_Layoput);
 
 		DcmToMhd_processButton = new QPushButton;
-		DcmToMhd_processButton->setText("Dcm To Mhd format");
+		DcmToMhd_processButton->setText("Dcms To Mhd format");
 
 		DcmToFeimos_processButton = new QPushButton;
-		DcmToFeimos_processButton->setText("Dcm To Feimos format");
+		DcmToFeimos_processButton->setText("Dcms To Feimos format");
 
 		MhdToFeimos_processButton = new QPushButton;
 		MhdToFeimos_processButton->setText("Mhd To Feimos format");
@@ -66,10 +66,24 @@ public:
 		FeimosToMhd_processButton = new QPushButton;
 		FeimosToMhd_processButton->setText("Feimos To Mhd format");
 
-		VolumeConvert_Layoput->addWidget(DcmToMhd_processButton);
-		VolumeConvert_Layoput->addWidget(DcmToFeimos_processButton);
-		VolumeConvert_Layoput->addWidget(MhdToFeimos_processButton);
-		VolumeConvert_Layoput->addWidget(FeimosToMhd_processButton);
+		PngToMhd_processButton = new QPushButton;
+		PngToMhd_processButton->setText("PNGs To Mhd format");
+		PngToFeimos_processButton = new QPushButton;
+		PngToFeimos_processButton->setText("PNGs To Feimos format");
+
+		JpgToMhd_processButton = new QPushButton;
+		JpgToMhd_processButton->setText("JPGs To Mhd format");
+		JpgToFeimos_processButton = new QPushButton;
+		JpgToFeimos_processButton->setText("JPGs To Feimos format");
+
+		VolumeConvert_Layoput->addWidget(DcmToMhd_processButton, 0, 0);
+		VolumeConvert_Layoput->addWidget(DcmToFeimos_processButton, 0, 1);
+		VolumeConvert_Layoput->addWidget(MhdToFeimos_processButton, 1, 0);
+		VolumeConvert_Layoput->addWidget(FeimosToMhd_processButton, 1, 1);
+		VolumeConvert_Layoput->addWidget(PngToMhd_processButton, 2, 0);
+		VolumeConvert_Layoput->addWidget(PngToFeimos_processButton, 2, 1);
+		VolumeConvert_Layoput->addWidget(JpgToMhd_processButton, 3, 0);
+		VolumeConvert_Layoput->addWidget(JpgToFeimos_processButton, 3, 1);
 	}
 	~QVolumeConvert_Frame(){ }
 
@@ -78,7 +92,12 @@ public:
 	QPushButton *MhdToFeimos_processButton;
 	QPushButton *FeimosToMhd_processButton;
 
-	QVBoxLayout *VolumeConvert_Layoput;
+	QPushButton * PngToMhd_processButton;
+	QPushButton * PngToFeimos_processButton;
+	QPushButton * JpgToMhd_processButton;
+	QPushButton * JpgToFeimos_processButton;
+
+	QGridLayout *VolumeConvert_Layoput;
 };
 
 // down sampling

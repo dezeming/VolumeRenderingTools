@@ -1191,7 +1191,7 @@ bool __DataFormatConvert(const T* data, U* aimdata, VolumeData& volumeData) {
 	return true;
 }
 
-bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat, VolumeData& volumeData) {
+bool DataReaderAndWriter::DataFormatConvertToWrite(const GenerateFormat& generateFormat, VolumeData& volumeData) {
 
 	// To ensure data accuracy, only a small number of conversions are supported.
 
@@ -1200,7 +1200,7 @@ bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat
 		return false;
 	}
 
-	if (generateFormat.format == Dez_Origin) {
+	if (generateFormat.format == Dez_Origin || volumeData.format == generateFormat.format) {
 		volumeData.data_toWrite = volumeData.data;
 		volumeData.format_toWrite = volumeData.format;
 		DebugTextPrintString("No need to convert data format.");
@@ -1211,6 +1211,32 @@ bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat
 	}
 
 	bool convertFlag = true;
+
+	if (volumeData.format == Dez_UnsignedChar && generateFormat.format == Dez_Float) {
+
+		convertFlag = convertFlag &&
+			__DataFormatConvert(
+				static_cast<unsigned char*>(volumeData.data),
+				static_cast<float*>(volumeData.data_toWrite),
+				volumeData);
+		if (convertFlag)
+			volumeData.format_toWrite = Dez_Float;
+		return convertFlag;
+	}
+
+	if (volumeData.format == Dez_SignedChar && generateFormat.format == Dez_Float) {
+
+		convertFlag = convertFlag &&
+			__DataFormatConvert(
+				static_cast<signed char*>(volumeData.data),
+				static_cast<float*>(volumeData.data_toWrite),
+				volumeData);
+		if (convertFlag)
+			volumeData.format_toWrite = Dez_Float;
+		return convertFlag;
+	}
+
+
 	if (volumeData.format == Dez_SignedShort && generateFormat.format == Dez_Float) {
 		
 		convertFlag = convertFlag && 
@@ -1218,6 +1244,8 @@ bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat
 				static_cast<signed short*>(volumeData.data),
 				static_cast<float*>(volumeData.data_toWrite),
 				volumeData);
+		if (convertFlag)
+			volumeData.format_toWrite = Dez_Float;
 		return convertFlag;
 	}
 
@@ -1228,6 +1256,20 @@ bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat
 				static_cast<unsigned short*>(volumeData.data),
 				static_cast<float*>(volumeData.data_toWrite),
 				volumeData);
+		if (convertFlag)
+			volumeData.format_toWrite = Dez_Float;
+		return convertFlag;
+	}
+
+	if (volumeData.format == Dez_Float && generateFormat.format == Dez_SignedShort) {
+
+		convertFlag = convertFlag &&
+			__DataFormatConvert(
+				static_cast<float*>(volumeData.data),
+				static_cast<short*>(volumeData.data_toWrite),
+				volumeData);
+		if (convertFlag)
+			volumeData.format_toWrite = Dez_Float;
 		return convertFlag;
 	}
 
@@ -1235,10 +1277,120 @@ bool DataReaderAndWriter::DataFormatConvert(const GenerateFormat& generateFormat
 	return false;
 }
 
+template <typename T, typename U>
+bool __DataFormatConvertSelf(T indicate1, U indicate2, VolumeData& volumeData) {
+	unsigned int width = volumeData.xResolution, height = volumeData.yResolution, images = volumeData.zResolution;
+
+	T* data = static_cast<T *>(volumeData.data);
+	void* aimdata = new U[width * height * images];
+	if (!aimdata) return false;
+
+	for (unsigned int k = 0; k < volumeData.zResolution; k++) {
+
+		T* imageP = static_cast<T *>(data) + k * width * height;
+		U* imageAimP = static_cast<U *>(aimdata) + k * width * height;
+
+		for (unsigned int i = 0; i < volumeData.xResolution; i++) {
+			for (unsigned int j = 0; j < volumeData.yResolution; j++) {
+				imageAimP[i + j * volumeData.xResolution] =
+					static_cast<U>(imageP[i + j * volumeData.xResolution]);
+			}
+		}
+	}
+
+	delete[] static_cast<T *>(volumeData.data);
+	volumeData.data = static_cast<void *>(aimdata);
+	return true;
+}
+bool DataReaderAndWriter::DataFormatConvertToInteract(const GenerateFormat& generateFormat, VolumeData& volumeData) {
+	// To ensure data accuracy, only a small number of conversions are supported.
+
+	if (!volumeData.data) {
+		DebugTextPrintErrorString("volumeData has no data");
+		return false;
+	}
+
+	if (generateFormat.format == Dez_Origin || volumeData.format == generateFormat.format) {
+		DebugTextPrintString("No need to convert data format.");
+		return true;
+	}
+	else {
+		DebugTextPrintString("Need to convert data format.");
+	}
+
+	bool convertFlag = true;
+
+	if (volumeData.format == Dez_UnsignedChar && generateFormat.format == Dez_Float) {
+
+		convertFlag = convertFlag &&
+			__DataFormatConvertSelf(
+				static_cast<unsigned char>(1),
+				static_cast<float>(1),
+				volumeData);
+		if (convertFlag)
+			volumeData.format = Dez_Float;
+		return convertFlag;
+	}
+
+	if (volumeData.format == Dez_SignedChar && generateFormat.format == Dez_Float) {
+
+		convertFlag = convertFlag &&
+			__DataFormatConvertSelf(
+				static_cast<signed char>(1),
+				static_cast<float>(1),
+				volumeData);
+		if (convertFlag)
+			volumeData.format = Dez_Float;
+		return convertFlag;
+	}
+
+
+	if (volumeData.format == Dez_SignedShort && generateFormat.format == Dez_Float) {
+
+		convertFlag = convertFlag &&
+			__DataFormatConvertSelf(
+				static_cast<signed short>(1),
+				static_cast<float>(1),
+				volumeData);
+		if (convertFlag)
+			volumeData.format = Dez_Float;
+		return convertFlag;
+	}
+
+	if (volumeData.format == Dez_UnsignedShort && generateFormat.format == Dez_Float) {
+
+		convertFlag = convertFlag &&
+			__DataFormatConvertSelf(
+				static_cast<unsigned short>(1),
+				static_cast<float>(1),
+				volumeData);
+		if (convertFlag)
+			volumeData.format = Dez_Float;
+		return convertFlag;
+	}
+
+	if (volumeData.format == Dez_Float && generateFormat.format == Dez_SignedShort) {
+
+		convertFlag = convertFlag &&
+			__DataFormatConvertSelf(
+				static_cast<float>(1),
+				static_cast<signed short>(1),
+				volumeData);
+		if (convertFlag)
+			volumeData.format = Dez_SignedShort;
+		return convertFlag;
+	}
+
+	DebugTextPrintErrorString("Unsupported conversion");
+	return false;
+
+}
+
+
 bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QString& outName,
 	const GenerateFormat& generateFormat, VolumeData& volumeData) {
 
-	if (!DataFormatConvert(generateFormat, volumeData)) {
+	if (!DataFormatConvertToWrite(generateFormat, volumeData)) {
 		return false;
 	}
 
@@ -1323,7 +1475,7 @@ bool SaveUncompressedRawData(std::string filename, unsigned int bytesOneScalar, 
 bool DataReaderAndWriter::GenerateOutput_Feimos(const QString& outputDir, const QString& outName,
 	const GenerateFormat& generateFormat, VolumeData& volumeData) {
 
-	if (!DataFormatConvert(generateFormat, volumeData)) {
+	if (!DataFormatConvertToWrite(generateFormat, volumeData)) {
 		return false;
 	}
 

@@ -88,8 +88,12 @@ set(Utility
 	Utility/DicomCommon.cpp
 	Utility/DebugText.hpp
 	Utility/DebugText.cpp
+	Utility/QDoubleSlider.hpp
+	Utility/QDoubleSlider.cpp
 	Utility/QSliderDoubleRange.hpp
 	Utility/QSliderDoubleRange.cpp
+	Utility/QDoubleSliderDoubleRange.hpp
+	Utility/QDoubleSliderDoubleRange.cpp
 	Utility/WidgetsCommon.hpp
 	Utility/WidgetsCommon.cpp
 )

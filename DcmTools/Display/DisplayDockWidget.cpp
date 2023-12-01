@@ -43,9 +43,7 @@ DisplayDockWidget::DisplayDockWidget(QWidget * parent) {
 }
 
 DisplayDockWidget::~DisplayDockWidget() {
-
 	volumeData.clear();
-
 }
 
 void DisplayDockWidget::setpuWidgets()
@@ -68,6 +66,10 @@ void DisplayDockWidget::setpuWidgets()
 
 	m_QVolumeStatistics_Widget = new QVolumeStatistics_Widget;
 	centerLayout->addWidget(m_QVolumeStatistics_Widget);
+
+	m_QVolumeWWWL_Widget = new QVolumeWWWL_Widget;
+	centerLayout->addWidget(m_QVolumeWWWL_Widget);
+
 }
 
 #include "InfoPresent/Status.hpp"
@@ -88,6 +90,10 @@ void DisplayDockWidget::readDcmsData() {
 		return;
 	}
 	parseFlag = m_DataRW.GenerateInput_GDCM(fileList, volumeData);
+	GenerateFormat generateFormat;
+	generateFormat.format = Dez_Float;
+	parseFlag = m_DataRW.DataFormatConvertToInteract(generateFormat, volumeData);
+
 	if (parseFlag) {
 		displayVolumeInfo();
 	}
@@ -102,6 +108,10 @@ void DisplayDockWidget::readMhdData() {
 
 	volumeData.clear();
 	bool parseFlag = m_DataRW.GenerateInput_Mhd(InputFilePath, volumeData);
+	GenerateFormat generateFormat;
+	generateFormat.format = Dez_Float;
+	parseFlag = m_DataRW.DataFormatConvertToInteract(generateFormat, volumeData);
+
 	if (!parseFlag) {
 		clearVolumeInfo();
 	}
@@ -119,6 +129,10 @@ void DisplayDockWidget::readFeimosData() {
 
 	volumeData.clear();
 	bool parseFlag = m_DataRW.GenerateInput_Feimos(InputFilePath, volumeData);
+	GenerateFormat generateFormat;
+	generateFormat.format = Dez_Float;
+	parseFlag = m_DataRW.DataFormatConvertToInteract(generateFormat, volumeData);
+
 	if (!parseFlag) {
 		clearVolumeInfo();
 	}
