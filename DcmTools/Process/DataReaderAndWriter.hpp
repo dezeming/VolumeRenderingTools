@@ -75,6 +75,15 @@ public:
 	*/
 	bool getInputDcmFileList(const QString& inputDir, std::vector<QString>& fileList);
 
+	/**
+	* Obtain the sequence of png files in the specified directory
+	*/
+	bool getInputPngsFileList(const QString& inputDir, std::vector<QString>& fileList);
+
+	/**
+	* Obtain the sequence of jpg files in the specified directory
+	*/
+	bool getInputJpgsFileList(const QString& inputDir, std::vector<QString>& fileList);
 
 	/*******************************************************/
 	/* Generate input data to VolumeData object
@@ -92,6 +101,16 @@ public:
 	* Generate VolumeData Object From (.dcm) files Using DCMTK
 	*/
 	bool GenerateInput_DCMTK(const std::vector<QString>& fileList, VolumeData& volumeData);
+
+	/**
+	* Generate VolumeData Object From (.feimos,.raw) file
+	*/
+	bool GenerateInput_PNGs(const std::vector<QString>& fileList, VolumeData& volumeData);
+
+	/**
+	* Generate VolumeData Object From (.feimos,.raw) file
+	*/
+	bool GenerateInput_JPGs(const std::vector<QString>& fileList, VolumeData& volumeData);
 
 	/**
 	* Copy data to volumeData.data with format T

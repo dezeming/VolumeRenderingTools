@@ -133,6 +133,15 @@ set(InfoPresent
 # Make the InfoPresent group
 SOURCE_GROUP("InfoPresent" FILES ${InfoPresent})
 
+# 3rdLibs files
+set(3rdLibs
+	3rdLibs/stb_image.h
+	3rdLibs/stb_image_write.h
+	3rdLibs/stb_image_resize2.h
+)
+# Make the 3rdLibs group
+SOURCE_GROUP("3rdLibs" FILES ${3rdLibs})
+
 # Create executable
 add_executable(DcmTools
 	WIN32
@@ -142,6 +151,7 @@ add_executable(DcmTools
 	${Process}
 	${Adjustment}
 	${InfoPresent}
+	${3rdLibs}
 )
 
 FILE(GLOB Icons ${CMAKE_CURRENT_SOURCE_DIR}/Icons/*.*)

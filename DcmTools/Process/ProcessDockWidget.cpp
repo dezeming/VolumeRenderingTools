@@ -95,6 +95,15 @@ void ProcessDockWidget::setupProcessFunc() {
 	connect(VolumeConvert_Frame->FeimosToMhd_processButton,
 		SIGNAL(clicked()), this, SLOT(process_FeimosToMhd()));
 
+	connect(VolumeConvert_Frame->PngToFeimos_processButton,
+		SIGNAL(clicked()), this, SLOT(process_PngsToFeimos()));
+	connect(VolumeConvert_Frame->PngToMhd_processButton,
+		SIGNAL(clicked()), this, SLOT(process_PngsToMhd()));
+	connect(VolumeConvert_Frame->JpgToFeimos_processButton,
+		SIGNAL(clicked()), this, SLOT(process_JpgsToFeimos()));
+	connect(VolumeConvert_Frame->JpgToMhd_processButton,
+		SIGNAL(clicked()), this, SLOT(process_JpgsToMhd()));
+
 	// down sampling
 	connect(VolumeDownSampling_Frame->MhdDownSampling_processButton,
 		SIGNAL(clicked()), this, SLOT(process_MhdDownSampling()));
@@ -199,6 +208,67 @@ void ProcessDockWidget::process_FeimosToMhd() {
 
 	processVolumeData.FeimosMakeMhdFile(
 		InputFilePath, OutputFolder, OutputFileName,
+		generateFormat);
+
+	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
+}
+
+void ProcessDockWidget::process_PngsToFeimos() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Convert .png files into Feimos' uncompressed (.feimos,.raw) format.");
+
+	getPredefinedInfo();
+
+	processVolumeData.PngsMakeFeimosFile(
+		InputFolder, OutputFolder, OutputFileName,
+		generateFormat);
+
+	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
+}
+void ProcessDockWidget::process_PngsToMhd() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Convert .png files into VTK's (.mdh-.raw) format.");
+
+	getPredefinedInfo();
+
+	processVolumeData.PngsMakeMhdFile(
+		InputFolder, OutputFolder, OutputFileName,
+		generateFormat);
+
+	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
+}
+void ProcessDockWidget::process_JpgsToFeimos() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Convert .jpg files into Feimos' uncompressed (.feimos,.raw) format.");
+
+	getPredefinedInfo();
+
+	processVolumeData.JpgsMakeFeimosFile(
+		InputFolder, OutputFolder, OutputFileName,
+		generateFormat);
+
+	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
+}
+void ProcessDockWidget::process_JpgsToMhd() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Convert .jpg files into VTK's (.mdh-.raw) format.");
+
+	getPredefinedInfo();
+
+	processVolumeData.JpgsMakeMhdFile(
+		InputFolder, OutputFolder, OutputFileName,
 		generateFormat);
 
 	DebugTextPrintString(".................  Process finished   ....................");

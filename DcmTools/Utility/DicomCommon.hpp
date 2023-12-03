@@ -106,6 +106,12 @@ struct DcmFilePixelData {
 	float position = 0.0f;
 };
 
+struct VolumeStatistics {
+	float min, max;
+	float gradientMin, gradientMax;
+
+};
+
 struct VolumeData {
 	unsigned int xResolution, yResolution, zResolution;
 	float xPixelSpace, yPixelSpace, zPixelSpace;

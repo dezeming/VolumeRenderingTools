@@ -416,6 +416,11 @@ private slots:
 	void process_MhdToFeimos();
 	void process_FeimosToMhd();
 
+	void process_PngsToFeimos();
+	void process_PngsToMhd();
+	void process_JpgsToFeimos();
+	void process_JpgsToMhd();
+
 	// down sampling
 	void process_MhdDownSampling();
 	void process_FeimosDownSampling();

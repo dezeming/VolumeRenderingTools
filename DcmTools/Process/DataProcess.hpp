@@ -115,7 +115,25 @@ public:
 	*/
 	void FeimosMakeMhdFile(const QString& inputFilePath, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
 
+	/**
+	* Make (.feimos,.raw) file from (.png) files
+	*/
+	void PngsMakeFeimosFile(const QString& inputDir, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
 
+	/**
+	* Make (.mhd,.raw) file from (.png) files
+	*/
+	void PngsMakeMhdFile(const QString& inputDir, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
+
+	/**
+	* Make (.feimos,.raw) file from (.jpg) files
+	*/
+	void JpgsMakeFeimosFile(const QString& inputDir, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
+
+	/**
+	* Make (.mhd,.raw) file from (.jpg) files
+	*/
+	void JpgsMakeMhdFile(const QString& inputDir, const QString& outputDir, const QString& outName, const GenerateFormat& generateFormat);
 
 
 	/*******************************************************/

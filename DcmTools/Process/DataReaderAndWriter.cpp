@@ -68,8 +68,6 @@ VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2);
 #include <string>
 #include <QTime>
 
-
-
 // **********************************************//
 // *** ProcessVolumeData *** //
 // **********************************************//
@@ -194,11 +192,86 @@ bool DataReaderAndWriter::getInputDcmFileList(const QString& inputDir, std::vect
 	return true;
 }
 
+bool DataReaderAndWriter::getInputPngsFileList(const QString& inputDir, std::vector<QString>& fileList) {
+	QDir dir(inputDir);
+	unsigned int file_count = 0;
+	QString _DirPath;
+
+	// load files info
+	{
+		if (!dir.exists()) {
+			DebugTextPrintErrorString("Fatal: Dir does not exist!");
+			return false;
+		}
+
+		fileList.clear();
+		fileList.shrink_to_fit();
+
+		QStringList filters;
+		filters << "*.png";
+		//Set type filters only for file formats, do not use symbolic links
+		dir.setFilter(QDir::Files | QDir::NoSymLinks);
+		//Set file name filters, filters format
+		dir.setNameFilters(filters);
+		//Number of record files
+		file_count = dir.count();
+		if (file_count == 0) {
+			DebugTextPrintErrorString("No .png file exists");
+			return false;
+		}
+		_DirPath = inputDir;
+		if (inputDir[inputDir.size() - 1] != '/') _DirPath = _DirPath + "/";
+	}
+
+	for (unsigned int i = 0; i < file_count; i++) {
+		QString file_Path = _DirPath + dir[i];
+		fileList.push_back(file_Path);
+	}
+	return true;
+
+}
+
+bool DataReaderAndWriter::getInputJpgsFileList(const QString& inputDir, std::vector<QString>& fileList) {
+	QDir dir(inputDir);
+	unsigned int file_count = 0;
+	QString _DirPath;
+
+	// load files info
+	{
+		if (!dir.exists()) {
+			DebugTextPrintErrorString("Fatal: Dir does not exist!");
+			return false;
+		}
+
+		fileList.clear();
+		fileList.shrink_to_fit();
+
+		QStringList filters;
+		filters << "*.jpg";
+		//Set type filters only for file formats, do not use symbolic links
+		dir.setFilter(QDir::Files | QDir::NoSymLinks);
+		//Set file name filters, filters format
+		dir.setNameFilters(filters);
+		//Number of record files
+		file_count = dir.count();
+		if (file_count == 0) {
+			DebugTextPrintErrorString("No .jpg file exists");
+			return false;
+		}
+		_DirPath = inputDir;
+		if (inputDir[inputDir.size() - 1] != '/') _DirPath = _DirPath + "/";
+	}
+
+	for (unsigned int i = 0; i < file_count; i++) {
+		QString file_Path = _DirPath + dir[i];
+		fileList.push_back(file_Path);
+	}
+	return true;
+}
 
 // **********************************************//
 // *** Generate input data to VolumeData object *** //
 // **********************************************//
-
 
 bool DcmFilePosCompare(const DcmFilePixelData &f1, const DcmFilePixelData &f2) {
 	if (f1.position < f2.position) return true;
@@ -922,7 +995,7 @@ bool DataReaderAndWriter::CopyUncompressedRawData(const T* data, VolumeData& vol
 	}
 	return true;
 }
- 
+
 bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, VolumeData& volumeData) {
 
 	vtkSmartPointer<vtkMetaImageReader> reader =
@@ -1386,7 +1459,6 @@ bool DataReaderAndWriter::DataFormatConvertToInteract(const GenerateFormat& gene
 
 }
 
-
 bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QString& outName,
 	const GenerateFormat& generateFormat, VolumeData& volumeData) {
 
@@ -1451,7 +1523,7 @@ bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QSt
 	writer->SetRAWFileName((outputDir + "/" + outName + ".raw").toStdString().c_str());
 	writer->Write();
 
-	DebugTextPrintErrorString("Write to Mhd file successfully!");
+	DebugTextPrintString("Write to Mhd file successfully!");
 	return true;
 }
 
@@ -1562,13 +1634,159 @@ bool DataReaderAndWriter::GenerateOutput_Feimos(const QString& outputDir, const 
 		fileInfo.close();
 	}
 	
-	DebugTextPrintErrorString("Write to Feimos file successfully!");
+	DebugTextPrintString("Write to Feimos file successfully!");
 	return true;
 }
 
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "3rdLibs/stb_image.h"
 
+bool DataReaderAndWriter::GenerateInput_PNGs(const std::vector<QString>& fileList, VolumeData& volumeData) {
+	std::vector<unsigned int> correctImagesNum;
+	std::vector<unsigned char *> dataPoints;
+	unsigned int correctImagesCount = 0;
+	int width_seq, height_seq, nrChannels_seq;
+	for (int i = 0; i < fileList.size(); i++) {
 
+		int width, height, nrChannels;
+		stbi_set_flip_vertically_on_load(false);
+		unsigned char *data = stbi_load(fileList[i].toStdString().c_str(), &width, &height, &nrChannels, 0);
+
+		if (data && nrChannels == 4) {
+			if (correctImagesCount == 0) {
+				width_seq = width;
+				height_seq = height;
+				nrChannels_seq = nrChannels;
+
+				dataPoints.push_back(data);
+				correctImagesCount++;
+			}
+			else {
+				if (width != width_seq || height != height_seq || nrChannels != nrChannels_seq) {
+					DebugTextPrintErrorString(("The size of the image sequence is inconsistent in File " + fileList[i]).toStdString().c_str());
+				}
+				else {
+					dataPoints.push_back(data);
+					correctImagesCount++;
+				}
+
+			}
+
+		}
+
+	}
+
+	if (correctImagesCount == 0) {
+		DebugTextPrintErrorString("No suitable PNG images to read");
+		return false;
+	}
+
+	volumeData.clear();
+	volumeData.data = new unsigned char[width_seq * height_seq * correctImagesCount];
+	if (!volumeData.data) {
+		DebugTextPrintErrorString("Unable to request sufficient amount of memory!");
+		return false;
+	}
+	volumeData.xPixelSpace = 1.0;
+	volumeData.yPixelSpace = 1.0;
+	volumeData.zPixelSpace = 1.0;
+	volumeData.xResolution = width_seq;
+	volumeData.yResolution = height_seq;
+	volumeData.zResolution = correctImagesCount;
+	volumeData.format = Dez_UnsignedChar;
+
+	// 0.299R + 0.587G + 0.114B
+	for (unsigned int k = 0; k < dataPoints.size(); k++) {
+		for (unsigned int i = 0; i < volumeData.xResolution; i++) {
+			for (unsigned int j = 0; j < volumeData.yResolution; j++) {
+				unsigned char* data_gray = static_cast<unsigned char*>(volumeData.data) + 
+					k * volumeData.xResolution * volumeData.yResolution;
+				unsigned int offset = j * volumeData.xResolution + i;
+				data_gray[offset] = static_cast<unsigned char>(0.299 * dataPoints[k][offset * 4 + 0]
+					+ 0.587 * dataPoints[k][offset * 4 + 1]
+					+ 0.114 * dataPoints[k][offset * 4 + 2]);
+
+			}
+		}
+
+		delete[] dataPoints[k];
+	}
+
+	return true;
+}
+
+bool DataReaderAndWriter::GenerateInput_JPGs(const std::vector<QString>& fileList, VolumeData& volumeData) {
+	std::vector<unsigned int> correctImagesNum;
+	std::vector<unsigned char *> dataPoints;
+	unsigned int correctImagesCount = 0;
+	int width_seq, height_seq, nrChannels_seq;
+	for (int i = 0; i < fileList.size(); i++) {
+
+		int width, height, nrChannels;
+		stbi_set_flip_vertically_on_load(false);
+		unsigned char *data = stbi_load(fileList[i].toStdString().c_str(), &width, &height, &nrChannels, 0);
+
+		if (data && nrChannels == 3) {
+			if (correctImagesCount == 0) {
+				width_seq = width;
+				height_seq = height;
+				nrChannels_seq = nrChannels;
+
+				dataPoints.push_back(data);
+				correctImagesCount++;
+			}
+			else {
+				if (width != width_seq || height != height_seq || nrChannels != nrChannels_seq) {
+					DebugTextPrintErrorString(("The size of the image sequence is inconsistent in File " + fileList[i]).toStdString().c_str());
+				}
+				else {
+					dataPoints.push_back(data);
+					correctImagesCount++;
+				}
+			}
+		}
+	}
+
+	if (correctImagesCount == 0) {
+		DebugTextPrintErrorString("No suitable PNG images to read");
+		return false;
+	}
+
+	volumeData.clear();
+	volumeData.data = new unsigned char[width_seq * height_seq * correctImagesCount];
+	if (!volumeData.data) {
+		DebugTextPrintErrorString("Unable to request sufficient amount of memory!");
+		return false;
+	}
+	volumeData.xPixelSpace = 1.0;
+	volumeData.yPixelSpace = 1.0;
+	volumeData.zPixelSpace = 1.0;
+	volumeData.xResolution = width_seq;
+	volumeData.yResolution = height_seq;
+	volumeData.zResolution = correctImagesCount;
+	volumeData.format = Dez_UnsignedChar;
+
+	// 0.299R + 0.587G + 0.114B
+	for (unsigned int k = 0; k < dataPoints.size(); k++) {
+		for (unsigned int i = 0; i < volumeData.xResolution; i++) {
+			for (unsigned int j = 0; j < volumeData.yResolution; j++) {
+				unsigned char* data_gray = static_cast<unsigned char*>(volumeData.data) +
+					k * volumeData.xResolution * volumeData.yResolution;
+				unsigned int offset = j * volumeData.xResolution + i;
+				data_gray[offset] = static_cast<unsigned char>(
+					0.299 * dataPoints[k][offset * 3 + 0]
+					+ 0.587 * dataPoints[k][offset * 3 + 1]
+					+ 0.114 * dataPoints[k][offset * 3 + 2]);
+
+			}
+		}
+
+		delete[] dataPoints[k];
+	}
+}
+
+#undef STB_IMAGE_IMPLEMENTATION
 
 
 

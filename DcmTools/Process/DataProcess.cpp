@@ -542,6 +542,89 @@ void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString
 	volumeData.clear();
 }
 
+void ProcessVolumeData::PngsMakeFeimosFile(
+	const QString& inputDir, const QString& outputDir, const QString& OutputFileName,
+	const GenerateFormat& generateFormat) {
+	// check input and output
+	if (!data_rw.isInputDirExist(inputDir)) return;
+	if (!data_rw.checkOutputDir_Feimos(outputDir, OutputFileName)) return;
+
+	std::vector<QString> fileList;
+	bool parseFlag = data_rw.getInputPngsFileList(inputDir, fileList);
+	if (!parseFlag) return;
+
+	VolumeData volumeData;
+
+	parseFlag = data_rw.GenerateInput_PNGs(fileList, volumeData);
+
+	if (parseFlag) {
+		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, OutputFileName, generateFormat, volumeData);
+	}
+	volumeData.clear();
+}
+
+void ProcessVolumeData::PngsMakeMhdFile(
+	const QString& inputDir, const QString& outputDir, const QString& OutputFileName,
+	const GenerateFormat& generateFormat) {
+	// check input and output
+	if (!data_rw.isInputDirExist(inputDir)) return;
+	if (!data_rw.checkOutputDir_Mhd(outputDir, OutputFileName)) return;
+
+	std::vector<QString> fileList;
+	bool parseFlag = data_rw.getInputPngsFileList(inputDir, fileList);
+	if (!parseFlag) return;
+
+	VolumeData volumeData;
+	parseFlag = data_rw.GenerateInput_PNGs(fileList, volumeData);
+
+	if (parseFlag) {
+		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, OutputFileName, generateFormat, volumeData);
+	}
+	volumeData.clear();
+}
+
+void ProcessVolumeData::JpgsMakeFeimosFile(
+	const QString& inputDir, const QString& outputDir, const QString& OutputFileName,
+	const GenerateFormat& generateFormat) {
+	// check input and output
+	if (!data_rw.isInputDirExist(inputDir)) return;
+	if (!data_rw.checkOutputDir_Feimos(outputDir, OutputFileName)) return;
+
+	std::vector<QString> fileList;
+	bool parseFlag = data_rw.getInputJpgsFileList(inputDir, fileList);
+	if (!parseFlag) return;
+
+	VolumeData volumeData;
+
+	parseFlag = data_rw.GenerateInput_JPGs(fileList, volumeData);
+
+	if (parseFlag) {
+		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, OutputFileName, generateFormat, volumeData);
+	}
+	volumeData.clear();
+}
+
+void ProcessVolumeData::JpgsMakeMhdFile(
+	const QString& inputDir, const QString& outputDir, const QString& OutputFileName,
+	const GenerateFormat& generateFormat) {
+	// check input and output
+	if (!data_rw.isInputDirExist(inputDir)) return;
+	if (!data_rw.checkOutputDir_Mhd(outputDir, OutputFileName)) return;
+
+	std::vector<QString> fileList;
+	bool parseFlag = data_rw.getInputJpgsFileList(inputDir, fileList);
+	if (!parseFlag) return;
+
+	VolumeData volumeData;
+	parseFlag = data_rw.GenerateInput_JPGs(fileList, volumeData);
+
+	if (parseFlag) {
+		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, OutputFileName, generateFormat, volumeData);
+	}
+	volumeData.clear();
+}
+
+
 void ProcessVolumeData::MhdMakeFeimosFile(const QString& inputFilePath, const QString& outputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 	// check input and output

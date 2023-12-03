@@ -63,8 +63,15 @@ public:
 		writeMhd_processButton->setText("Write Mhd files");
 		writeFeimos_processButton = new QPushButton;
 		writeFeimos_processButton->setText("Write Feimos file");
-		readDataLayout->addWidget(writeMhd_processButton, 1, 0);
-		readDataLayout->addWidget(writeFeimos_processButton, 1, 1);
+		readDataLayout->addWidget(writeMhd_processButton, 2, 0);
+		readDataLayout->addWidget(writeFeimos_processButton, 2, 1);
+
+		readPngs_processButton = new QPushButton;
+		readJpgs_processButton = new QPushButton;
+		readDataLayout->addWidget(readPngs_processButton, 1, 0);
+		readDataLayout->addWidget(readJpgs_processButton, 1, 1);
+		readPngs_processButton->setText("Read Png files");
+		readJpgs_processButton->setText("Read JPG files");
 
 		setLayout(centerLayout);
 		centerLayout->addLayout(readDataLayout);
@@ -77,6 +84,9 @@ public:
 	QPushButton *readDcms_processButton;
 	QPushButton *readMhd_processButton;
 	QPushButton *readFeimos_processButton;
+
+	QPushButton *readPngs_processButton;
+	QPushButton *readJpgs_processButton;
 
 	QPushButton *writeMhd_processButton;
 	QPushButton *writeFeimos_processButton;
@@ -255,6 +265,7 @@ private:
 	QVolumeReadWrite_Widget * m_QVolumeReadWrite_Widget;
 	QVolumeStatistics_Widget * m_QVolumeStatistics_Widget;
 	QVolumeWWWL_Widget * m_QVolumeWWWL_Widget;
+	QSetFormat_Widget * m_QSetFormat_Widget;
 
 	void setpuWidgets();
 	void displayVolumeInfo();
@@ -264,6 +275,9 @@ private slots:
 	void readDcmsData();
 	void readMhdData();
 	void readFeimosData();
+	void readPNGsData();
+	void readJPGsData();
+
 	void writeMhdData();
 	void writeFeimosData();
 private:

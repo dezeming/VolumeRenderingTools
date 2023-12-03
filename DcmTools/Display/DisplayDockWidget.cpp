@@ -44,6 +44,23 @@ DisplayDockWidget::DisplayDockWidget(QWidget * parent) {
 
 DisplayDockWidget::~DisplayDockWidget() {
 	volumeData.clear();
+
+	disconnect(m_QVolumeReadWrite_Widget->readDcms_processButton,
+		SIGNAL(clicked()), this, SLOT(readDcmsData()));
+	disconnect(m_QVolumeReadWrite_Widget->readPngs_processButton,
+		SIGNAL(clicked()), this, SLOT(readPNGsData()));
+	disconnect(m_QVolumeReadWrite_Widget->readJpgs_processButton,
+		SIGNAL(clicked()), this, SLOT(readJPGsData()));
+
+	disconnect(m_QVolumeReadWrite_Widget->readMhd_processButton,
+		SIGNAL(clicked()), this, SLOT(readMhdData()));
+	disconnect(m_QVolumeReadWrite_Widget->readFeimos_processButton,
+		SIGNAL(clicked()), this, SLOT(readFeimosData()));
+
+	disconnect(m_QVolumeReadWrite_Widget->writeMhd_processButton,
+		SIGNAL(clicked()), this, SLOT(writeMhdData()));
+	disconnect(m_QVolumeReadWrite_Widget->writeFeimos_processButton,
+		SIGNAL(clicked()), this, SLOT(writeFeimosData()));
 }
 
 void DisplayDockWidget::setpuWidgets()
@@ -55,14 +72,23 @@ void DisplayDockWidget::setpuWidgets()
 	centerLayout->addWidget(m_QVolumeReadWrite_Widget);
 	connect(m_QVolumeReadWrite_Widget->readDcms_processButton,
 		SIGNAL(clicked()), this, SLOT(readDcmsData()));
+	connect(m_QVolumeReadWrite_Widget->readPngs_processButton,
+		SIGNAL(clicked()), this, SLOT(readPNGsData()));
+	connect(m_QVolumeReadWrite_Widget->readJpgs_processButton,
+		SIGNAL(clicked()), this, SLOT(readJPGsData()));
+
 	connect(m_QVolumeReadWrite_Widget->readMhd_processButton,
 		SIGNAL(clicked()), this, SLOT(readMhdData()));
 	connect(m_QVolumeReadWrite_Widget->readFeimos_processButton,
 		SIGNAL(clicked()), this, SLOT(readFeimosData()));
+
 	connect(m_QVolumeReadWrite_Widget->writeMhd_processButton,
 		SIGNAL(clicked()), this, SLOT(writeMhdData()));
 	connect(m_QVolumeReadWrite_Widget->writeFeimos_processButton,
 		SIGNAL(clicked()), this, SLOT(writeFeimosData()));
+
+	m_QSetFormat_Widget = new QSetFormat_Widget;
+
 
 	m_QVolumeStatistics_Widget = new QVolumeStatistics_Widget;
 	centerLayout->addWidget(m_QVolumeStatistics_Widget);
@@ -73,6 +99,7 @@ void DisplayDockWidget::setpuWidgets()
 }
 
 #include "InfoPresent/Status.hpp"
+void showMemoryInfo(void);
 
 void DisplayDockWidget::readDcmsData() {
 	DebugTextPrintLineBreak();
@@ -97,6 +124,66 @@ void DisplayDockWidget::readDcmsData() {
 	if (parseFlag) {
 		displayVolumeInfo();
 	}
+	showMemoryInfo();
+}
+
+void DisplayDockWidget::readPNGsData() {
+	DebugTextPrintLineBreak();
+	getPredefinedInfo();
+
+	// check input and output
+	if (!m_DataRW.isInputDirExist(InputFolder)) {
+		showMemoryInfo(); return;
+	}
+
+	volumeData.clear();
+
+	std::vector<QString> fileList;
+	bool parseFlag = m_DataRW.getInputPngsFileList(InputFolder, fileList);
+	if (!parseFlag) {
+		clearVolumeInfo();
+		showMemoryInfo();
+		return;
+	}
+	parseFlag = m_DataRW.GenerateInput_PNGs(fileList, volumeData);
+	GenerateFormat generateFormat;
+	generateFormat.format = Dez_Float;
+	parseFlag = m_DataRW.DataFormatConvertToInteract(generateFormat, volumeData);
+
+	if (parseFlag) {
+		displayVolumeInfo();
+	}
+	showMemoryInfo();
+}
+
+void DisplayDockWidget::readJPGsData() {
+	DebugTextPrintLineBreak();
+	getPredefinedInfo();
+
+	// check input and output
+	if (!m_DataRW.isInputDirExist(InputFolder)) { 
+		showMemoryInfo();
+		return; 
+	}
+
+	volumeData.clear();
+
+	std::vector<QString> fileList;
+	bool parseFlag = m_DataRW.getInputJpgsFileList(InputFolder, fileList);
+	if (!parseFlag) {
+		clearVolumeInfo();
+		showMemoryInfo();
+		return;
+	}
+	parseFlag = m_DataRW.GenerateInput_JPGs(fileList, volumeData);
+	GenerateFormat generateFormat;
+	generateFormat.format = Dez_Float;
+	parseFlag = m_DataRW.DataFormatConvertToInteract(generateFormat, volumeData);
+
+	if (parseFlag) {
+		displayVolumeInfo();
+	}
+	showMemoryInfo();
 }
 
 void DisplayDockWidget::readMhdData() {
@@ -104,7 +191,7 @@ void DisplayDockWidget::readMhdData() {
 	getPredefinedInfo();
 
 	// check input and output
-	if (!m_DataRW.isInputMhdFileExist(InputFilePath)) return;
+	if (!m_DataRW.isInputMhdFileExist(InputFilePath)) { showMemoryInfo(); return; }
 
 	volumeData.clear();
 	bool parseFlag = m_DataRW.GenerateInput_Mhd(InputFilePath, volumeData);
@@ -118,6 +205,7 @@ void DisplayDockWidget::readMhdData() {
 	else {
 		displayVolumeInfo();
 	}
+	showMemoryInfo();
 }
 
 void DisplayDockWidget::readFeimosData() {
@@ -125,7 +213,7 @@ void DisplayDockWidget::readFeimosData() {
 	getPredefinedInfo();
 
 	// check input and output
-	if (!m_DataRW.isInputFeimosFileExist(InputFilePath)) return;
+	if (!m_DataRW.isInputFeimosFileExist(InputFilePath)) { showMemoryInfo(); return; }
 
 	volumeData.clear();
 	bool parseFlag = m_DataRW.GenerateInput_Feimos(InputFilePath, volumeData);
@@ -144,19 +232,23 @@ void DisplayDockWidget::readFeimosData() {
 void DisplayDockWidget::writeMhdData() {
 	DebugTextPrintLineBreak();
 	getPredefinedInfo();
-	if (!m_DataRW.checkOutputDir_Mhd(OutputFolder, OutputFileName)) return;
+	if (!m_DataRW.checkOutputDir_Mhd(OutputFolder, OutputFileName)) { showMemoryInfo(); return; }
 	GenerateFormat generateFormat;
 	generateFormat.format = Dez_Origin;
 	bool parseFlag = m_DataRW.GenerateOutput_Mhd(OutputFolder, OutputFileName, generateFormat, volumeData);
+	showMemoryInfo();
 }
 
 void DisplayDockWidget::writeFeimosData() {
 	DebugTextPrintLineBreak();
 	getPredefinedInfo();
-	if (!m_DataRW.checkOutputDir_Feimos(OutputFolder, OutputFileName)) return;
+	if (!m_DataRW.checkOutputDir_Feimos(OutputFolder, OutputFileName)) {
+		showMemoryInfo(); return;
+	}
 	GenerateFormat generateFormat;
 	generateFormat.format = Dez_Origin;
 	bool parseFlag = m_DataRW.GenerateOutput_Feimos(OutputFolder, OutputFileName, generateFormat, volumeData);
+	showMemoryInfo();
 }
 
 void DisplayDockWidget::clearVolumeInfo() {
