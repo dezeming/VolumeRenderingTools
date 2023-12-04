@@ -91,29 +91,58 @@ public:
 
 		RadioButton_Origin->setChecked(true);
 
-		GenerateFormatLayout->addWidget(Label_UnsignedInt, 0, 0);
-		GenerateFormatLayout->addWidget(Label_SignedInt, 0, 2);
-		GenerateFormatLayout->addWidget(Label_UnsignedShort, 0, 4);
-		GenerateFormatLayout->addWidget(Label_SignedShort, 0, 6);
+		QFrame* hLine[6];
+		for (int fi = 0; fi < 6; fi++) {
+			hLine[fi] = new QFrame;
+			hLine[fi]->setFrameShape(QFrame::VLine);
+			hLine[fi]->setFrameShadow(QFrame::Sunken);
+		}
 
+		GenerateFormatLayout->addWidget(Label_UnsignedInt, 0, 0);
 		GenerateFormatLayout->addWidget(RadioButton_UnsignedInt, 0, 1);
-		GenerateFormatLayout->addWidget(RadioButton_SignedInt, 0, 3);
-		GenerateFormatLayout->addWidget(RadioButton_UnsignedShort, 0, 5);
-		GenerateFormatLayout->addWidget(RadioButton_SignedShort, 0, 7);
+		GenerateFormatLayout->addWidget(hLine[0], 0, 2);
+
+		GenerateFormatLayout->addWidget(Label_SignedInt, 0, 3);
+		GenerateFormatLayout->addWidget(RadioButton_SignedInt, 0, 4);
+		GenerateFormatLayout->addWidget(hLine[1], 0, 5);
+
+		GenerateFormatLayout->addWidget(Label_UnsignedShort, 0, 6);
+		GenerateFormatLayout->addWidget(RadioButton_UnsignedShort, 0, 7);
+		GenerateFormatLayout->addWidget(hLine[2], 0, 8);
+
+		GenerateFormatLayout->addWidget(Label_SignedShort, 0, 9);
+		GenerateFormatLayout->addWidget(RadioButton_SignedShort, 0, 10);
+		
 
 		GenerateFormatLayout->addWidget(Label_UnsignedChar, 1, 0);
-		GenerateFormatLayout->addWidget(Label_SignedChar, 1, 2);
-		GenerateFormatLayout->addWidget(Label_Float, 1, 4);
-		GenerateFormatLayout->addWidget(Label_Double, 1, 6);
-
 		GenerateFormatLayout->addWidget(RadioButton_UnsignedChar, 1, 1);
-		GenerateFormatLayout->addWidget(RadioButton_SignedChar, 1, 3);
-		GenerateFormatLayout->addWidget(RadioButton_Float, 1, 5);
-		GenerateFormatLayout->addWidget(RadioButton_Double, 1, 7);
+		GenerateFormatLayout->addWidget(hLine[3], 1, 2);
+
+		GenerateFormatLayout->addWidget(Label_SignedChar, 1, 3);
+		GenerateFormatLayout->addWidget(RadioButton_SignedChar, 1, 4);
+		GenerateFormatLayout->addWidget(hLine[4], 1, 5);
+
+		GenerateFormatLayout->addWidget(Label_Float, 1, 6);
+		GenerateFormatLayout->addWidget(RadioButton_Float, 1, 7);
+		GenerateFormatLayout->addWidget(hLine[5], 1, 8);
+
+		GenerateFormatLayout->addWidget(Label_Double, 1, 9);
+		GenerateFormatLayout->addWidget(RadioButton_Double, 1, 10);
 
 		GenerateFormatLayout->addWidget(Label_Origin, 3, 0);
 		GenerateFormatLayout->addWidget(RadioButton_Origin, 3, 1);
 
+		GenerateFormatLayout->setColumnStretch(0, 3);
+		GenerateFormatLayout->setColumnStretch(1, 1);
+		GenerateFormatLayout->setColumnStretch(2, 2);
+		GenerateFormatLayout->setColumnStretch(3, 3);
+		GenerateFormatLayout->setColumnStretch(4, 1);
+		GenerateFormatLayout->setColumnStretch(5, 2);
+		GenerateFormatLayout->setColumnStretch(6, 3);
+		GenerateFormatLayout->setColumnStretch(7, 1);
+		GenerateFormatLayout->setColumnStretch(8, 2);
+		GenerateFormatLayout->setColumnStretch(9, 3);
+		GenerateFormatLayout->setColumnStretch(10, 1);
 	}
 	~QSetFormat_Widget() { }
 

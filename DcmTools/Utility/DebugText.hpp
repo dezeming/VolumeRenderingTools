@@ -34,6 +34,7 @@ public:
 	~DebugText();
 	void addContents(const QString& s1);
 	void addHtmlContents(const QString& s1);
+public:
 	static DebugText* getDebugText();
 
 private:
@@ -46,15 +47,15 @@ private:
 };
 
 #define DebugTextPrintLineBreak() DebugText::getDebugText()->addContents("")
-#define DebugTextPrintString(text)  DebugText::getDebugText()->addContents(QString("<font color='black' size='14'>Info:[") + text + QString("]</font>"))
+#define DebugTextPrintString(text)  DebugTextPrintLineBreak(); DebugText::getDebugText()->addContents(QString("<font color='black' size='14'>Info:[") + text + QString("]</font>"))
 
-#define DebugTextPrintNum(text, num)  DebugText::getDebugText()->addContents(QString("<font color='black' size='14'>") + text + ":[" + QString::number(num) + "]</font>")
+#define DebugTextPrintNum(text, num)  DebugTextPrintLineBreak(); DebugText::getDebugText()->addContents(QString("<font color='black' size='14'>") + text + ":[" + QString::number(num) + "]</font>")
 #define DebugTextPrint2Nums(text, num1, num2)  DebugText::getDebugText()->addContents(QString("<font color='black' size='14'>") + text + ":[" + QString::number(num1) + "," + QString::number(num2) + "]</font>")
 #define DebugTextPrint3Nums(text, num1, num2, num3)  DebugText::getDebugText()->addContents(QString("<font color='black' size='14'>") + text + ":[" + QString::number(num1) + "," + QString::number(num2) + "," + QString::number(num3) + "]</font>")
 #define DebugTextPrint4Nums(text, num1, num2, num3, num4)  DebugText::getDebugText()->addContents(QString("<font color='black' size='14'>") + text + ":[" + QString::number(num1) + "," + QString::number(num2) + "," + QString::number(num3) + "," + QString::number(num4) + "]</font>")
 
-#define DebugTextPrintErrorString(text) DebugText::getDebugText()->addHtmlContents(QString("<font color='red' size='14'>Error:[") + QString(text) + QString("]</font>"))
-#define DebugTextPrintWarningString(text) DebugText::getDebugText()->addHtmlContents(QString("<font color='blue' size='14'>Warning:[") + QString(text) + QString("]</font>"))
+#define DebugTextPrintErrorString(text) DebugTextPrintLineBreak(); DebugText::getDebugText()->addHtmlContents(QString("<font color='red' size='14'>Error:[") + QString(text) + QString("]</font>"))
+#define DebugTextPrintWarningString(text) DebugTextPrintLineBreak(); DebugText::getDebugText()->addHtmlContents(QString("<font color='blue' size='14'>Warning:[") + QString(text) + QString("]</font>"))
 
 
 #endif

@@ -39,6 +39,82 @@ enum DataFormat {
 	Dez_Double = 8
 };
 
+inline QString getDataFormatString(DataFormat format) {
+	QString form;
+	switch (format)
+	{
+	case Dez_Origin:
+		form = "Origin";
+		break;
+	case Dez_UnsignedLong:
+		form = "UnsignedLong";
+		break;
+	case Dez_SignedLong:
+		form = "SignedLong";
+		break;
+	case Dez_UnsignedShort:
+		form = "UnsignedShort";
+		break;
+	case Dez_SignedShort:
+		form = "SignedShort";
+		break;
+	case Dez_UnsignedChar:
+		form = "UnsignedChar";
+		break;
+	case Dez_SignedChar:
+		form = "SignedChar";
+		break;
+	case Dez_Float:
+		form = "Float";
+		break;
+	case Dez_Double:
+		form = "Double";
+		break;
+	default:
+		form = "Error";
+		break;
+	}
+	return form;
+}
+
+inline int getDataFormatOnePixelBytes(DataFormat format) {
+	int bytes = -1;
+	switch (format)
+	{
+	case Dez_Origin:
+		bytes = -1;
+		break;
+	case Dez_UnsignedLong:
+		bytes = sizeof(unsigned long);
+		break;
+	case Dez_SignedLong:
+		bytes = sizeof(signed long);
+		break;
+	case Dez_UnsignedShort:
+		bytes = sizeof(unsigned short);
+		break;
+	case Dez_SignedShort:
+		bytes = sizeof(signed short);
+		break;
+	case Dez_UnsignedChar:
+		bytes = sizeof(unsigned char);
+		break;
+	case Dez_SignedChar:
+		bytes = sizeof(signed char);
+		break;
+	case Dez_Float:
+		bytes = sizeof(float);
+		break;
+	case Dez_Double:
+		bytes = sizeof(double);
+		break;
+	default:
+		bytes = -1;
+		break;
+	}
+	return bytes;
+}
+
 enum DcmParseLib {
 	Dez_GDCM = 0,
 	Dez_DCMTK = 1
@@ -103,34 +179,47 @@ inline int getFormatOnePixelBytes(const QString str) {
 
 struct DcmFilePixelData {
 	char *pixData = nullptr;
-	float position = 0.0f;
+	double position = 0.0f;
+	double slope, intercept;
 };
 
 struct VolumeStatistics {
 	float min, max;
 	float gradientMin, gradientMax;
 
+	float * data = nullptr;
 };
 
 struct VolumeData {
-	unsigned int xResolution, yResolution, zResolution;
-	float xPixelSpace, yPixelSpace, zPixelSpace;
 
-	void * data;
-	DataFormat format;
-
-	// If the data format needs to be converted, use this pointer
-	void * data_toWrite;
-	DataFormat format_toWrite;
-
+public:
 	VolumeData() {
 		data = nullptr;
-		data_toWrite = nullptr;
 		format = Dez_Origin;
+
+		slope = 1.0;
+		intercept = 0.0;
 	}
 	~VolumeData() {
 		clear();
 	}
+public:
+	unsigned int xResolution, yResolution, zResolution;
+	float xPixelSpace, yPixelSpace, zPixelSpace;
+
+	VolumeStatistics statistics;
+	bool getVolumeStatistics();
+
+	// The data for process
+	void * data;
+	DataFormat format;
+
+	// Info used for .dcm image
+	double slope, intercept;
+
+	/****** functions ******/
+
+	// clear buffers
 	void clear() {
 		if (data) {
 			switch (format)
@@ -167,79 +256,13 @@ struct VolumeData {
 		}
 		data = nullptr;
 
-		if (data_toWrite && format_toWrite != format) {
-			switch (format_toWrite)
-			{
-			case Dez_Origin:
-				break;
-			case Dez_UnsignedLong:
-				delete[] static_cast<unsigned long*>(data_toWrite);
-				break;
-			case Dez_SignedLong:
-				delete[] static_cast<signed long*>(data_toWrite);
-				break;
-			case Dez_UnsignedShort:
-				delete[] static_cast<unsigned short*>(data_toWrite);
-				break;
-			case Dez_SignedShort:
-				delete[] static_cast<signed short*>(data_toWrite);
-				break;
-			case Dez_UnsignedChar:
-				delete[] static_cast<unsigned char*>(data_toWrite);
-				break;
-			case Dez_SignedChar:
-				delete[] static_cast<signed char*>(data_toWrite);
-				break;
-			case Dez_Float:
-				delete[] static_cast<float*>(data_toWrite);
-				break;
-			case Dez_Double:
-				delete[] static_cast<double*>(data_toWrite);
-				break;
-			default:
-				break;
-			}
-		}
-		data_toWrite = nullptr;
+		slope = 1.0;
+		intercept = 0.0;
+
+		statistics.data = nullptr;
 	}
 
-	void clearAim() {
-		if (data_toWrite && format_toWrite != format) {
-			switch (format_toWrite)
-			{
-			case Dez_Origin:
-				break;
-			case Dez_UnsignedLong:
-				delete[] static_cast<unsigned long*>(data_toWrite);
-				break;
-			case Dez_SignedLong:
-				delete[] static_cast<signed long*>(data_toWrite);
-				break;
-			case Dez_UnsignedShort:
-				delete[] static_cast<unsigned short*>(data_toWrite);
-				break;
-			case Dez_SignedShort:
-				delete[] static_cast<signed short*>(data_toWrite);
-				break;
-			case Dez_UnsignedChar:
-				delete[] static_cast<unsigned char*>(data_toWrite);
-				break;
-			case Dez_SignedChar:
-				delete[] static_cast<signed char*>(data_toWrite);
-				break;
-			case Dez_Float:
-				delete[] static_cast<float*>(data_toWrite);
-				break;
-			case Dez_Double:
-				delete[] static_cast<double*>(data_toWrite);
-				break;
-			default:
-				break;
-			}
-		}
-		data_toWrite = nullptr;
-	}
-
+	// Format dependent function
 	bool setFormatUsingString(const QString str) {
 		if (str == "UnsignedLong") { format = Dez_UnsignedLong; return true; }
 		else if (str == "SignedLong") { format = Dez_SignedLong; return true; }
@@ -251,83 +274,14 @@ struct VolumeData {
 		else if (str == "Double") { format = Dez_Double; return true; }
 		else { return false; }
 	}
-
 	int getFormatOnePixelBytes() {
-		int bytes = -1;
-		switch (format)
-		{
-		case Dez_Origin:
-			bytes = -1;
-			break;
-		case Dez_UnsignedLong:
-			bytes = sizeof(unsigned long);
-			break;
-		case Dez_SignedLong:
-			bytes = sizeof(signed long);
-			break;
-		case Dez_UnsignedShort:
-			bytes = sizeof(unsigned short);
-			break;
-		case Dez_SignedShort:
-			bytes = sizeof(signed short);
-			break;
-		case Dez_UnsignedChar:
-			bytes = sizeof(unsigned char);
-			break;
-		case Dez_SignedChar:
-			bytes = sizeof(signed char);
-			break;
-		case Dez_Float:
-			bytes = sizeof(float);
-			break;
-		case Dez_Double:
-			bytes = sizeof(double);
-			break;
-		default:
-			bytes = -1;
-			break;
-		}
-		return bytes;
+		return getDataFormatOnePixelBytes(format);
 	}
-
 	QString getFormatString() {
-		QString form;
-		switch (format)
-		{
-		case Dez_Origin:
-			form = "Origin";
-			break;
-		case Dez_UnsignedLong:
-			form = "UnsignedLong";
-			break;
-		case Dez_SignedLong:
-			form = "SignedLong";
-			break;
-		case Dez_UnsignedShort:
-			form = "UnsignedShort";
-			break;
-		case Dez_SignedShort:
-			form = "SignedShort";
-			break;
-		case Dez_UnsignedChar:
-			form = "UnsignedChar";
-			break;
-		case Dez_SignedChar:
-			form = "SignedChar";
-			break;
-		case Dez_Float:
-			form = "Float";
-			break;
-		case Dez_Double:
-			form = "Double";
-			break;
-		default:
-			form = "Error";
-			break;
-		}
-		return form;
+		return getDataFormatString(format);
 	}
 
+	// To String
 	QString toString() {
 		QString s = "xResolution:[" + QString::number(xResolution) + "] "
 			"yResolution:[" + QString::number(yResolution) + "] "
@@ -340,11 +294,66 @@ struct VolumeData {
 	}
 };
 
+struct VolumeDataToWrite {
+public:
+	VolumeDataToWrite() {
+		data_toWrite = nullptr;
+		generated = false;
+	}
+	~VolumeDataToWrite() {
+		clearWriteBuffer();
+	}
 
+
+	// If the data format needs to be converted to write, use this pointer
+	void * data_toWrite;
+	DataFormat format_toWrite;
+	bool generated;
+
+	void clearWriteBuffer() {
+		if (data_toWrite && generated) {
+			switch (format_toWrite)
+			{
+			case Dez_Origin:
+				break;
+			case Dez_UnsignedLong:
+				delete[] static_cast<unsigned long*>(data_toWrite);
+				break;
+			case Dez_SignedLong:
+				delete[] static_cast<signed long*>(data_toWrite);
+				break;
+			case Dez_UnsignedShort:
+				delete[] static_cast<unsigned short*>(data_toWrite);
+				break;
+			case Dez_SignedShort:
+				delete[] static_cast<signed short*>(data_toWrite);
+				break;
+			case Dez_UnsignedChar:
+				delete[] static_cast<unsigned char*>(data_toWrite);
+				break;
+			case Dez_SignedChar:
+				delete[] static_cast<signed char*>(data_toWrite);
+				break;
+			case Dez_Float:
+				delete[] static_cast<float*>(data_toWrite);
+				break;
+			case Dez_Double:
+				delete[] static_cast<double*>(data_toWrite);
+				break;
+			default:
+				break;
+			}
+		}
+		data_toWrite = nullptr;
+	}
+
+
+};
 
 
 
 
 #endif
+
 
 

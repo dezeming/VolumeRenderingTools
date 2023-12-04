@@ -273,6 +273,86 @@ bool DataReaderAndWriter::getInputJpgsFileList(const QString& inputDir, std::vec
 // *** Generate input data to VolumeData object *** //
 // **********************************************//
 
+template <typename T, typename U>
+bool __DataFormatConvertSelf(T indicate1, U indicate2, VolumeData& volumeData) {
+	unsigned int width = volumeData.xResolution, height = volumeData.yResolution, images = volumeData.zResolution;
+
+	T* data = static_cast<T *>(volumeData.data);
+	void* aimdata = new U[width * height * images];
+	if (!aimdata) return false;
+
+	for (unsigned int k = 0; k < volumeData.zResolution; k++) {
+
+		T* imageP = static_cast<T *>(data) + k * width * height;
+		U* imageAimP = static_cast<U *>(aimdata) + k * width * height;
+
+		for (unsigned int i = 0; i < volumeData.xResolution; i++) {
+			for (unsigned int j = 0; j < volumeData.yResolution; j++) {
+				imageAimP[i + j * volumeData.xResolution] =
+					static_cast<U>(imageP[i + j * volumeData.xResolution]);
+			}
+		}
+	}
+
+	delete[] static_cast<T *>(volumeData.data);
+	volumeData.data = static_cast<void *>(aimdata);
+	return true;
+}
+
+template <typename T>
+bool __DicomOriginDataToHuValue(T indicate1, VolumeData& volumeData) {
+	unsigned int width = volumeData.xResolution, height = volumeData.yResolution, images = volumeData.zResolution;
+
+	T* data = static_cast<T *>(volumeData.data);
+
+	for (unsigned int k = 0; k < volumeData.zResolution; k++) {
+		T* imageP = static_cast<T *>(data) + k * width * height;
+
+		for (unsigned int i = 0; i < volumeData.xResolution; i++) {
+			for (unsigned int j = 0; j < volumeData.yResolution; j++) {	
+				imageP[i + j * volumeData.xResolution] = imageP[i + j * volumeData.xResolution] * volumeData .slope + volumeData.intercept;
+			}
+		}
+	}
+	return true;
+}
+
+bool DataReaderAndWriter::DicomOriginDataToHuValue(VolumeData& volumeData) {
+
+	GenerateFormat generateFormat;
+	bool convertFlag;
+	if (volumeData.format == Dez_SignedShort || volumeData.format == Dez_Float) {
+		convertFlag = true;
+	}
+	else if (volumeData.format == Dez_UnsignedShort) {
+		generateFormat.format = Dez_SignedShort;
+		DebugTextPrintWarningString("Need to Convert UShort To Short for Hu value calculation.");
+		convertFlag = __DataFormatConvertSelf(
+				static_cast<unsigned short>(1),
+				static_cast<signed short>(1),
+				volumeData);
+		if (convertFlag)
+			volumeData.format = Dez_SignedShort;
+	}
+
+	if (convertFlag) {
+
+		if (volumeData.format == Dez_SignedShort) {
+			convertFlag = convertFlag & __DicomOriginDataToHuValue(static_cast<signed short>(1), volumeData);
+		}
+		else if (volumeData.format == Dez_Float) {
+			convertFlag = convertFlag & __DicomOriginDataToHuValue(static_cast<float>(1), volumeData);
+		}
+
+		return convertFlag;
+	}
+	else {
+		DebugTextPrintErrorString("Due to formatting unsupported, it is not possible to convert data to Hu unit values.");
+		return true;
+	}
+
+}
+
 bool DcmFilePosCompare(const DcmFilePixelData &f1, const DcmFilePixelData &f2) {
 	if (f1.position < f2.position) return true;
 	else return false;
@@ -284,6 +364,7 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 	unsigned int width, height, imageNum;
 	double pixelSpacing_X, pixelSpacing_Y, pixelSpacing_Z;
 	unsigned int bits_perPixel;
+	
 
 	std::vector<unsigned int> correctImagesNum;
 	for (int i = 0; i < fileList.size(); i++) {
@@ -526,7 +607,8 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 	}
 
 	bool readFlag = true;
-	for (int i = 0; i < correctImagesNum.size(); i++) {
+	double slope, intercept;
+	for (unsigned int i = 0; i < correctImagesNum.size(); i++) {
 		
 		gdcm::Reader reader;
 		QString file_Path = fileList[correctImagesNum[i]];
@@ -569,11 +651,28 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 		DcmFilePixelData dcmfile;
 		dcmfile.position = imagePos_temp;
 		dcmfile.pixData = m_data + i * width * height * bytesOnPixel;
-		
+		dcmfile.slope = gimage.GetSlope();
+		dcmfile.intercept = gimage.GetIntercept();
+		if (0 == i) {
+			slope = dcmfile.slope;
+			intercept = dcmfile.intercept;
+		}
+		else {
+			if (slope != dcmfile.slope) {
+				DebugTextPrintErrorString(("The slop of the image sequence is inconsistent"));
+			} 
+			if (intercept != dcmfile.intercept) {
+				DebugTextPrintErrorString(("The intercept of the image sequence is inconsistent"));
+			}
+		}
+
 		memcpy(m_data + i * width * height * bytesOnPixel, buffer, width * height * bytesOnPixel);
 
 		dcmFileVec.push_back(dcmfile);
 	}
+
+	volumeData.slope = slope;
+	volumeData.intercept = intercept;
 
 	if (readFlag) {
 		std::sort(dcmFileVec.begin(), dcmFileVec.end(), DcmFilePosCompare);
@@ -584,7 +683,7 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 			readFlag = false;
 		}
 
-		if (readFlag)
+		if (readFlag) {
 			for (unsigned int i = 0; i < imageNum; i++) {
 				if (dcmFileVec[i].pixData == nullptr) {
 					DebugTextPrintErrorString("(dcmFileVec[i].pixData16 == nullptr) ");
@@ -594,7 +693,35 @@ bool DataReaderAndWriter::GenerateInput_GDCM(const std::vector<QString>& fileLis
 				memcpy((char*)volumeData.data + i * width * height * bytesOnPixel, 
 					dcmFileVec[i].pixData, 
 					width * height * bytesOnPixel);
+
+				/*if (volumeData.format == Dez_SignedShort) {
+					void * data_temp = (char*)volumeData.data + i * width * height * bytesOnPixel;
+					short * data_oneImage = static_cast<signed short*>(data_temp);
+					for (unsigned int ii = 0; ii < width; ii++) {
+						for (unsigned int jj = 0; jj < height; jj++) {
+							data_oneImage[ii + jj * width] = data_oneImage[ii + jj * width] * dcmFileVec[i].slope + dcmFileVec[i].intercept;
+						}
+					}
+				} else if (volumeData.format == Dez_Float) {
+					void * data_temp = (char*)volumeData.data + i * width * height * bytesOnPixel;
+					float * data_oneImage = static_cast<float*>(data_temp);
+					for (unsigned int ii = 0; ii < width; ii++) {
+						for (unsigned int jj = 0; jj < height; jj++) {
+							data_oneImage[ii + jj * width] = data_oneImage[ii + jj * width] * dcmFileVec[i].slope + dcmFileVec[i].intercept;
+						}
+					}
+				}*/
+
 			}
+			if (volumeData.format != Dez_SignedShort && volumeData.format != Dez_Float) {
+				//DebugTextPrintWarningString("Currently do not support linear scaling of this format using the slope and intercept properties.");
+			}
+		}
+
+	}
+
+	if (readFlag) {
+		readFlag = DicomOriginDataToHuValue(volumeData);
 	}
 
 	delete[] m_data;
@@ -885,6 +1012,7 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 
 	// Start processing each image
 	bool readDataFlag = true;
+	double slope, intercept;
 	std::vector<DcmFilePixelData> dcmFileVec;
 	for (unsigned int i = 0; i < imageNum; i++) {
 		// File Path
@@ -920,6 +1048,11 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 		OFString ImagePos;
 		data->findAndGetOFString(DCM_SliceLocation, ImagePos);
 
+		OFString ImageSlope;
+		data->findAndGetOFString(DCM_RescaleSlope, ImageSlope);
+		OFString ImageIntercept;
+		data->findAndGetOFString(DCM_RescaleIntercept, ImageIntercept);
+
 		if (volumeData.format == Dez_UnsignedShort) {
 			Uint16* dat_t;
 			element->getUint16Array(dat_t);
@@ -948,8 +1081,40 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 		DcmFilePixelData dcmF;
 		dcmF.pixData = static_cast<char*>(m_data) + i * width * height * bytesOnPixel;
 		dcmF.position = atof(ImagePos.data());
+
+		if (ImageSlope.data()) {
+			//dcmF.slope = 1.0;
+			dcmF.slope = atof(ImageSlope.data());
+		}
+		else {
+			dcmF.slope = 1.0;
+		}
+		if (ImageIntercept.data()) {
+			//dcmF.intercept = 0.0; 
+			dcmF.intercept = atof(ImageIntercept.data());
+		}
+		else {
+			dcmF.intercept = 0.0;
+		}
+
+		if (0 == i) {
+			slope = dcmF.slope;
+			intercept = dcmF.intercept;
+		}
+		else {
+			if (slope != dcmF.slope) {
+				DebugTextPrintErrorString(("The slop of the image sequence is inconsistent"));
+			}
+			if (intercept != dcmF.intercept) {
+				DebugTextPrintErrorString(("The intercept of the image sequence is inconsistent"));
+			}
+		}
+
 		dcmFileVec.push_back(dcmF);
 	}
+
+	volumeData.slope = slope;
+	volumeData.intercept = intercept;
 
 	// sort images by their positions and save to volumeData.data
 	if (readDataFlag) {
@@ -972,9 +1137,36 @@ bool DataReaderAndWriter::GenerateInput_DCMTK(const std::vector<QString>& fileLi
 						dcmFileVec[i].pixData,
 						width * height * bytesOnPixel);
 				}
+
+				/*if (volumeData.format == Dez_SignedShort) {
+					void * data_temp = (char*)volumeData.data + i * width * height * bytesOnPixel;
+					short * data_oneImage = static_cast<signed short*>(data_temp);
+					for (unsigned int ii = 0; ii < width; ii++) {
+						for (unsigned int jj = 0; jj < height; jj++) {
+							data_oneImage[ii + jj * width] = data_oneImage[ii + jj * width] * dcmFileVec[i].slope + dcmFileVec[i].intercept;
+						}
+					}
+				}
+				else if (volumeData.format == Dez_Float) {
+					void * data_temp = (char*)volumeData.data + i * width * height * bytesOnPixel;
+					float * data_oneImage = static_cast<float*>(data_temp);
+					for (unsigned int ii = 0; ii < width; ii++) {
+						for (unsigned int jj = 0; jj < height; jj++) {
+							data_oneImage[ii + jj * width] = data_oneImage[ii + jj * width] * dcmFileVec[i].slope + dcmFileVec[i].intercept;
+						}
+					}
+				}*/
+			}
+
+			if (volumeData.format != Dez_SignedShort && volumeData.format != Dez_Float) {
+				// DebugTextPrintWarningString("Currently do not support linear scaling of this format using the slope and intercept properties.");
 			}
 		}
 
+	}
+
+	if (readDataFlag) {
+		readDataFlag = DicomOriginDataToHuValue(volumeData);
 	}
 
 	delete [] static_cast<char *>(m_data);
@@ -1243,16 +1435,19 @@ bool DataReaderAndWriter::GenerateInput_Feimos(const QString& inputFilePath, Vol
 // ********************************************** //
 
 template <typename T, typename U>
-bool __DataFormatConvert(const T* data, U* aimdata, VolumeData& volumeData) {
+bool __DataFormatConvert(T indicateSrc, U indicateAim, VolumeData& volumeData, VolumeDataToWrite& volumeToWrite) {
 	unsigned int width = volumeData.xResolution, height = volumeData.yResolution, images = volumeData.zResolution;
 
-	aimdata = new U[width * height * images];
-	if (!aimdata) return false;
+	volumeToWrite.data_toWrite = new U[width * height * images];
+	if (!volumeToWrite.data_toWrite) {
+		DebugTextPrintErrorString("Unable to request sufficient amount of memory!");
+		return false;
+	}
 
 	for (unsigned int k = 0; k < volumeData.zResolution; k++) {
 
-		T* imageP = (T *)data + k * width * height;
-		U* imageAimP = (U *)aimdata + k * width * height;
+		T* imageP = (T *)volumeData.data + k * width * height;
+		U* imageAimP = (U *)volumeToWrite.data_toWrite + k * width * height;
 
 		for (unsigned int i = 0; i < volumeData.xResolution; i++) {
 			for (unsigned int j = 0; j < volumeData.yResolution; j++) {
@@ -1264,7 +1459,7 @@ bool __DataFormatConvert(const T* data, U* aimdata, VolumeData& volumeData) {
 	return true;
 }
 
-bool DataReaderAndWriter::DataFormatConvertToWrite(const GenerateFormat& generateFormat, VolumeData& volumeData) {
+bool DataReaderAndWriter::DataFormatConvertToWrite(const GenerateFormat& generateFormat, VolumeData& volumeData, VolumeDataToWrite& volumeToWrite) {
 
 	// To ensure data accuracy, only a small number of conversions are supported.
 
@@ -1274,13 +1469,14 @@ bool DataReaderAndWriter::DataFormatConvertToWrite(const GenerateFormat& generat
 	}
 
 	if (generateFormat.format == Dez_Origin || volumeData.format == generateFormat.format) {
-		volumeData.data_toWrite = volumeData.data;
-		volumeData.format_toWrite = volumeData.format;
-		DebugTextPrintString("No need to convert data format.");
+		volumeToWrite.data_toWrite = volumeData.data;
+		volumeToWrite.format_toWrite = volumeData.format;
+		volumeToWrite.generated = false;
+		DebugTextPrintString("No need to convert data format to write to file.");
 		return true;
 	}
 	else {
-		DebugTextPrintString("Need to convert data format.");
+		DebugTextPrintString("Need to convert data format to " + getDataFormatString(generateFormat.format) + " to write to file.");
 	}
 
 	bool convertFlag = true;
@@ -1289,92 +1485,78 @@ bool DataReaderAndWriter::DataFormatConvertToWrite(const GenerateFormat& generat
 
 		convertFlag = convertFlag &&
 			__DataFormatConvert(
-				static_cast<unsigned char*>(volumeData.data),
-				static_cast<float*>(volumeData.data_toWrite),
-				volumeData);
+				static_cast<unsigned char>(1),
+				static_cast<float>(1),
+				volumeData, volumeToWrite);
 		if (convertFlag)
-			volumeData.format_toWrite = Dez_Float;
-		return convertFlag;
-	}
-
-	if (volumeData.format == Dez_SignedChar && generateFormat.format == Dez_Float) {
-
+			volumeToWrite.format_toWrite = Dez_Float;
+	} 
+	else if (volumeData.format == Dez_SignedChar && generateFormat.format == Dez_Float) {
 		convertFlag = convertFlag &&
 			__DataFormatConvert(
-				static_cast<signed char*>(volumeData.data),
-				static_cast<float*>(volumeData.data_toWrite),
-				volumeData);
+				static_cast<signed char>(1),
+				static_cast<float>(1),
+				volumeData, volumeToWrite);
 		if (convertFlag)
-			volumeData.format_toWrite = Dez_Float;
-		return convertFlag;
+			volumeToWrite.format_toWrite = Dez_Float;
 	}
-
-
-	if (volumeData.format == Dez_SignedShort && generateFormat.format == Dez_Float) {
+	else if (volumeData.format == Dez_SignedShort && generateFormat.format == Dez_Float) {
 		
 		convertFlag = convertFlag && 
 			__DataFormatConvert(
-				static_cast<signed short*>(volumeData.data),
-				static_cast<float*>(volumeData.data_toWrite),
-				volumeData);
+				static_cast<signed short>(1),
+				static_cast<float>(1),
+				volumeData, volumeToWrite);
 		if (convertFlag)
-			volumeData.format_toWrite = Dez_Float;
-		return convertFlag;
+			volumeToWrite.format_toWrite = Dez_Float;
 	}
-
-	if (volumeData.format == Dez_UnsignedShort && generateFormat.format == Dez_Float) {
+	else if (volumeData.format == Dez_UnsignedShort && generateFormat.format == Dez_Float) {
 		
 		convertFlag = convertFlag &&
 			__DataFormatConvert(
-				static_cast<unsigned short*>(volumeData.data),
-				static_cast<float*>(volumeData.data_toWrite),
-				volumeData);
+				static_cast<unsigned short>(1),
+				static_cast<float>(1),
+				volumeData, volumeToWrite);
 		if (convertFlag)
-			volumeData.format_toWrite = Dez_Float;
-		return convertFlag;
+			volumeToWrite.format_toWrite = Dez_Float;
 	}
-
-	if (volumeData.format == Dez_Float && generateFormat.format == Dez_SignedShort) {
+	else if (volumeData.format == Dez_Float && generateFormat.format == Dez_SignedShort) {
 
 		convertFlag = convertFlag &&
 			__DataFormatConvert(
-				static_cast<float*>(volumeData.data),
-				static_cast<short*>(volumeData.data_toWrite),
-				volumeData);
+				static_cast<float>(1),
+				static_cast<short>(1),
+				volumeData, volumeToWrite);
 		if (convertFlag)
-			volumeData.format_toWrite = Dez_Float;
-		return convertFlag;
+			volumeToWrite.format_toWrite = Dez_SignedShort;
+	}
+	else if (volumeData.format == Dez_UnsignedShort && generateFormat.format == Dez_SignedShort) {
+
+		convertFlag = convertFlag &&
+			__DataFormatConvert(
+				static_cast<unsigned short>(1),
+				static_cast<short>(1),
+				volumeData, volumeToWrite);
+		if (convertFlag)
+			volumeToWrite.format_toWrite = Dez_SignedShort;
+	}
+	else {
+		convertFlag = false;
+		DebugTextPrintErrorString("Unsupported conversion");
 	}
 
-	DebugTextPrintErrorString("Unsupported conversion");
-	return false;
-}
-
-template <typename T, typename U>
-bool __DataFormatConvertSelf(T indicate1, U indicate2, VolumeData& volumeData) {
-	unsigned int width = volumeData.xResolution, height = volumeData.yResolution, images = volumeData.zResolution;
-
-	T* data = static_cast<T *>(volumeData.data);
-	void* aimdata = new U[width * height * images];
-	if (!aimdata) return false;
-
-	for (unsigned int k = 0; k < volumeData.zResolution; k++) {
-
-		T* imageP = static_cast<T *>(data) + k * width * height;
-		U* imageAimP = static_cast<U *>(aimdata) + k * width * height;
-
-		for (unsigned int i = 0; i < volumeData.xResolution; i++) {
-			for (unsigned int j = 0; j < volumeData.yResolution; j++) {
-				imageAimP[i + j * volumeData.xResolution] =
-					static_cast<U>(imageP[i + j * volumeData.xResolution]);
-			}
-		}
+	if (!convertFlag) {
+		DebugTextPrintErrorString("Write format conversion failed");
+		volumeToWrite.clearWriteBuffer();
+		volumeToWrite.generated = false;
+	}
+	else {
+		volumeToWrite.generated = true;
 	}
 
-	delete[] static_cast<T *>(volumeData.data);
-	volumeData.data = static_cast<void *>(aimdata);
-	return true;
+	return convertFlag;
 }
+
 bool DataReaderAndWriter::DataFormatConvertToInteract(const GenerateFormat& generateFormat, VolumeData& volumeData) {
 	// To ensure data accuracy, only a small number of conversions are supported.
 
@@ -1384,11 +1566,11 @@ bool DataReaderAndWriter::DataFormatConvertToInteract(const GenerateFormat& gene
 	}
 
 	if (generateFormat.format == Dez_Origin || volumeData.format == generateFormat.format) {
-		DebugTextPrintString("No need to convert data format.");
+		DebugTextPrintString("No need to convert data format for interaction.");
 		return true;
 	}
 	else {
-		DebugTextPrintString("Need to convert data format.");
+		DebugTextPrintString("Need to convert data format to " + getDataFormatString(generateFormat.format) + " for interaction.");
 	}
 
 	bool convertFlag = true;
@@ -1442,6 +1624,18 @@ bool DataReaderAndWriter::DataFormatConvertToInteract(const GenerateFormat& gene
 		return convertFlag;
 	}
 
+	if (volumeData.format == Dez_UnsignedShort && generateFormat.format == Dez_SignedShort) {
+
+		convertFlag = convertFlag &&
+			__DataFormatConvertSelf(
+				static_cast<unsigned short>(1),
+				static_cast<signed short>(1),
+				volumeData);
+		if (convertFlag)
+			volumeData.format = Dez_SignedShort;
+		return convertFlag;
+	}
+
 	if (volumeData.format == Dez_Float && generateFormat.format == Dez_SignedShort) {
 
 		convertFlag = convertFlag &&
@@ -1462,9 +1656,11 @@ bool DataReaderAndWriter::DataFormatConvertToInteract(const GenerateFormat& gene
 bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QString& outName,
 	const GenerateFormat& generateFormat, VolumeData& volumeData) {
 
-	if (!DataFormatConvertToWrite(generateFormat, volumeData)) {
+	VolumeDataToWrite volumeToWrite;
+	if (!DataFormatConvertToWrite(generateFormat, volumeData, volumeToWrite)) {
 		return false;
 	}
+
 
 	int dimM[3] = { volumeData.xResolution, volumeData.yResolution, volumeData.zResolution };
 	double PixelSpace[3] = { volumeData.xPixelSpace, volumeData.yPixelSpace, volumeData.zPixelSpace};
@@ -1475,7 +1671,7 @@ bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QSt
 	imageImport->SetWholeExtent(0, dimM[0] - 1, 0, dimM[1] - 1, 0, dimM[2] - 1);
 	imageImport->SetDataExtentToWholeExtent();
 
-	switch (volumeData.format_toWrite)
+	switch (volumeToWrite.format_toWrite)
 	{
 	case Dez_Origin:
 		DebugTextPrintErrorString("Error Mhd output format");
@@ -1514,7 +1710,7 @@ bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QSt
 	}
 	
 	imageImport->SetNumberOfScalarComponents(1); // channel
-	imageImport->SetImportVoidPointer(volumeData.data_toWrite);
+	imageImport->SetImportVoidPointer(volumeToWrite.data_toWrite);
 	imageImport->Update();
 	vtkSmartPointer<vtkMetaImageWriter> writer =
 		vtkSmartPointer<vtkMetaImageWriter>::New();
@@ -1524,19 +1720,30 @@ bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QSt
 	writer->Write();
 
 	DebugTextPrintString("Write to Mhd file successfully!");
+
+	volumeToWrite.clearWriteBuffer();
 	return true;
 }
 
-bool SaveUncompressedRawData(std::string filename, unsigned int bytesOneScalar, const VolumeData& volumeData) {
+bool SaveUncompressedRawData(std::string filename, unsigned int bytesOneScalar, const VolumeData& volumeData, const VolumeDataToWrite& volumeToWrite) {
 	unsigned int width = volumeData.xResolution, height = volumeData.yResolution, imageNUm = volumeData.zResolution;
 
+	if (!volumeToWrite.data_toWrite) {
+		DebugTextPrintErrorString("No data to be written, pointer is nullptr!");
+		return false;
+	}
+
 	std::ofstream file(filename, std::ios::binary);
-	if (!file.is_open()) return false;
+	if (!file.is_open()) {
+		DebugTextPrintErrorString("Unable to open file for writing!");
+		return false;
+	}
 	try {
-		file.write(reinterpret_cast<const char*>(volumeData.data_toWrite), bytesOneScalar * width * height * imageNUm);
+		file.write(reinterpret_cast<const char*>(volumeToWrite.data_toWrite), bytesOneScalar * width * height * imageNUm);
 	}
 	catch (const std::exception& e) {
 		std::cerr << "Exception caught: " << e.what() << std::endl;
+		DebugTextPrintErrorString("Unable to open file for writing!");
 		return false;
 	}
 
@@ -1547,12 +1754,13 @@ bool SaveUncompressedRawData(std::string filename, unsigned int bytesOneScalar, 
 bool DataReaderAndWriter::GenerateOutput_Feimos(const QString& outputDir, const QString& outName,
 	const GenerateFormat& generateFormat, VolumeData& volumeData) {
 
-	if (!DataFormatConvertToWrite(generateFormat, volumeData)) {
+	VolumeDataToWrite volumeToWrite;
+	if (!DataFormatConvertToWrite(generateFormat, volumeData, volumeToWrite)) {
 		return false;
 	}
 
 	std::string format; bool writebinaryFlag = true;
-	switch (volumeData.format_toWrite)
+	switch (volumeToWrite.format_toWrite)
 	{
 	case Dez_Origin:
 		format = "Error";
@@ -1563,49 +1771,49 @@ bool DataReaderAndWriter::GenerateOutput_Feimos(const QString& outputDir, const 
 		format = "UnsignedLong";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(unsigned long), volumeData);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(unsigned long), volumeData, volumeToWrite);
 		break;
 	case Dez_SignedLong:
 		format = "SignedLong";
 		writebinaryFlag = writebinaryFlag &&
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(signed long), volumeData);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(signed long), volumeData, volumeToWrite);
 		break;
 	case Dez_UnsignedShort:
 		format = "UnsignedShort";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(unsigned short), volumeData);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(unsigned short), volumeData, volumeToWrite);
 		break;
 	case Dez_SignedShort:
 		format = "SignedShort";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(signed short), volumeData);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(signed short), volumeData, volumeToWrite);
 		break;
 	case Dez_UnsignedChar:
 		format = "UnsignedChar";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(unsigned char), volumeData);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(unsigned char), volumeData, volumeToWrite);
 		break;
 	case Dez_SignedChar:
 		format = "SignedChar";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(signed char), volumeData);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(signed char), volumeData, volumeToWrite);
 		break;
 	case Dez_Float:
 		format = "Float";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(float), volumeData);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(float), volumeData, volumeToWrite);
 		break;
 	case Dez_Double:
 		format = "Double";
 		writebinaryFlag = writebinaryFlag && 
 			SaveUncompressedRawData(
-			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(double), volumeData);
+			(outputDir + "/" + outName + ".raw").toStdString(), sizeof(double), volumeData, volumeToWrite);
 		break;
 	default:
 		DebugTextPrintErrorString("Non compliant data output format");
@@ -1635,6 +1843,8 @@ bool DataReaderAndWriter::GenerateOutput_Feimos(const QString& outputDir, const 
 	}
 	
 	DebugTextPrintString("Write to Feimos file successfully!");
+
+	volumeToWrite.clearWriteBuffer();
 	return true;
 }
 

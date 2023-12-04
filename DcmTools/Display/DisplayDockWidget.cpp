@@ -23,12 +23,25 @@
 #include <QFile>
 #include <fstream>
 #include <string>
+#include <QString>
+#include <QTextStream>
 
 DisplayDockWidget::DisplayDockWidget(QWidget * parent) {
 
 	setWindowTitle("Display Interaction");
 
 	setFeatures(QDockWidget::DockWidgetMovable);
+
+	QFile styleFile("./Icons/DisplayDock.qss");
+	if (styleFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+		QTextStream stream(&styleFile);
+		// 应用样式表
+		setStyleSheet(stream.readAll());
+		styleFile.close();
+	}
+	else {
+		DebugTextPrintErrorString("Failed to open stylesheet file for DisplayDockWidget");
+	}
 
 	dockCentralWidget = new QFrame;
 
@@ -68,6 +81,9 @@ void DisplayDockWidget::setpuWidgets()
 	m_FileDirSet_Widget = new FileDirSet_Widget;
 	centerLayout->addWidget(m_FileDirSet_Widget);
 
+	m_QSetFormat_Widget = new QSetFormat_Widget;
+	centerLayout->addWidget(m_QSetFormat_Widget);
+
 	m_QVolumeReadWrite_Widget = new QVolumeReadWrite_Widget;
 	centerLayout->addWidget(m_QVolumeReadWrite_Widget);
 	connect(m_QVolumeReadWrite_Widget->readDcms_processButton,
@@ -87,11 +103,10 @@ void DisplayDockWidget::setpuWidgets()
 	connect(m_QVolumeReadWrite_Widget->writeFeimos_processButton,
 		SIGNAL(clicked()), this, SLOT(writeFeimosData()));
 
-	m_QSetFormat_Widget = new QSetFormat_Widget;
-
-
 	m_QVolumeStatistics_Widget = new QVolumeStatistics_Widget;
 	centerLayout->addWidget(m_QVolumeStatistics_Widget);
+	connect(m_QVolumeStatistics_Widget->getOriginInfo_processButton,
+		SIGNAL(clicked()), this, SLOT(getStatistics()));
 
 	m_QVolumeWWWL_Widget = new QVolumeWWWL_Widget;
 	centerLayout->addWidget(m_QVolumeWWWL_Widget);
@@ -117,12 +132,19 @@ void DisplayDockWidget::readDcmsData() {
 		return;
 	}
 	parseFlag = m_DataRW.GenerateInput_GDCM(fileList, volumeData);
+	
 	GenerateFormat generateFormat;
 	generateFormat.format = Dez_Float;
 	parseFlag = m_DataRW.DataFormatConvertToInteract(generateFormat, volumeData);
 
 	if (parseFlag) {
 		displayVolumeInfo();
+
+		HaveDataEnableWidgets();
+		NoStatisticsDisableWidgets();
+	}
+	else {
+		NoDataDisableWidgets();
 	}
 	showMemoryInfo();
 }
@@ -152,6 +174,12 @@ void DisplayDockWidget::readPNGsData() {
 
 	if (parseFlag) {
 		displayVolumeInfo();
+
+		HaveDataEnableWidgets();
+		NoStatisticsDisableWidgets();
+	}
+	else {
+		NoDataDisableWidgets();
 	}
 	showMemoryInfo();
 }
@@ -182,6 +210,13 @@ void DisplayDockWidget::readJPGsData() {
 
 	if (parseFlag) {
 		displayVolumeInfo();
+
+		HaveDataEnableWidgets();
+		NoStatisticsDisableWidgets();
+	}
+	else {
+
+		NoDataDisableWidgets();
 	}
 	showMemoryInfo();
 }
@@ -201,9 +236,14 @@ void DisplayDockWidget::readMhdData() {
 
 	if (!parseFlag) {
 		clearVolumeInfo();
+
+		NoDataDisableWidgets();
 	}
 	else {
 		displayVolumeInfo();
+
+		HaveDataEnableWidgets();
+		NoStatisticsDisableWidgets();
 	}
 	showMemoryInfo();
 }
@@ -223,18 +263,27 @@ void DisplayDockWidget::readFeimosData() {
 
 	if (!parseFlag) {
 		clearVolumeInfo();
+
+		NoDataDisableWidgets();
 	}
 	else {
 		displayVolumeInfo();
+
+		HaveDataEnableWidgets();
+		NoStatisticsDisableWidgets();
 	}
+	showMemoryInfo();
 }
 
 void DisplayDockWidget::writeMhdData() {
 	DebugTextPrintLineBreak();
 	getPredefinedInfo();
 	if (!m_DataRW.checkOutputDir_Mhd(OutputFolder, OutputFileName)) { showMemoryInfo(); return; }
-	GenerateFormat generateFormat;
-	generateFormat.format = Dez_Origin;
+	
+	if (generateFormat.format == Dez_Origin) {
+		DebugTextPrintWarningString("Due to being converted to Float type before processing, Float type data is generated with format Origin");
+	}
+
 	bool parseFlag = m_DataRW.GenerateOutput_Mhd(OutputFolder, OutputFileName, generateFormat, volumeData);
 	showMemoryInfo();
 }
@@ -245,22 +294,13 @@ void DisplayDockWidget::writeFeimosData() {
 	if (!m_DataRW.checkOutputDir_Feimos(OutputFolder, OutputFileName)) {
 		showMemoryInfo(); return;
 	}
-	GenerateFormat generateFormat;
-	generateFormat.format = Dez_Origin;
+
+	if (generateFormat.format == Dez_Origin) {
+		DebugTextPrintWarningString("Due to being converted to Float type before processing, Float type data is generated with format Origin");
+	}
+	
 	bool parseFlag = m_DataRW.GenerateOutput_Feimos(OutputFolder, OutputFileName, generateFormat, volumeData);
 	showMemoryInfo();
-}
-
-void DisplayDockWidget::clearVolumeInfo() {
-	m_GuiStatus.setDataChanged("Volume Data", "Resolution-x", "", "");
-	m_GuiStatus.setDataChanged("Volume Data", "Resolution-y", "", "");
-	m_GuiStatus.setDataChanged("Volume Data", "Resolution-z", "", "");
-
-	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-x", "", "mm");
-	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-y", "", "mm");
-	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-z", "", "mm");
-
-	m_GuiStatus.setDataChanged("Volume Data", "Data Format", "", "");
 }
 
 void DisplayDockWidget::displayVolumeInfo() {
@@ -273,6 +313,53 @@ void DisplayDockWidget::displayVolumeInfo() {
 	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-z", QString::number(volumeData.zPixelSpace), "mm");
 
 	m_GuiStatus.setDataChanged("Volume Data", "Data Format", (volumeData.getFormatString()), "");
+
+	m_GuiStatus.setDataChanged("Dicom Orignal Info", "Slope", QString::number(volumeData.slope), "");
+	m_GuiStatus.setDataChanged("Dicom Orignal Info", "Intercept", QString::number(volumeData.intercept), "");
+
+	clearVolumeStatistics();
+}
+void DisplayDockWidget::clearVolumeInfo() {
+	m_GuiStatus.setDataChanged("Volume Data", "Resolution-x", "", "");
+	m_GuiStatus.setDataChanged("Volume Data", "Resolution-y", "", "");
+	m_GuiStatus.setDataChanged("Volume Data", "Resolution-z", "", "");
+
+	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-x", "", "mm");
+	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-y", "", "mm");
+	m_GuiStatus.setDataChanged("Volume Data", "VoxelSpace-z", "", "mm");
+
+	m_GuiStatus.setDataChanged("Volume Data", "Data Format", "", "");
+
+	m_GuiStatus.setDataChanged("Dicom Orignal Info", "Slope", "", "");
+	m_GuiStatus.setDataChanged("Dicom Orignal Info", "Intercept", "", "");
+
+	clearVolumeStatistics();
+}
+
+void DisplayDockWidget::displayVolumeStatistics() {
+	m_GuiStatus.setDataChanged("Volume Data", "Data-min", QString::number(volumeData.statistics.min), "");
+	m_GuiStatus.setDataChanged("Volume Data", "Data-max", QString::number(volumeData.statistics.max), "");
+	m_GuiStatus.setDataChanged("Volume Data", "Data-graient-min", QString::number(volumeData.statistics.gradientMin), "");
+	m_GuiStatus.setDataChanged("Volume Data", "Data-graient-max", QString::number(volumeData.statistics.gradientMax), "");
+}
+void DisplayDockWidget::clearVolumeStatistics() {
+	m_GuiStatus.setDataChanged("Volume Data", "Data-min", "", "");
+	m_GuiStatus.setDataChanged("Volume Data", "Data-max", "", "");
+	m_GuiStatus.setDataChanged("Volume Data", "Data-graient-min", "", "");
+	m_GuiStatus.setDataChanged("Volume Data", "Data-graient-max", "", "");
+}
+
+void DisplayDockWidget::getStatistics() {
+	DebugTextPrintLineBreak();
+	bool flag = volumeData.getVolumeStatistics();
+	if (!flag) {
+		DebugTextPrintErrorString("Failed to generate statistical data");
+		return;
+	}
+
+	HaveStatisticsDataEnableWidgets(volumeData);
+
+	displayVolumeStatistics();
 }
 
 #include <QFileInfo>
@@ -291,6 +378,8 @@ void DisplayDockWidget::getPredefinedInfo() {
 	//DebugTextPrintString("outputDir: " + outputDir);
 	OutputFileName = m_FileDirSet_Widget->getOutputFileName();
 	//DebugTextPrintString("outputFileName: " + outputFileName);
+
+	generateFormat.format = m_QSetFormat_Widget->getDataFormatSet();
 
 }
 

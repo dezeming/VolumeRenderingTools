@@ -103,6 +103,11 @@ public:
 	bool GenerateInput_DCMTK(const std::vector<QString>& fileList, VolumeData& volumeData);
 
 	/**
+	* Generate Hu data value from original data in (.dcm) files
+	*/
+	bool DicomOriginDataToHuValue(VolumeData& volumeData);
+
+	/**
 	* Generate VolumeData Object From (.feimos,.raw) file
 	*/
 	bool GenerateInput_PNGs(const std::vector<QString>& fileList, VolumeData& volumeData);
@@ -138,7 +143,7 @@ public:
 
 	bool DataFormatConvertToInteract(const GenerateFormat& generateFormat, VolumeData& volumeData);
 
-	bool DataFormatConvertToWrite(const GenerateFormat& generateFormat, VolumeData& volumeData);
+	bool DataFormatConvertToWrite(const GenerateFormat& generateFormat, VolumeData& volumeData, VolumeDataToWrite& volumeToWrite);
 
 	/**
 	* Generate .mhd file
