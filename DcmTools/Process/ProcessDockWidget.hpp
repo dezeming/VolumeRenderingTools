@@ -401,6 +401,12 @@ private:
 	QMhdClip_Frame *MhdClip_Frame;
 
 	QGridLayout * framesLayout;
+
+	// data
+
+	// display buffer
+	FrameBuffer framebuffer;
+
 	
 protected:
 	void closeEvent(QCloseEvent *event);

@@ -46,10 +46,6 @@ public:
 	void startRenderThread(int index = 0);
 	void killRenderThread();
 
-	// display buffer
-	FrameBuffer framebuffer;
-
-
 private:
 
 	QGridLayout displayWidgetLayout;

@@ -26,14 +26,10 @@ DisplayWidget::DisplayWidget(QGroupBox * parent) {
 
 	setLayout(&displayWidgetLayout);
 	displayWidgetLayout.addWidget(&m_IMAGraphicsView);
-
-	framebuffer.InitBuffer(800, 600, 4);
 }
 
 DisplayWidget::~DisplayWidget() { 
 	killRenderThread();
-
-	framebuffer.FreeBuffer();
 }
 
 void DisplayWidget::closeEvent(QCloseEvent *event) {
@@ -45,7 +41,6 @@ void DisplayWidget::startRenderThread(int index) {
 		rThread = new RenderThread;
 		//renderFlag = true;
 		rThread->renderFlag = true;
-		rThread->p_framebuffer = &framebuffer;
 
 		connect(rThread, SIGNAL(PrintString(const char*)), this, SLOT(PrintString(const char*)));
 		connect(rThread, SIGNAL(PrintDataD(const char*, const double)), this, SLOT(PrintDataD(const char*, const double)));

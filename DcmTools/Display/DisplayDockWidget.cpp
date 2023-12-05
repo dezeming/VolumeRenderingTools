@@ -26,6 +26,8 @@
 #include <QString>
 #include <QTextStream>
 
+// DisplayDockWidget
+
 DisplayDockWidget::DisplayDockWidget(QWidget * parent) {
 
 	setWindowTitle("Display Interaction");
@@ -54,9 +56,9 @@ DisplayDockWidget::DisplayDockWidget(QWidget * parent) {
 
 	setMinimumWidth(200);
 }
-
 DisplayDockWidget::~DisplayDockWidget() {
 	volumeData.clear();
+	framebuffer.clear();
 
 	disconnect(m_QVolumeReadWrite_Widget->readDcms_processButton,
 		SIGNAL(clicked()), this, SLOT(readDcmsData()));
@@ -108,14 +110,14 @@ void DisplayDockWidget::setpuWidgets()
 	connect(m_QVolumeStatistics_Widget->getOriginInfo_processButton,
 		SIGNAL(clicked()), this, SLOT(getStatistics()));
 
-	m_QVolumeWWWL_Widget = new QVolumeWWWL_Widget;
-	centerLayout->addWidget(m_QVolumeWWWL_Widget);
+	m_QVolumeDisplayRange_Widget = new QVolumeDisplayRange_Widget;
+	centerLayout->addWidget(m_QVolumeDisplayRange_Widget);
 
 }
 
-#include "InfoPresent/Status.hpp"
-void showMemoryInfo(void);
 
+void showMemoryInfo(void);
+// read and write slots
 void DisplayDockWidget::readDcmsData() {
 	DebugTextPrintLineBreak();
 	getPredefinedInfo();
@@ -148,7 +150,6 @@ void DisplayDockWidget::readDcmsData() {
 	}
 	showMemoryInfo();
 }
-
 void DisplayDockWidget::readPNGsData() {
 	DebugTextPrintLineBreak();
 	getPredefinedInfo();
@@ -183,7 +184,6 @@ void DisplayDockWidget::readPNGsData() {
 	}
 	showMemoryInfo();
 }
-
 void DisplayDockWidget::readJPGsData() {
 	DebugTextPrintLineBreak();
 	getPredefinedInfo();
@@ -220,7 +220,6 @@ void DisplayDockWidget::readJPGsData() {
 	}
 	showMemoryInfo();
 }
-
 void DisplayDockWidget::readMhdData() {
 	DebugTextPrintLineBreak();
 	getPredefinedInfo();
@@ -247,7 +246,6 @@ void DisplayDockWidget::readMhdData() {
 	}
 	showMemoryInfo();
 }
-
 void DisplayDockWidget::readFeimosData() {
 	DebugTextPrintLineBreak();
 	getPredefinedInfo();
@@ -274,7 +272,6 @@ void DisplayDockWidget::readFeimosData() {
 	}
 	showMemoryInfo();
 }
-
 void DisplayDockWidget::writeMhdData() {
 	DebugTextPrintLineBreak();
 	getPredefinedInfo();
@@ -287,7 +284,6 @@ void DisplayDockWidget::writeMhdData() {
 	bool parseFlag = m_DataRW.GenerateOutput_Mhd(OutputFolder, OutputFileName, generateFormat, volumeData);
 	showMemoryInfo();
 }
-
 void DisplayDockWidget::writeFeimosData() {
 	DebugTextPrintLineBreak();
 	getPredefinedInfo();
@@ -303,6 +299,20 @@ void DisplayDockWidget::writeFeimosData() {
 	showMemoryInfo();
 }
 
+void DisplayDockWidget::getStatistics() {
+	DebugTextPrintLineBreak();
+	bool flag = volumeData.getVolumeStatistics();
+	if (!flag) {
+		DebugTextPrintErrorString("Failed to generate statistical data");
+		return;
+	}
+
+	HaveStatisticsDataEnableWidgets(volumeData);
+
+	displayVolumeStatistics();
+}
+
+#include "InfoPresent/Status.hpp"
 void DisplayDockWidget::displayVolumeInfo() {
 	m_GuiStatus.setDataChanged("Volume Data", "Resolution-x", QString::number(volumeData.xResolution), "");
 	m_GuiStatus.setDataChanged("Volume Data", "Resolution-y", QString::number(volumeData.yResolution), "");
@@ -335,7 +345,6 @@ void DisplayDockWidget::clearVolumeInfo() {
 
 	clearVolumeStatistics();
 }
-
 void DisplayDockWidget::displayVolumeStatistics() {
 	m_GuiStatus.setDataChanged("Volume Data", "Data-min", QString::number(volumeData.statistics.min), "");
 	m_GuiStatus.setDataChanged("Volume Data", "Data-max", QString::number(volumeData.statistics.max), "");
@@ -349,18 +358,6 @@ void DisplayDockWidget::clearVolumeStatistics() {
 	m_GuiStatus.setDataChanged("Volume Data", "Data-graient-max", "", "");
 }
 
-void DisplayDockWidget::getStatistics() {
-	DebugTextPrintLineBreak();
-	bool flag = volumeData.getVolumeStatistics();
-	if (!flag) {
-		DebugTextPrintErrorString("Failed to generate statistical data");
-		return;
-	}
-
-	HaveStatisticsDataEnableWidgets(volumeData);
-
-	displayVolumeStatistics();
-}
 
 #include <QFileInfo>
 #include <QDesktopServices>
@@ -382,6 +379,489 @@ void DisplayDockWidget::getPredefinedInfo() {
 	generateFormat.format = m_QSetFormat_Widget->getDataFormatSet();
 
 }
+
+// QVolumeReadWrite_Widget
+
+QVolumeReadWrite_Widget::QVolumeReadWrite_Widget(QWidget * parent) {
+	setTitle("Basic function");
+	setMinimumWidth(200);
+
+	centerLayout = new QVBoxLayout;
+
+	readDataLayout = new QGridLayout;
+	setup_readwrite_Widgets();
+
+	setLayout(centerLayout);
+	centerLayout->addLayout(readDataLayout);
+
+	NoDataDisableWidgets();
+}
+QVolumeReadWrite_Widget::~QVolumeReadWrite_Widget() { }
+void QVolumeReadWrite_Widget::setup_readwrite_Widgets() {
+	readDcms_processButton = new QPushButton;
+	readDcms_processButton->setText("Read Dcm files");
+	readMhd_processButton = new QPushButton;
+	readMhd_processButton->setText("Read Mhd file");
+	readFeimos_processButton = new QPushButton;
+	readFeimos_processButton->setText("Read Feimos file");
+	readDataLayout->addWidget(readDcms_processButton, 0, 0);
+	readDataLayout->addWidget(readMhd_processButton, 0, 1);
+	readDataLayout->addWidget(readFeimos_processButton, 0, 2);
+	writeMhd_processButton = new QPushButton;
+	writeMhd_processButton->setText("Write Mhd files");
+	writeFeimos_processButton = new QPushButton;
+	writeFeimos_processButton->setText("Write Feimos file");
+	readDataLayout->addWidget(writeMhd_processButton, 2, 0);
+	readDataLayout->addWidget(writeFeimos_processButton, 2, 1);
+
+	readPngs_processButton = new QPushButton;
+	readJpgs_processButton = new QPushButton;
+	readDataLayout->addWidget(readPngs_processButton, 1, 0);
+	readDataLayout->addWidget(readJpgs_processButton, 1, 1);
+	readPngs_processButton->setText("Read Png files");
+	readJpgs_processButton->setText("Read JPG files");
+}
+
+void QVolumeReadWrite_Widget::NoDataDisableWidgets() {
+	writeMhd_processButton->setDisabled(true);
+	writeFeimos_processButton->setDisabled(true);
+	NoStatisticsDisableWidgets();
+}
+void QVolumeReadWrite_Widget::NoStatisticsDisableWidgets() {
+	;
+}
+void QVolumeReadWrite_Widget::HaveDataEnableWidgets() {
+	writeMhd_processButton->setEnabled(true);
+	writeFeimos_processButton->setEnabled(true);
+}
+void QVolumeReadWrite_Widget::HaveStatisticsDataEnableWidgets(const VolumeData& volumeData) {
+	;
+}
+
+
+// QVolumeStatistics_Widget
+
+QVolumeStatistics_Widget::QVolumeStatistics_Widget(QWidget * parent) {
+	setTitle("Statistics");
+	setMinimumWidth(200);
+
+	centerLayout = new QVBoxLayout;
+
+	GetStatisticsLayout = new QGridLayout;
+	getOriginInfo_processButton = new QPushButton;
+	getOriginInfo_processButton->setText("Generate Data Info");
+
+	GetStatisticsLayout->addWidget(getOriginInfo_processButton, 0, 0);
+
+	ScaleTheDataValue_Layout = new QGridLayout;
+	setupScale_Widgets();
+
+	Clamp_Layout = new QGridLayout;
+	setupClamp_Widgets();
+
+	setLayout(centerLayout);
+	centerLayout->addLayout(GetStatisticsLayout);
+	centerLayout->addLayout(ScaleTheDataValue_Layout);
+	centerLayout->addLayout(Clamp_Layout);
+
+	NoDataDisableWidgets();
+}
+QVolumeStatistics_Widget::~QVolumeStatistics_Widget() {
+	disconnect(Scale_Slider, SIGNAL(valueChanged(double)), Scale_SpinBox, SLOT(setValue(double)));
+	disconnect(Scale_SpinBox, SIGNAL(valueChanged(double)), Scale_Slider, SLOT(setValue(double)));
+
+	disconnect(ClampRangeMin_SpinBox, SIGNAL(valueChanged(double)), ClampRangeSlider, SLOT(setLowerValue(double)));
+	disconnect(ClampRangeMax_SpinBox, SIGNAL(valueChanged(double)), ClampRangeSlider, SLOT(setUpperValue(double)));
+	disconnect(ClampRangeSlider, SIGNAL(lowerValueChanged(double)), ClampRangeMin_SpinBox, SLOT(setValue(double)));
+	disconnect(ClampRangeSlider, SIGNAL(upperValueChanged(double)), ClampRangeMax_SpinBox, SLOT(setValue(double)));
+}
+void QVolumeStatistics_Widget::setupScale_Widgets() {
+	Scale_processButton = new QPushButton;
+	Scale_Slider = new QDoubleSlider;
+	Scale_SpinBox = new QDoubleSpinBox;
+	ScaleTheDataValue_Layout->addWidget(Scale_processButton, 0, 0);
+	Scale_processButton->setText("Scale the value");
+	ScaleTheDataValue_Layout->addWidget(Scale_Slider, 0, 1);
+	ScaleTheDataValue_Layout->addWidget(Scale_SpinBox, 0, 2);
+	Scale_Slider->setRange(0.1, 10.0f);
+	Scale_SpinBox->setRange(0.1, 10.0f);
+	connect(Scale_Slider, SIGNAL(valueChanged(double)), Scale_SpinBox, SLOT(setValue(double)));
+	connect(Scale_SpinBox, SIGNAL(valueChanged(double)), Scale_Slider, SLOT(setValue(double)));
+	Scale_Slider->setValue(1.0f);
+	Scale_SpinBox->setSingleStep(0.1);
+}
+void QVolumeStatistics_Widget::setupClamp_Widgets() {
+	Clamp_Button = new QPushButton;
+	Clamp_Button->setText("Clamp");
+	ClampRangeSlider = new QDoubleSliderDoubleRange(Qt::Horizontal, QDoubleSliderDoubleRange::Option::DoubleHandles, nullptr);
+	ClampRangeMin_SpinBox = new QDoubleSpinBox;
+	ClampRangeMax_SpinBox = new QDoubleSpinBox;
+	Clamp_Layout->addWidget(Clamp_Button, 0, 0);
+	Clamp_Layout->addWidget(ClampRangeMin_SpinBox, 0, 1);
+	Clamp_Layout->addWidget(ClampRangeSlider, 0, 2);
+	Clamp_Layout->addWidget(ClampRangeMax_SpinBox, 0, 3);
+	connect(ClampRangeMin_SpinBox, SIGNAL(valueChanged(double)), ClampRangeSlider, SLOT(setLowerValue(double)));
+	connect(ClampRangeMax_SpinBox, SIGNAL(valueChanged(double)), ClampRangeSlider, SLOT(setUpperValue(double)));
+	connect(ClampRangeSlider, SIGNAL(lowerValueChanged(double)), ClampRangeMin_SpinBox, SLOT(setValue(double)));
+	connect(ClampRangeSlider, SIGNAL(upperValueChanged(double)), ClampRangeMax_SpinBox, SLOT(setValue(double)));
+	Clamp_Layout->setColumnStretch(0, 2);
+	Clamp_Layout->setColumnStretch(1, 1);
+	Clamp_Layout->setColumnStretch(2, 5);
+	Clamp_Layout->setColumnStretch(3, 1);
+}
+
+void QVolumeStatistics_Widget::NoDataDisableWidgets() {
+	getOriginInfo_processButton->setDisabled(true);
+	NoStatisticsDisableWidgets();
+}
+void QVolumeStatistics_Widget::NoStatisticsDisableWidgets() {
+	Scale_processButton->setDisabled(true);
+	Scale_Slider->setDisabled(true);
+	Scale_SpinBox->setDisabled(true);
+
+	Clamp_Button->setDisabled(true);
+	ClampRangeMin_SpinBox->setDisabled(true);
+	ClampRangeSlider->setDisabled(true);
+	ClampRangeMax_SpinBox->setDisabled(true);
+}
+void QVolumeStatistics_Widget::HaveDataEnableWidgets() {
+	getOriginInfo_processButton->setEnabled(true);
+}
+void QVolumeStatistics_Widget::HaveStatisticsDataEnableWidgets(const VolumeData& volumeData) {
+	getOriginInfo_processButton->setEnabled(true);
+
+	Scale_Slider->setRange(0.1, 10.0f);
+	Scale_SpinBox->setRange(0.1, 10.0f);
+	Scale_Slider->setValue(1.0f);
+	Scale_processButton->setEnabled(true);
+	Scale_Slider->setEnabled(true);
+	Scale_SpinBox->setEnabled(true);
+
+	ClampRangeSlider->SetRange(volumeData.statistics.min, volumeData.statistics.max);
+	ClampRangeSlider->SetLowerValue(volumeData.statistics.min);
+	ClampRangeSlider->SetUpperValue(volumeData.statistics.max);
+	ClampRangeMin_SpinBox->setRange(volumeData.statistics.min, volumeData.statistics.max);
+	ClampRangeMin_SpinBox->setValue(volumeData.statistics.min);
+	ClampRangeMax_SpinBox->setRange(volumeData.statistics.min, volumeData.statistics.max);
+	ClampRangeMax_SpinBox->setValue(volumeData.statistics.max);
+	Clamp_Button->setEnabled(true);
+	ClampRangeMin_SpinBox->setEnabled(true);
+	ClampRangeSlider->setEnabled(true);
+	ClampRangeMax_SpinBox->setEnabled(true);
+}
+
+// QVolumeDisplayRange_Widget
+
+QVolumeDisplayRange_Widget::QVolumeDisplayRange_Widget(QWidget * parent) {
+	setTitle("Data Display Range");
+	setMinimumWidth(200);
+
+	centerLayout = new QVBoxLayout;
+
+	WWWL_Layout = new QGridLayout;
+	DataRange_Layout = new QGridLayout;
+	setupWWWL_Widgets();
+
+	axis_Layout = new QGridLayout;
+	setupAxis_Widgets();
+
+	setLayout(centerLayout);
+	centerLayout->addLayout(WWWL_Layout);
+	centerLayout->addLayout(DataRange_Layout);
+	centerLayout->addLayout(axis_Layout);
+
+	NoDataDisableWidgets();
+}
+QVolumeDisplayRange_Widget::~QVolumeDisplayRange_Widget() {
+	disconnect(WW_Slider, SIGNAL(valueChanged(double)), WW_SpinBox, SLOT(setValue(double)));
+	disconnect(WW_SpinBox, SIGNAL(valueChanged(double)), WW_Slider, SLOT(setValue(double)));
+	disconnect(WL_Slider, SIGNAL(valueChanged(double)), WL_SpinBox, SLOT(setValue(double)));
+	disconnect(WL_SpinBox, SIGNAL(valueChanged(double)), WL_Slider, SLOT(setValue(double)));
+
+	disconnect(dataRangeMin_SpinBox, SIGNAL(valueChanged(double)), dataRangeSlider, SLOT(setLowerValue(double)));
+	disconnect(dataRangeMax_SpinBox, SIGNAL(valueChanged(double)), dataRangeSlider, SLOT(setUpperValue(double)));
+	disconnect(dataRangeSlider, SIGNAL(lowerValueChanged(double)), dataRangeMin_SpinBox, SLOT(setValue(double)));
+	disconnect(dataRangeSlider, SIGNAL(upperValueChanged(double)), dataRangeMax_SpinBox, SLOT(setValue(double)));
+
+	disconnect(WW_SpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNewRange_WW(double)));
+	disconnect(WL_SpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNewRange_WL(double)));
+	disconnect(dataRangeMin_SpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNewRange_DataMin(double)));
+	disconnect(dataRangeMax_SpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNewRange_DataMax(double)));
+
+	disconnect(display_axis_xy_slider, SIGNAL(valueChanged(int)), display_axis_xy_spinbox, SLOT(setValue(int)));
+	disconnect(display_axis_xy_spinbox, SIGNAL(valueChanged(int)), display_axis_xy_slider, SLOT(setValue(int)));
+
+	disconnect(display_axis_yz_slider, SIGNAL(valueChanged(int)), display_axis_yz_spinbox, SLOT(setValue(int)));
+	disconnect(display_axis_yz_spinbox, SIGNAL(valueChanged(int)), display_axis_yz_slider, SLOT(setValue(int)));
+
+	disconnect(display_axis_xz_slider, SIGNAL(valueChanged(int)), display_axis_xz_spinbox, SLOT(setValue(int)));
+	disconnect(display_axis_xz_spinbox, SIGNAL(valueChanged(int)), display_axis_xz_slider, SLOT(setValue(int)));
+}
+void QVolumeDisplayRange_Widget::setupWWWL_Widgets() {
+
+	WW_Button = new QPushButton;
+	WW_Button->setText("Window Width");
+	WL_Button = new QPushButton;
+	WL_Button->setText("Window Level");
+
+	WWWL_Layout->addWidget(WW_Button, 0, 0);
+	WWWL_Layout->addWidget(WL_Button, 1, 0);
+
+	WW_Slider = new QDoubleSlider;
+	WW_SpinBox = new QDoubleSpinBox;
+	WL_Slider = new QDoubleSlider;
+	WL_SpinBox = new QDoubleSpinBox;
+
+	WWWL_Layout->addWidget(WW_Slider, 0, 1);
+	WWWL_Layout->addWidget(WW_SpinBox, 0, 2);
+	WWWL_Layout->addWidget(WL_Slider, 1, 1);
+	WWWL_Layout->addWidget(WL_SpinBox, 1, 2);
+
+	connect(WW_Slider, SIGNAL(valueChanged(double)), WW_SpinBox, SLOT(setValue(double)));
+	connect(WW_SpinBox, SIGNAL(valueChanged(double)), WW_Slider, SLOT(setValue(double)));
+	connect(WL_Slider, SIGNAL(valueChanged(double)), WL_SpinBox, SLOT(setValue(double)));
+	connect(WL_SpinBox, SIGNAL(valueChanged(double)), WL_Slider, SLOT(setValue(double)));
+
+	connect(WW_SpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNewRange_WW(double)));
+	connect(WL_SpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNewRange_WL(double)));
+
+
+	dataRange_Button = new QPushButton;
+	dataRangeSlider = new QDoubleSliderDoubleRange(Qt::Horizontal, QDoubleSliderDoubleRange::Option::DoubleHandles, nullptr);
+	dataRange_Button->setText("Data Range");
+	dataRangeMin_SpinBox = new QDoubleSpinBox;
+	dataRangeMax_SpinBox = new QDoubleSpinBox;
+	DataRange_Layout->addWidget(dataRange_Button, 0, 0);
+	DataRange_Layout->addWidget(dataRangeMin_SpinBox, 0, 1);
+	DataRange_Layout->addWidget(dataRangeSlider, 0, 2);
+	DataRange_Layout->addWidget(dataRangeMax_SpinBox, 0, 3);
+	DataRange_Layout->setColumnStretch(0, 2);
+	DataRange_Layout->setColumnStretch(1, 1);
+	DataRange_Layout->setColumnStretch(2, 5);
+	DataRange_Layout->setColumnStretch(3, 1);
+
+	connect(dataRangeMin_SpinBox, SIGNAL(valueChanged(double)), dataRangeSlider, SLOT(setLowerValue(double)));
+	connect(dataRangeMax_SpinBox, SIGNAL(valueChanged(double)), dataRangeSlider, SLOT(setUpperValue(double)));
+	connect(dataRangeSlider, SIGNAL(lowerValueChanged(double)), dataRangeMin_SpinBox, SLOT(setValue(double)));
+	connect(dataRangeSlider, SIGNAL(upperValueChanged(double)), dataRangeMax_SpinBox, SLOT(setValue(double)));
+
+	connect(dataRangeMin_SpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNewRange_DataMin(double)));
+	connect(dataRangeMax_SpinBox, SIGNAL(valueChanged(double)), this, SLOT(setNewRange_DataMax(double)));
+}
+void QVolumeDisplayRange_Widget::setupAxis_Widgets() {
+	display_axis_xy_label = new QLabel;
+	display_axis_xy_label->setText(" X-Y axis");
+	display_axis_xy_radio = new QRadioButton;
+	display_axis_yz_label = new QLabel;
+	display_axis_yz_label->setText(" Y-Z axis");
+	display_axis_yz_radio = new QRadioButton;
+	display_axis_xz_label = new QLabel;
+	display_axis_xz_label->setText(" X-Z axis");
+	display_axis_xz_radio = new QRadioButton;
+	display_axis_xy_slider = new QSlider(Qt::Horizontal);
+	display_axis_xy_spinbox = new QSpinBox;
+	display_axis_yz_slider = new QSlider(Qt::Horizontal);
+	display_axis_yz_spinbox = new QSpinBox;
+	display_axis_xz_slider = new QSlider(Qt::Horizontal);
+	display_axis_xz_spinbox = new QSpinBox;
+
+	display_axis_ButtonGroup = new QButtonGroup;
+	display_axis_ButtonGroup->addButton(display_axis_xy_radio);
+	display_axis_ButtonGroup->addButton(display_axis_yz_radio);
+	display_axis_ButtonGroup->addButton(display_axis_xz_radio);
+
+
+	axis_Layout->addWidget(display_axis_xy_label, 0, 0);
+	axis_Layout->addWidget(display_axis_xy_radio, 0, 1);
+	axis_Layout->addWidget(display_axis_xy_slider, 0, 2);
+	axis_Layout->addWidget(display_axis_xy_spinbox, 0, 3);
+
+	axis_Layout->addWidget(display_axis_yz_label, 1, 0);
+	axis_Layout->addWidget(display_axis_yz_radio, 1, 1);
+	axis_Layout->addWidget(display_axis_yz_slider, 1, 2);
+	axis_Layout->addWidget(display_axis_yz_spinbox, 1, 3);
+
+	axis_Layout->addWidget(display_axis_xz_label, 2, 0);
+	axis_Layout->addWidget(display_axis_xz_radio, 2, 1);
+	axis_Layout->addWidget(display_axis_xz_slider, 2, 2);
+	axis_Layout->addWidget(display_axis_xz_spinbox, 2, 3);
+
+	axis_Layout->setColumnStretch(0, 2);
+	axis_Layout->setColumnStretch(1, 1);
+	axis_Layout->setColumnStretch(2, 10);
+	axis_Layout->setColumnStretch(3, 2);
+
+	connect(display_axis_xy_slider, SIGNAL(valueChanged(int)), display_axis_xy_spinbox, SLOT(setValue(int)));
+	connect(display_axis_xy_spinbox, SIGNAL(valueChanged(int)), display_axis_xy_slider, SLOT(setValue(int)));
+
+	connect(display_axis_yz_slider, SIGNAL(valueChanged(int)), display_axis_yz_spinbox, SLOT(setValue(int)));
+	connect(display_axis_yz_spinbox, SIGNAL(valueChanged(int)), display_axis_yz_slider, SLOT(setValue(int)));
+
+	connect(display_axis_xz_slider, SIGNAL(valueChanged(int)), display_axis_xz_spinbox, SLOT(setValue(int)));
+	connect(display_axis_xz_spinbox, SIGNAL(valueChanged(int)), display_axis_xz_slider, SLOT(setValue(int)));
+}
+
+void QVolumeDisplayRange_Widget::NoDataDisableWidgets() {
+	NoStatisticsDisableWidgets();
+}
+void QVolumeDisplayRange_Widget::NoStatisticsDisableWidgets() {
+	WW_Button->setDisabled(true);
+	WW_Slider->setDisabled(true);
+	WW_SpinBox->setDisabled(true);
+
+	WL_Button->setDisabled(true);
+	WL_Slider->setDisabled(true);
+	WL_SpinBox->setDisabled(true);
+
+	dataRange_Button->setDisabled(true);
+	dataRangeSlider->setDisabled(true);
+	dataRangeMin_SpinBox->setDisabled(true);
+	dataRangeMax_SpinBox->setDisabled(true);
+
+	display_axis_xy_radio->setDisabled(true);
+	display_axis_xy_slider->setDisabled(true);
+	display_axis_xy_spinbox->setDisabled(true);
+
+	display_axis_yz_radio->setDisabled(true);
+	display_axis_yz_slider->setDisabled(true);
+	display_axis_yz_spinbox->setDisabled(true);
+
+	display_axis_xz_radio->setDisabled(true);
+	display_axis_xz_slider->setDisabled(true);
+	display_axis_xz_spinbox->setDisabled(true);
+}
+void QVolumeDisplayRange_Widget::HaveDataEnableWidgets() {
+	;
+}
+void QVolumeDisplayRange_Widget::HaveStatisticsDataEnableWidgets(const VolumeData& volumeData) {
+
+	// data range
+
+	float dataInterval = volumeData.statistics.max - volumeData.statistics.min;
+
+	originDataMin = volumeData.statistics.min;
+	originDataMax = volumeData.statistics.max;
+
+	dataRangeSlider->SetRange(volumeData.statistics.min, volumeData.statistics.max);
+	dataRangeSlider->SetLowerValue(volumeData.statistics.min);
+	dataRangeSlider->SetUpperValue(volumeData.statistics.max);
+	dataRangeMin_SpinBox->setRange(volumeData.statistics.min, volumeData.statistics.max);
+	dataRangeMin_SpinBox->setValue(volumeData.statistics.min);
+	dataRangeMin_SpinBox->setSingleStep(dataInterval * 0.01);
+	dataRangeMax_SpinBox->setRange(volumeData.statistics.min, volumeData.statistics.max);
+	dataRangeMax_SpinBox->setValue(volumeData.statistics.max);
+	dataRangeMax_SpinBox->setSingleStep(dataInterval * 0.01);
+	dataRange_Button->setEnabled(true);
+	dataRangeSlider->setEnabled(true);
+	dataRangeMin_SpinBox->setEnabled(true);
+	dataRangeMax_SpinBox->setEnabled(true);
+
+	WW_Slider->setRange(dataInterval * 0.01, dataInterval);
+	WW_SpinBox->setRange(dataInterval * 0.01, dataInterval);
+	WW_SpinBox->setSingleStep(dataInterval * 0.01);
+	WindowWidth = dataInterval;
+	WW_SpinBox->setValue(dataInterval);
+	WW_Button->setEnabled(true);
+	WW_Slider->setEnabled(true);
+	WW_SpinBox->setEnabled(true);
+
+	WL_Slider->setRange(volumeData.statistics.min, volumeData.statistics.max);
+	WL_SpinBox->setRange(volumeData.statistics.min, volumeData.statistics.max);
+	WL_SpinBox->setSingleStep(dataInterval * 0.01);
+	WindowLevel = (volumeData.statistics.max + volumeData.statistics.min) * 0.5;
+	WL_SpinBox->setValue(WindowLevel);
+	WL_Button->setEnabled(true);
+	WL_Slider->setEnabled(true);
+	WL_SpinBox->setEnabled(true);
+
+	dataMin = volumeData.statistics.min;
+	dataMax = volumeData.statistics.max;
+
+	// display axis
+	display_axis_xy_radio->setEnabled(true);
+	display_axis_xy_slider->setEnabled(true);
+	display_axis_xy_spinbox->setEnabled(true);
+	display_axis_xy_slider->setRange(0, volumeData.zResolution);
+	display_axis_xy_spinbox->setRange(0, volumeData.zResolution);
+	display_axis_xy_slider->setValue(0);
+
+	display_axis_yz_radio->setEnabled(true);
+	display_axis_yz_slider->setEnabled(true);
+	display_axis_yz_spinbox->setEnabled(true);
+	display_axis_yz_slider->setRange(0, volumeData.xResolution);
+	display_axis_yz_spinbox->setRange(0, volumeData.xResolution);
+	display_axis_yz_slider->setValue(0);
+
+	display_axis_xz_radio->setEnabled(true);
+	display_axis_xz_slider->setEnabled(true);
+	display_axis_xz_spinbox->setEnabled(true);
+	display_axis_xz_slider->setRange(0, volumeData.yResolution);
+	display_axis_xz_spinbox->setRange(0, volumeData.yResolution);
+	display_axis_xz_slider->setValue(0);
+
+	display_axis_xy_radio->setChecked(true);
+}
+
+void QVolumeDisplayRange_Widget::setNewRange_WW(double ww) {
+	WindowWidth = ww;
+
+	if ((WindowLevel - 0.5 * WindowWidth) < originDataMin) {
+		dataMin = originDataMin;
+		return;
+	}
+	else {
+		dataMin = WindowLevel - 0.5 * WindowWidth;
+	}
+	if ((WindowLevel + 0.5 * WindowWidth) > originDataMax) {
+		dataMax = originDataMax;
+		return;
+	}
+	else {
+		dataMax = WindowLevel + 0.5 * WindowWidth;
+	}
+	dataRangeSlider->SetLowerValue(dataMin);
+	dataRangeSlider->SetUpperValue(dataMax);
+	emit dataRangeChanged();
+}
+void QVolumeDisplayRange_Widget::setNewRange_WL(double wl) {
+	WindowLevel = wl;
+
+	if ((WindowLevel - 0.5 * WindowWidth) < originDataMin) {
+		dataMin = originDataMin;
+		return;
+	}
+	else {
+		dataMin = WindowLevel - 0.5 * WindowWidth;
+	}
+	if ((WindowLevel + 0.5 * WindowWidth) > originDataMax) {
+		dataMax = originDataMax;
+		return;
+	}
+	else {
+		dataMax = WindowLevel + 0.5 * WindowWidth;
+	}
+	dataRangeSlider->SetLowerValue(dataMin);
+	dataRangeSlider->SetUpperValue(dataMax);
+
+	emit dataRangeChanged();
+}
+void QVolumeDisplayRange_Widget::setNewRange_DataMin(double datamin) {
+	dataMin = datamin;
+	WindowWidth = dataMax - dataMin;
+	WW_Slider->setValue(dataMax - dataMin);
+	WL_Slider->setValue((dataMax + dataMin) * 0.5);
+
+	emit dataRangeChanged();
+}
+void QVolumeDisplayRange_Widget::setNewRange_DataMax(double datamax) {
+	dataMax = datamax;
+	WindowWidth = dataMax - dataMin;
+	WW_Slider->setValue(dataMax - dataMin);
+	WL_Slider->setValue((dataMax + dataMin) * 0.5);
+
+	emit dataRangeChanged();
+}
+
 
 
 

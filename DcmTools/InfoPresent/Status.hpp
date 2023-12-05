@@ -32,6 +32,8 @@ signals:
     void setDataChanged(const QString& Group, const QString& Name,
         const QString& Value, const QString& Unit = "", const QString& Icon = "");
 
+	void PaintBuffer_signal(unsigned char* buffer, int width, int height, int channals);
+
 private slots:
 
 

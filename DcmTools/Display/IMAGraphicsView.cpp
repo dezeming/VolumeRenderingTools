@@ -19,7 +19,7 @@
 
 #include "IMAGraphicsView.hpp"
 #include "Utility/DebugText.hpp"
-
+#include "InfoPresent/Status.hpp"
 
 IMAGraphicsView::IMAGraphicsView(QGraphicsView * parent) {
 	setFrameShadow(Sunken);
@@ -38,12 +38,14 @@ IMAGraphicsView::IMAGraphicsView(QGraphicsView * parent) {
 
 	setCacheMode(CacheBackground);
 	scale(_scale, _scale);
+
+	connect(&m_GuiStatus, SIGNAL(PaintBuffer_signal(unsigned char*, int, int, int)), 
+		this, SLOT(PaintBuffer(unsigned char*, int, int, int)));
 }
 
 IMAGraphicsView::~IMAGraphicsView() {
-	
-
-
+	disconnect(&m_GuiStatus, SIGNAL(PaintBuffer_signal(unsigned char*, int, int, int)),
+		this, SLOT(PaintBuffer(unsigned char*, int, int, int)));
 }
 
 
