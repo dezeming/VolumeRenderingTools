@@ -213,6 +213,12 @@ public:
 	// The data for process
 	void * data;
 	DataFormat format;
+	template <typename T>
+	T __getPixel(T indicateSrc, unsigned int x, unsigned int y, unsigned int z) {
+		T* data_t = static_cast<T*>(data);
+		size_t offset = x + y * xResolution + z * xResolution * yResolution;
+		return data_t[offset];
+	}
 
 	// Info used for .dcm image
 	double slope, intercept;

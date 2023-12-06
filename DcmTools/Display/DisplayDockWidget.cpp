@@ -76,6 +76,12 @@ DisplayDockWidget::~DisplayDockWidget() {
 		SIGNAL(clicked()), this, SLOT(writeMhdData()));
 	disconnect(m_QVolumeReadWrite_Widget->writeFeimos_processButton,
 		SIGNAL(clicked()), this, SLOT(writeFeimosData()));
+
+	disconnect(m_QVolumeStatistics_Widget->getOriginInfo_processButton,
+		SIGNAL(clicked()), this, SLOT(getStatistics()));
+
+	disconnect(m_QVolumeDisplayRange_Widget,
+		SIGNAL(dataRangeChanged()), this, SLOT(setCurrentDisplay()));
 }
 
 void DisplayDockWidget::setpuWidgets()
@@ -112,9 +118,11 @@ void DisplayDockWidget::setpuWidgets()
 
 	m_QVolumeDisplayRange_Widget = new QVolumeDisplayRange_Widget;
 	centerLayout->addWidget(m_QVolumeDisplayRange_Widget);
-
+	connect(m_QVolumeDisplayRange_Widget,
+		SIGNAL(dataRangeChanged()), this, SLOT(setCurrentDisplay()));
+	connect(m_QVolumeDisplayRange_Widget,
+		SIGNAL(dataDisplayChanged()), this, SLOT(setCurrentDisplay()));
 }
-
 
 void showMemoryInfo(void);
 // read and write slots
@@ -310,6 +318,8 @@ void DisplayDockWidget::getStatistics() {
 	HaveStatisticsDataEnableWidgets(volumeData);
 
 	displayVolumeStatistics();
+
+	setCurrentDisplay();
 }
 
 #include "InfoPresent/Status.hpp"
@@ -358,6 +368,82 @@ void DisplayDockWidget::clearVolumeStatistics() {
 	m_GuiStatus.setDataChanged("Volume Data", "Data-graient-max", "", "");
 }
 
+inline float FloatDataClampped(const float&min, const float&max, const float& data) {
+	return std::fmin(max, std::fmax(min, data));
+}
+void DisplayDockWidget::setCurrentDisplay() {
+
+	if (volumeData.format != Dez_Float) {
+		DebugTextPrintErrorString("Only Float format data is supported to process.");
+		return;
+	}
+
+	float min, max, range, rangeInv;
+	m_QVolumeDisplayRange_Widget->getDataMinMax(min, max);
+	range = max - min;
+	if (0 == range) range = 1.0f;
+	rangeInv = 1.0f / range;
+
+	unsigned int width, height;
+	unsigned int axis = m_QVolumeDisplayRange_Widget->getDisplayedAxis();
+	unsigned int imageNum = m_QVolumeDisplayRange_Widget->getDisplayedImageNum();
+	float *data = static_cast<float *>(volumeData.data);
+	if (0 == axis) {
+		width = volumeData.xResolution;
+		height = volumeData.yResolution;
+
+		framebuffer.resizeBuffer(width, height, 3);
+
+		for (unsigned int i = 0;i < width; i++) {
+			for (unsigned int j = 0;j < height; j++) {
+				float voxel = FloatDataClampped(min, max, volumeData.__getPixel(static_cast<float>(1), i, j, imageNum));
+				unsigned char pixelValue = static_cast<unsigned char>((voxel - min) * rangeInv * 255.9f);
+
+				framebuffer.fast_set_uc(i, j, 0, pixelValue);
+				framebuffer.fast_set_uc(i, j, 1, pixelValue);
+				framebuffer.fast_set_uc(i, j, 2, pixelValue);
+			}
+		}
+	}
+	else if (1 == axis) {
+		width = volumeData.yResolution;
+		height = volumeData.zResolution;
+		framebuffer.resizeBuffer(width, height, 3);
+
+		for (unsigned int i = 0; i < width; i++) {
+			for (unsigned int j = 0; j < height; j++) {
+				float voxel = FloatDataClampped(min, max, volumeData.__getPixel(static_cast<float>(1), imageNum, i, j));
+				unsigned char pixelValue = static_cast<unsigned char>((voxel - min) * rangeInv * 255.9f);
+
+				framebuffer.fast_set_uc(i, j, 0, pixelValue);
+				framebuffer.fast_set_uc(i, j, 1, pixelValue);
+				framebuffer.fast_set_uc(i, j, 2, pixelValue);
+			}
+		}
+	}
+	else if (2 == axis) {
+		width = volumeData.xResolution;
+		height = volumeData.zResolution;
+		framebuffer.resizeBuffer(width, height, 3);
+
+		for (unsigned int i = 0; i < width; i++) {
+			for (unsigned int j = 0; j < height; j++) {
+				float voxel = FloatDataClampped(min, max, volumeData.__getPixel(static_cast<float>(1), i, imageNum, j));
+				unsigned char pixelValue = static_cast<unsigned char>((voxel - min) * rangeInv * 255.9f);
+
+				framebuffer.fast_set_uc(i, j, 0, pixelValue);
+				framebuffer.fast_set_uc(i, j, 1, pixelValue);
+				framebuffer.fast_set_uc(i, j, 2, pixelValue);
+			}
+		}
+	}
+
+	if (!framebuffer.ubuffer) {
+		DebugTextPrintErrorString("framebuffer has no data");
+		return;
+	}
+	emit m_GuiStatus.PaintBuffer_signal(framebuffer.ubuffer, framebuffer.width, framebuffer.height, framebuffer.channals);
+}
 
 #include <QFileInfo>
 #include <QDesktopServices>
@@ -596,6 +682,13 @@ QVolumeDisplayRange_Widget::~QVolumeDisplayRange_Widget() {
 
 	disconnect(display_axis_xz_slider, SIGNAL(valueChanged(int)), display_axis_xz_spinbox, SLOT(setValue(int)));
 	disconnect(display_axis_xz_spinbox, SIGNAL(valueChanged(int)), display_axis_xz_slider, SLOT(setValue(int)));
+
+	disconnect(display_axis_xy_slider, SIGNAL(valueChanged(int)), this, SLOT(setDataDisplayChanged()));
+	disconnect(display_axis_yz_slider, SIGNAL(valueChanged(int)), this, SLOT(setDataDisplayChanged()));
+	disconnect(display_axis_xz_slider, SIGNAL(valueChanged(int)), this, SLOT(setDataDisplayChanged()));
+	disconnect(display_axis_xy_radio, SIGNAL(clicked()), this, SLOT(setDataDisplayChanged()));
+	disconnect(display_axis_xz_radio, SIGNAL(clicked()), this, SLOT(setDataDisplayChanged()));
+	disconnect(display_axis_yz_radio, SIGNAL(clicked()), this, SLOT(setDataDisplayChanged()));
 }
 void QVolumeDisplayRange_Widget::setupWWWL_Widgets() {
 
@@ -699,6 +792,19 @@ void QVolumeDisplayRange_Widget::setupAxis_Widgets() {
 
 	connect(display_axis_xz_slider, SIGNAL(valueChanged(int)), display_axis_xz_spinbox, SLOT(setValue(int)));
 	connect(display_axis_xz_spinbox, SIGNAL(valueChanged(int)), display_axis_xz_slider, SLOT(setValue(int)));
+
+
+	connect(display_axis_xy_slider, SIGNAL(valueChanged(int)), this, SLOT(setDataDisplayChanged()));
+	connect(display_axis_yz_slider, SIGNAL(valueChanged(int)), this, SLOT(setDataDisplayChanged()));
+	connect(display_axis_xz_slider, SIGNAL(valueChanged(int)), this, SLOT(setDataDisplayChanged()));
+	connect(display_axis_xy_radio, SIGNAL(clicked()), this, SLOT(setDataDisplayChanged()));
+	connect(display_axis_xz_radio, SIGNAL(clicked()), this, SLOT(setDataDisplayChanged()));
+	connect(display_axis_yz_radio, SIGNAL(clicked()), this, SLOT(setDataDisplayChanged()));
+
+}
+
+void QVolumeDisplayRange_Widget::setDataDisplayChanged() {
+	emit dataDisplayChanged();
 }
 
 void QVolumeDisplayRange_Widget::NoDataDisableWidgets() {
@@ -781,22 +887,22 @@ void QVolumeDisplayRange_Widget::HaveStatisticsDataEnableWidgets(const VolumeDat
 	display_axis_xy_radio->setEnabled(true);
 	display_axis_xy_slider->setEnabled(true);
 	display_axis_xy_spinbox->setEnabled(true);
-	display_axis_xy_slider->setRange(0, volumeData.zResolution);
-	display_axis_xy_spinbox->setRange(0, volumeData.zResolution);
+	display_axis_xy_slider->setRange(0, volumeData.zResolution-1);
+	display_axis_xy_spinbox->setRange(0, volumeData.zResolution-1);
 	display_axis_xy_slider->setValue(0);
 
 	display_axis_yz_radio->setEnabled(true);
 	display_axis_yz_slider->setEnabled(true);
 	display_axis_yz_spinbox->setEnabled(true);
-	display_axis_yz_slider->setRange(0, volumeData.xResolution);
-	display_axis_yz_spinbox->setRange(0, volumeData.xResolution);
+	display_axis_yz_slider->setRange(0, volumeData.xResolution-1);
+	display_axis_yz_spinbox->setRange(0, volumeData.xResolution-1);
 	display_axis_yz_slider->setValue(0);
 
 	display_axis_xz_radio->setEnabled(true);
 	display_axis_xz_slider->setEnabled(true);
 	display_axis_xz_spinbox->setEnabled(true);
-	display_axis_xz_slider->setRange(0, volumeData.yResolution);
-	display_axis_xz_spinbox->setRange(0, volumeData.yResolution);
+	display_axis_xz_slider->setRange(0, volumeData.yResolution-1);
+	display_axis_xz_spinbox->setRange(0, volumeData.yResolution-1);
 	display_axis_xz_slider->setValue(0);
 
 	display_axis_xy_radio->setChecked(true);
@@ -848,21 +954,39 @@ void QVolumeDisplayRange_Widget::setNewRange_WL(double wl) {
 void QVolumeDisplayRange_Widget::setNewRange_DataMin(double datamin) {
 	dataMin = datamin;
 	WindowWidth = dataMax - dataMin;
-	WW_Slider->setValue(dataMax - dataMin);
 	WL_Slider->setValue((dataMax + dataMin) * 0.5);
+	WW_Slider->setValue(dataMax - dataMin);
 
 	emit dataRangeChanged();
 }
 void QVolumeDisplayRange_Widget::setNewRange_DataMax(double datamax) {
 	dataMax = datamax;
 	WindowWidth = dataMax - dataMin;
-	WW_Slider->setValue(dataMax - dataMin);
 	WL_Slider->setValue((dataMax + dataMin) * 0.5);
+	WW_Slider->setValue(dataMax - dataMin);
 
 	emit dataRangeChanged();
 }
 
-
+void QVolumeDisplayRange_Widget::getDataMinMax(float& min, float& max) {
+	min = dataMin;
+	max = dataMax;
+}
+unsigned int QVolumeDisplayRange_Widget::getDisplayedAxis() {
+	if (display_axis_xy_radio->isChecked()) return 0;
+	if (display_axis_yz_radio->isChecked()) return 1;
+	if (display_axis_xz_radio->isChecked()) return 2;
+	return 0;
+}
+unsigned int QVolumeDisplayRange_Widget::getDisplayedImageNum() {
+	if (display_axis_xy_radio->isChecked()) 
+		return static_cast<unsigned int>(display_axis_xy_slider->value());
+	if (display_axis_yz_radio->isChecked()) 
+		return static_cast<unsigned int>(display_axis_yz_slider->value());
+	if (display_axis_xz_radio->isChecked()) 
+		return static_cast<unsigned int>(display_axis_xz_slider->value());
+	return 0;
+}
 
 
 

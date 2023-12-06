@@ -53,7 +53,8 @@ public:
 		this->channals = 0;
 	}
 
-	bool resizeBuffer(const int width = 800, const int height = 600, const int channals = 4) {
+	bool resizeBuffer(const unsigned int width = 800, const unsigned int height = 600, 
+		const unsigned int channals = 4) {
 
 		clear();
 
@@ -76,7 +77,8 @@ public:
 		return true;
 	}
 
-	inline float at_f(const int w, const int h, const int shifting) {
+	inline float at_f(const unsigned int w, const unsigned int h, 
+		const unsigned int shifting) {
 		if (nullptr == buffer) {
 			DebugTextPrintErrorString("Access Error: Buffer is empty and cannot be accessed!");
 			return 0.0;
@@ -88,7 +90,8 @@ public:
 		int offset = (w + h * height) * channals + shifting;
 		return buffer[offset];
 	}
-	inline bool set_f(const int w, const int h, const int shifting, const float & dat) {
+	inline bool set_f(const unsigned int w, const unsigned int h, 
+		const unsigned int shifting, const float & dat) {
 		if (nullptr == buffer) {
 			DebugTextPrintErrorString("Access Error: Buffer is empty and cannot be accessed!");
 			return false;
@@ -101,7 +104,8 @@ public:
 		buffer[offset] = dat;
 		return true;
 	}
-	inline unsigned char at_uc(const int w, const int h, const int shifting) {
+	inline unsigned char at_uc(const unsigned int w, const unsigned int h, 
+		const unsigned int shifting) {
 		if (nullptr == ubuffer) {
 			DebugTextPrintErrorString("Access Error: Buffer is empty and cannot be accessed!");
 			return 0.0;
@@ -113,7 +117,8 @@ public:
 		int offset = (w + h * height) * channals + shifting;
 		return ubuffer[offset];
 	}
-	inline bool set_uc(const int w, const int h, const int shifting, const unsigned char dat) {
+	inline bool set_uc(const unsigned int w, const unsigned int h, const unsigned int shifting, 
+		const unsigned char dat) {
 		if (nullptr == ubuffer) {
 			DebugTextPrintErrorString("Access Error: Buffer is empty and cannot be accessed!");
 			return false;
@@ -127,24 +132,28 @@ public:
 		return true;
 	}
 
-	inline float fast_at_f(const int w, const int h, const int shifting) {
+	inline float fast_at_f(const unsigned int w, const unsigned int h, 
+		const unsigned int shifting) {
 		return buffer[(w + h * height) * channals + shifting];
 	}
-	inline void fast_set_f(const int w, const int h, const int shifting, const float & dat) {
+	inline void fast_set_f(const unsigned int w, const unsigned int h, 
+		const unsigned int shifting, const float & dat) {
 		buffer[(w + h * width) * channals + shifting] = dat;
 	}
-	inline unsigned char fast_at_uc(const int w, const int h, const int shifting) {
+	inline unsigned char fast_at_uc(const unsigned int w, const unsigned int h, 
+		const unsigned int shifting) {
 		return ubuffer[(w + h * height) * channals + shifting];
 	}
-	inline void fast_set_uc(const int w, const int h, const int shifting, const unsigned char dat) {
+	inline void fast_set_uc(const unsigned int w, const unsigned int h, const unsigned int shifting, 
+		const unsigned char dat) {
 		ubuffer[(w + h * width) * channals + shifting] = dat;
 	}
 
 	float * buffer;
 	unsigned char * ubuffer;
-	int width;
-	int height;
-	int channals;
+	unsigned int width;
+	unsigned int height;
+	unsigned int channals;
 };
 
 

@@ -130,6 +130,7 @@ public:
 	QDoubleSliderDoubleRange *dataRangeSlider;
 	QDoubleSpinBox * dataRangeMin_SpinBox;
 	QDoubleSpinBox * dataRangeMax_SpinBox;
+	void getDataMinMax(float& min, float& max);
 
 	// widgets: display axis
 	QGridLayout * axis_Layout;
@@ -146,6 +147,8 @@ public:
 	QSlider* display_axis_xz_slider;
 	QSpinBox* display_axis_xz_spinbox;
 	QButtonGroup* display_axis_ButtonGroup;
+	unsigned int getDisplayedAxis();
+	unsigned int getDisplayedImageNum();
 
 	void NoDataDisableWidgets();
 	void NoStatisticsDisableWidgets();
@@ -154,7 +157,10 @@ public:
 
 signals:
 	void dataRangeChanged();
+	void dataDisplayChanged();
 private slots:
+	void setDataDisplayChanged();
+
 	void setNewRange_WW(double ww);
 	void setNewRange_WL(double wl);
 	void setNewRange_DataMin(double datamin);
@@ -201,6 +207,8 @@ private slots:
 	void writeFeimosData();
 
 	void getStatistics();
+
+	void setCurrentDisplay();
 
 private:
 	VolumeData volumeData;
