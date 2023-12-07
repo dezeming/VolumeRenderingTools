@@ -538,7 +538,20 @@ void ProcessVolumeData::ClipFeimosFile(const QString& InputFilePath, const QStri
 	if (!volumeData.data) {
 		parseFlag = false;
 	}
+
 	if (parseFlag) {
+		// Check if the number of image layers between intervals is less than 1
+		if (end[0] * volumeData.xResolution -  begin[0] * volumeData.xResolution < 1.0) parseFlag = false;
+		if (end[1] * volumeData.yResolution - begin[1] * volumeData.yResolution < 1.0) parseFlag = false;
+		if (end[2] * volumeData.zResolution - begin[2] * volumeData.zResolution < 1.0) parseFlag = false;
+
+		if (!parseFlag) {
+			DebugTextPrintErrorString("At least one layer of images must be included within the scope!");
+		}
+	}
+
+	if (parseFlag) {
+
 		switch (volumeData.format)
 		{
 		case Dez_Origin:

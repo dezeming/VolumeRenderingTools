@@ -80,6 +80,8 @@ void ProcessDockWidget::setupFrames() {
 	VolumeClip_Frame = new QVolumeClip_Frame;
 	framesLayout->addWidget(VolumeClip_Frame, 2, 0);
 
+	framesLayout->setColumnStretch(0, 1);
+	framesLayout->setColumnStretch(1, 1);
 
 	centerLayout->addLayout(framesLayout);
 }
@@ -115,10 +117,20 @@ void ProcessDockWidget::setupProcessFunc() {
 	// volume process
 	connect(VolumeRotateAxis_Frame->MhdRotateAxis_processButton,
 		SIGNAL(clicked()), this, SLOT(process_MhdRotateAxis()));
+	connect(VolumeRotateAxis_Frame->FeimosRotateAxis_processButton,
+		SIGNAL(clicked()), this, SLOT(process_FeimosRotateAxis()));
+
+
 	connect(VolumeFlipAxis_Frame->MhdFlipAxis_processButton,
 		SIGNAL(clicked()), this, SLOT(process_MhdFlipAxis()));
+	connect(VolumeFlipAxis_Frame->FeimosFlipAxis_processButton,
+		SIGNAL(clicked()), this, SLOT(process_FeimosFlipAxis()));
+
+
 	connect(VolumeClip_Frame->MhdClip_processButton,
 		SIGNAL(clicked()), this, SLOT(process_MhdClip()));
+	connect(VolumeClip_Frame->FeimosClip_processButton,
+		SIGNAL(clicked()), this, SLOT(process_FeimosClip()));
 
 	// test
 	connect(processButton, SIGNAL(clicked()), this, SLOT(setProcess()));
@@ -328,11 +340,33 @@ void ProcessDockWidget::process_MhdRotateAxis() {
 	getPredefinedInfo();
 
 	bool ok = VolumeRotateAxis_Frame->getRotateAxis(permute);
-	if (!ok) return;
+	if (ok) {
+		processVolumeData.RotateAxisMhdFile(
+			InputFilePath, OutputFolder, OutputFileName,
+			generateFormat, permute);
+	}
 
 	DebugTextPrintString(".................  Process finished   ....................");
 	showMemoryInfo();
 }
+void ProcessDockWidget::process_FeimosRotateAxis() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Permute axis of .mhd-.raw file.");
+	getPredefinedInfo();
+
+	bool ok = VolumeRotateAxis_Frame->getRotateAxis(permute);
+	if (ok) {
+		processVolumeData.RotateAxisFeimosFile(
+			InputFilePath, OutputFolder, OutputFileName,
+			generateFormat, permute);
+	}
+
+	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
+}
+
 void ProcessDockWidget::process_MhdFlipAxis() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
@@ -341,11 +375,33 @@ void ProcessDockWidget::process_MhdFlipAxis() {
 	getPredefinedInfo();
 
 	bool ok = VolumeFlipAxis_Frame->getFlipAxis(flip);
-	if (!ok) return;
+	if (ok) {
+		processVolumeData.FlipAxisMhdFile(
+			InputFilePath, OutputFolder, OutputFileName,
+			generateFormat, flip);
+	}
 
 	DebugTextPrintString(".................  Process finished   ....................");
 	showMemoryInfo();
 }
+void ProcessDockWidget::process_FeimosFlipAxis() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Flip axis of .mhd-.raw file.");
+	getPredefinedInfo();
+
+	bool ok = VolumeFlipAxis_Frame->getFlipAxis(flip);
+	if (ok) {
+		processVolumeData.FlipAxisFeimosFile(
+			InputFilePath, OutputFolder, OutputFileName,
+			generateFormat, flip);
+	}
+
+	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
+}
+
 void ProcessDockWidget::process_MhdClip() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
@@ -353,7 +409,29 @@ void ProcessDockWidget::process_MhdClip() {
 	DebugTextPrintString("Clip.mhd - .raw file.");
 	getPredefinedInfo();
 
+	bool isOk = VolumeClip_Frame->getClipRange(clipBegin, clipEnd);
+	if (isOk) {
+		processVolumeData.ClipMhdFile(
+			InputFilePath, OutputFolder, OutputFileName,
+			generateFormat, clipBegin, clipEnd);
+	}
 
+	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
+}
+void ProcessDockWidget::process_FeimosClip() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Clip.mhd - .raw file.");
+	getPredefinedInfo();
+	
+	bool isOk = VolumeClip_Frame->getClipRange(clipBegin, clipEnd);
+	if (isOk) {
+		processVolumeData.ClipFeimosFile(
+			InputFilePath, OutputFolder, OutputFileName,
+			generateFormat, clipBegin, clipEnd);
+	}
 
 	DebugTextPrintString(".................  Process finished   ....................");
 	showMemoryInfo();
@@ -479,7 +557,7 @@ bool QVolumeRotateAxis_Frame::getRotateAxis(int permute[3]) {
 	QString permu = permuteEdit->text();
 	QStringList splitList = permu.split(",");
 	if (splitList.size() != 3) {
-		DebugTextPrintString("Incorrect input format.");
+		DebugTextPrintString("Incorrect input axis.");
 		return false;
 	}
 
@@ -488,6 +566,19 @@ bool QVolumeRotateAxis_Frame::getRotateAxis(int permute[3]) {
 		bool ok;
 		permute[i] = splitList[i].toInt(&ok);
 		isOk = isOk && ok;
+	}
+	if (isOk) {
+		if (permute[0] < 0 || permute[0] > 2) isOk = false;
+		if (permute[1] < 0 || permute[1] > 2) isOk = false;
+		if (permute[2] < 0 || permute[2] > 2) isOk = false;
+
+		if (permute[0] == permute[1]) isOk = false;
+		if (permute[0] == permute[2]) isOk = false;
+		if (permute[1] == permute[2]) isOk = false;
+	}
+
+	if (!isOk) {
+		DebugTextPrintString("Incorrect input axis.");
 	}
 
 	return isOk;
@@ -575,22 +666,41 @@ QVolumeClip_Frame::QVolumeClip_Frame(QWidget * parent) {
 	VolumeClip_Lower_Z->setText("0.0");
 	VolumeClip_Upper_Z = new QLineEdit;
 	VolumeClip_Upper_Z->setText("1.0");
+
+	xbegin = new QLabel; xbegin->setText("xbegin");
+	xend = new QLabel; xend->setText("xbegin");
+	ybegin = new QLabel; ybegin->setText("ybegin");
+	yend = new QLabel; yend->setText("yend");
+	zbegin = new QLabel; zbegin->setText("zbegin");
+	zend = new QLabel; zend->setText("zend");
+
 	VolumeClip_EditLayout = new QGridLayout;
 	VolumeClip_EditLayout->addWidget(VolumeClip_Label_X, 0, 0);
-	VolumeClip_EditLayout->addWidget(VolumeClip_Lower_X, 0, 1);
-	VolumeClip_EditLayout->addWidget(VolumeClip_Upper_X, 0, 2);
+	VolumeClip_EditLayout->addWidget(xbegin, 0, 1);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Lower_X, 0, 2);
+	VolumeClip_EditLayout->addWidget(xend, 0, 3);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Upper_X, 0, 4);
+
 	VolumeClip_EditLayout->addWidget(VolumeClip_Label_Y, 1, 0);
-	VolumeClip_EditLayout->addWidget(VolumeClip_Lower_Y, 1, 1);
-	VolumeClip_EditLayout->addWidget(VolumeClip_Upper_Y, 1, 2);
+	VolumeClip_EditLayout->addWidget(ybegin, 1, 1);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Lower_Y, 1, 2);
+	VolumeClip_EditLayout->addWidget(yend, 1, 3);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Upper_Y, 1, 4);
+
 	VolumeClip_EditLayout->addWidget(VolumeClip_Label_Z, 2, 0);
-	VolumeClip_EditLayout->addWidget(VolumeClip_Lower_Z, 2, 1);
-	VolumeClip_EditLayout->addWidget(VolumeClip_Upper_Z, 2, 2);
+	VolumeClip_EditLayout->addWidget(zbegin, 2, 1);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Lower_Z, 2, 2);
+	VolumeClip_EditLayout->addWidget(zend, 2, 3);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Upper_Z, 2, 4);
+
 	VolumeClip_EditLayout->setColumnMinimumWidth(0, 30);
 	VolumeClip_EditLayout->setColumnMinimumWidth(1, 50);
 	VolumeClip_EditLayout->setColumnMinimumWidth(2, 50);
 	VolumeClip_EditLayout->setColumnStretch(0, 1);
-	VolumeClip_EditLayout->setColumnStretch(1, 2);
-	VolumeClip_EditLayout->setColumnStretch(2, 2);
+	VolumeClip_EditLayout->setColumnStretch(1, 1);
+	VolumeClip_EditLayout->setColumnStretch(2, 3);
+	VolumeClip_EditLayout->setColumnStretch(3, 1);
+	VolumeClip_EditLayout->setColumnStretch(4, 3);
 
 	MhdClip_processButton = new QPushButton;
 	MhdClip_processButton->setText("Clip Mhd");
@@ -605,7 +715,64 @@ QVolumeClip_Frame::QVolumeClip_Frame(QWidget * parent) {
 }
 QVolumeClip_Frame::~QVolumeClip_Frame() { }
 
+bool QVolumeClip_Frame::getClipRange(double begin[3], double end[3]) {
+	bool isOk = true;
+	QString xbeginValue = VolumeClip_Lower_X->text();
+	{
+		bool ok;
+		begin[0] = xbeginValue.toDouble(&ok);
+		isOk = isOk && ok;
+	}
+	QString ybeginValue = VolumeClip_Lower_Y->text();
+	{
+		bool ok;
+		begin[1] = ybeginValue.toDouble(&ok);
+		isOk = isOk && ok;
+	}
+	QString zbeginValue = VolumeClip_Lower_Z->text();
+	{
+		bool ok;
+		begin[2] = zbeginValue.toDouble(&ok);
+		isOk = isOk && ok;
+	}
 
+	QString xendValue = VolumeClip_Upper_X->text();
+	{
+		bool ok;
+		end[0] = xendValue.toDouble(&ok);
+		isOk = isOk && ok;
+	}
+	QString yendValue = VolumeClip_Upper_Y->text();
+	{
+		bool ok;
+		end[1] = yendValue.toDouble(&ok);
+		isOk = isOk && ok;
+	}
+	QString zendValue = VolumeClip_Upper_Z->text();
+	{
+		bool ok;
+		end[2] = zendValue.toDouble(&ok);
+		isOk = isOk && ok;
+	}
+
+	if (isOk) {
+		for (int i = 0; i < 3; i++) {
+			if (begin[i] < 0.0) begin[i] = 0.0;
+			if (begin[i] > 1.0) begin[i] = 1.0;
+			if (end[i] < 0.0) end[i] = 0.0;
+			if (end[i] > 1.0) end[i] = 1.0;
+
+			if (begin[i] >= end[i]) {
+				isOk = false;
+			}
+		}
+	}
+
+	if (!isOk) {
+		DebugTextPrintString("Incorrect input axis.");
+	}
+	return isOk;
+}
 
 // test
 void ProcessDockWidget::setProcess() {
@@ -718,7 +885,7 @@ void ProcessDockWidget::setProcess() {
 	
 		processVolumeData.MhdFlipAxis_OldFunc(InputFilePath, OutputFolder, OutputFileName, flip);
 	
-		processVolumeData.MhdClip_OldFunc(InputFilePath, OutputFolder, OutputFileName, clipCenter, clipBound);
+		//processVolumeData.MhdClip_OldFunc(InputFilePath, OutputFolder, OutputFileName, , );
 	
 		processVolumeData.DownSamplingMhdWithInterval_OldFunc(InputFilePath, OutputFolder, OutputFileName, interval);
 	}

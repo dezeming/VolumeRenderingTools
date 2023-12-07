@@ -136,7 +136,10 @@ public:
 	QVolumeClip_Frame(QWidget * parent = Q_NULLPTR);
 	~QVolumeClip_Frame();
 
+	bool getClipRange(double begin[3], double end[3]);
+
 	QLabel *VolumeClip_Label_X, *VolumeClip_Label_Y, *VolumeClip_Label_Z;
+	QLabel * xbegin, *xend, *ybegin, *yend, *zbegin, *zend;
 	QLineEdit * VolumeClip_Lower_X, *VolumeClip_Lower_Y, *VolumeClip_Lower_Z;
 	QLineEdit * VolumeClip_Upper_X, *VolumeClip_Upper_Y, *VolumeClip_Upper_Z;
 	QGridLayout * VolumeClip_EditLayout;
@@ -179,8 +182,7 @@ public:
 
 	int permute[3];
 	int flip[3];
-	double clipCenter[3], clipBound[3];
-	double clipLower[3], clipUpper[3];
+	double clipBegin[3], clipEnd[3];
 	int interval;
 
 private:
@@ -238,8 +240,13 @@ private slots:
 
 	// volume process
 	void process_MhdRotateAxis();
+	void process_FeimosRotateAxis();
+
 	void process_MhdFlipAxis();
+	void process_FeimosFlipAxis();
+	
 	void process_MhdClip();
+	void process_FeimosClip();
 
 
 };
