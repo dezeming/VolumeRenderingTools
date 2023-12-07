@@ -71,14 +71,14 @@ void ProcessDockWidget::setupFrames() {
 	VolumeDownSampling_Frame = new QVolumeDownSampling_Frame;
 	framesLayout->addWidget(VolumeDownSampling_Frame, 0, 1);
 
-	MhdRotateAxis_Frame = new QMhdRotateAxis_Frame;
-	framesLayout->addWidget(MhdRotateAxis_Frame, 1, 0);
+	VolumeRotateAxis_Frame = new QVolumeRotateAxis_Frame;
+	framesLayout->addWidget(VolumeRotateAxis_Frame, 1, 0);
 
-	MhdFlipAxis_Frame = new QMhdFlipAxis_Frame;
-	framesLayout->addWidget(MhdFlipAxis_Frame, 1, 1);
+	VolumeFlipAxis_Frame = new QVolumeFlipAxis_Frame;
+	framesLayout->addWidget(VolumeFlipAxis_Frame, 1, 1);
 
-	MhdClip_Frame = new QMhdClip_Frame;
-	framesLayout->addWidget(MhdClip_Frame, 2, 0);
+	VolumeClip_Frame = new QVolumeClip_Frame;
+	framesLayout->addWidget(VolumeClip_Frame, 2, 0);
 
 
 	centerLayout->addLayout(framesLayout);
@@ -113,11 +113,11 @@ void ProcessDockWidget::setupProcessFunc() {
 		SIGNAL(clicked()), this, SLOT(process_LargeFeimosDownSampling()));
 
 	// volume process
-	connect(MhdRotateAxis_Frame->MhdRotateAxis_processButton,
+	connect(VolumeRotateAxis_Frame->MhdRotateAxis_processButton,
 		SIGNAL(clicked()), this, SLOT(process_MhdRotateAxis()));
-	connect(MhdFlipAxis_Frame->MhdFlipAxis_processButton,
+	connect(VolumeFlipAxis_Frame->MhdFlipAxis_processButton,
 		SIGNAL(clicked()), this, SLOT(process_MhdFlipAxis()));
-	connect(MhdClip_Frame->MhdClip_processButton,
+	connect(VolumeClip_Frame->MhdClip_processButton,
 		SIGNAL(clicked()), this, SLOT(process_MhdClip()));
 
 	// test
@@ -327,7 +327,7 @@ void ProcessDockWidget::process_MhdRotateAxis() {
 	DebugTextPrintString("Permute axis of .mhd-.raw file.");
 	getPredefinedInfo();
 
-	bool ok = MhdRotateAxis_Frame->getRotateAxis(permute);
+	bool ok = VolumeRotateAxis_Frame->getRotateAxis(permute);
 	if (!ok) return;
 
 	DebugTextPrintString(".................  Process finished   ....................");
@@ -340,7 +340,7 @@ void ProcessDockWidget::process_MhdFlipAxis() {
 	DebugTextPrintString("Flip axis of .mhd-.raw file.");
 	getPredefinedInfo();
 
-	bool ok = MhdFlipAxis_Frame->getFlipAxis(flip);
+	bool ok = VolumeFlipAxis_Frame->getFlipAxis(flip);
 	if (!ok) return;
 
 	DebugTextPrintString(".................  Process finished   ....................");
@@ -354,9 +354,258 @@ void ProcessDockWidget::process_MhdClip() {
 	getPredefinedInfo();
 
 
+
 	DebugTextPrintString(".................  Process finished   ....................");
 	showMemoryInfo();
 }
+
+// QVolumeConvert_Frame
+
+QVolumeConvert_Frame::QVolumeConvert_Frame(QWidget * parent) {
+	setTitle("DCM Sequence to Volume");
+	setMinimumWidth(200);
+
+	VolumeConvert_Layoput = new QGridLayout;
+	setLayout(VolumeConvert_Layoput);
+
+	DcmToMhd_processButton = new QPushButton;
+	DcmToMhd_processButton->setText("Dcms To Mhd format");
+
+	DcmToFeimos_processButton = new QPushButton;
+	DcmToFeimos_processButton->setText("Dcms To Feimos format");
+
+	MhdToFeimos_processButton = new QPushButton;
+	MhdToFeimos_processButton->setText("Mhd To Feimos format");
+
+	FeimosToMhd_processButton = new QPushButton;
+	FeimosToMhd_processButton->setText("Feimos To Mhd format");
+
+	PngToMhd_processButton = new QPushButton;
+	PngToMhd_processButton->setText("PNGs To Mhd format");
+	PngToFeimos_processButton = new QPushButton;
+	PngToFeimos_processButton->setText("PNGs To Feimos format");
+
+	JpgToMhd_processButton = new QPushButton;
+	JpgToMhd_processButton->setText("JPGs To Mhd format");
+	JpgToFeimos_processButton = new QPushButton;
+	JpgToFeimos_processButton->setText("JPGs To Feimos format");
+
+	VolumeConvert_Layoput->addWidget(DcmToMhd_processButton, 0, 0);
+	VolumeConvert_Layoput->addWidget(DcmToFeimos_processButton, 0, 1);
+	VolumeConvert_Layoput->addWidget(MhdToFeimos_processButton, 1, 0);
+	VolumeConvert_Layoput->addWidget(FeimosToMhd_processButton, 1, 1);
+	VolumeConvert_Layoput->addWidget(PngToMhd_processButton, 2, 0);
+	VolumeConvert_Layoput->addWidget(PngToFeimos_processButton, 2, 1);
+	VolumeConvert_Layoput->addWidget(JpgToMhd_processButton, 3, 0);
+	VolumeConvert_Layoput->addWidget(JpgToFeimos_processButton, 3, 1);
+}
+QVolumeConvert_Frame::~QVolumeConvert_Frame() { }
+
+// QVolumeDownSampling_Frame
+
+QVolumeDownSampling_Frame::QVolumeDownSampling_Frame(QWidget * parent) {
+	setTitle("DownSampling Volume");
+	setMinimumWidth(200);
+
+	DownSampling_Layoput = new QVBoxLayout;
+	setLayout(DownSampling_Layoput);
+
+	Interval_Label = new QLabel;
+	Interval_Label->setText("Interval:");
+	Interval_Slider = new QSlider(Qt::Horizontal);
+	Interval_Slider->setRange(1, 100);
+	Interval_SpinBox = new QSpinBox;
+	Interval_SpinBox->setRange(1, 100);
+	Interval_Layout = new QGridLayout;
+	Interval_Layout->addWidget(Interval_Label, 0, 0);
+	Interval_Layout->addWidget(Interval_Slider, 0, 1);
+	Interval_Layout->addWidget(Interval_SpinBox, 0, 2);
+
+	MhdDownSampling_processButton = new QPushButton;
+	MhdDownSampling_processButton->setText("DownSampling .mhd");
+
+	FeimosDownSampling_processButton = new QPushButton;
+	FeimosDownSampling_processButton->setText("DownSampling .feimos");
+
+	LargeFeimosDownSampling_processButton = new QPushButton;
+	LargeFeimosDownSampling_processButton->setText("DownSampling large .feimos");
+
+	DownSampling_Layoput->addLayout(Interval_Layout);
+	DownSampling_Layoput->addWidget(MhdDownSampling_processButton);
+	DownSampling_Layoput->addWidget(FeimosDownSampling_processButton);
+	DownSampling_Layoput->addWidget(LargeFeimosDownSampling_processButton);
+
+	connect(Interval_Slider, SIGNAL(valueChanged(int)), Interval_SpinBox, SLOT(setValue(int)));
+	connect(Interval_SpinBox, SIGNAL(valueChanged(int)), Interval_Slider, SLOT(setValue(int)));
+	Interval_Slider->setValue(2);
+}
+QVolumeDownSampling_Frame::~QVolumeDownSampling_Frame() {
+	disconnect(Interval_Slider, SIGNAL(valueChanged(int)), Interval_SpinBox, SLOT(setValue(int)));
+	disconnect(Interval_SpinBox, SIGNAL(valueChanged(int)), Interval_Slider, SLOT(setValue(int)));
+}
+
+// QVolumeRotateAxis_Frame
+
+QVolumeRotateAxis_Frame::QVolumeRotateAxis_Frame(QWidget * parent) {
+	setTitle("MHD Rotate Axis");
+	setMinimumWidth(200);
+
+	VolumeRotateAxis_Layoput = new QVBoxLayout;
+	setLayout(VolumeRotateAxis_Layoput);
+
+	permuteLabel = new QLabel;
+	permuteLabel->setText("Rotate Axis(Example: 2,0,1)");
+	permuteEdit = new QLineEdit;
+	permuteEdit->setText("0,1,2");
+	VolumeRotateAxis_Edit_Layout = new QGridLayout;
+	VolumeRotateAxis_Edit_Layout->addWidget(permuteLabel, 0, 0);
+	VolumeRotateAxis_Edit_Layout->addWidget(permuteEdit, 0, 1);
+
+	MhdRotateAxis_processButton = new QPushButton;
+	MhdRotateAxis_processButton->setText("Rotate Mhd");
+	FeimosRotateAxis_processButton = new QPushButton;
+	FeimosRotateAxis_processButton->setText("Rotate Feimos");
+	process_Layout = new QGridLayout;
+	process_Layout->addWidget(MhdRotateAxis_processButton, 0, 0);
+	process_Layout->addWidget(FeimosRotateAxis_processButton, 0, 1);
+
+	VolumeRotateAxis_Layoput->addLayout(VolumeRotateAxis_Edit_Layout);
+	VolumeRotateAxis_Layoput->addLayout(process_Layout);
+}
+QVolumeRotateAxis_Frame::~QVolumeRotateAxis_Frame() { }
+
+bool QVolumeRotateAxis_Frame::getRotateAxis(int permute[3]) {
+
+	QString permu = permuteEdit->text();
+	QStringList splitList = permu.split(",");
+	if (splitList.size() != 3) {
+		DebugTextPrintString("Incorrect input format.");
+		return false;
+	}
+
+	bool isOk = true;
+	for (int i = 0; i < splitList.size(); ++i) {
+		bool ok;
+		permute[i] = splitList[i].toInt(&ok);
+		isOk = isOk && ok;
+	}
+
+	return isOk;
+}
+
+// QVolumeFlipAxis_Frame
+
+QVolumeFlipAxis_Frame::QVolumeFlipAxis_Frame(QWidget * parent) {
+	setTitle("MHD Flip Axis");
+	setMinimumWidth(200);
+
+	VolumeFlipAxis_Layoput = new QVBoxLayout;
+	setLayout(VolumeFlipAxis_Layoput);
+
+	VolumeFlipAxis_Label_X = new QLabel;
+	VolumeFlipAxis_Label_Y = new QLabel;
+	VolumeFlipAxis_Label_Z = new QLabel;
+	VolumeFlipAxis_Radio_X = new QRadioButton;
+	VolumeFlipAxis_Radio_Y = new QRadioButton;
+	VolumeFlipAxis_Radio_Z = new QRadioButton;
+	VolumeFlipAxis_ButtonGroup = new QButtonGroup(this);
+	VolumeFlipAxis_ButtonGroup->addButton(VolumeFlipAxis_Radio_X);
+	VolumeFlipAxis_ButtonGroup->addButton(VolumeFlipAxis_Radio_Y);
+	VolumeFlipAxis_ButtonGroup->addButton(VolumeFlipAxis_Radio_Z);
+	VolumeFlipAxis_EditLayout = new QGridLayout;
+	VolumeFlipAxis_Label_X->setText("X:");
+	VolumeFlipAxis_Label_Y->setText("Y:");
+	VolumeFlipAxis_Label_Z->setText("Z:");
+	VolumeFlipAxis_EditLayout->addWidget(VolumeFlipAxis_Label_X, 0, 0);
+	VolumeFlipAxis_EditLayout->addWidget(VolumeFlipAxis_Label_Y, 0, 2);
+	VolumeFlipAxis_EditLayout->addWidget(VolumeFlipAxis_Label_Z, 0, 4);
+	VolumeFlipAxis_EditLayout->addWidget(VolumeFlipAxis_Radio_X, 0, 1);
+	VolumeFlipAxis_EditLayout->addWidget(VolumeFlipAxis_Radio_Y, 0, 3);
+	VolumeFlipAxis_EditLayout->addWidget(VolumeFlipAxis_Radio_Z, 0, 5);
+
+	MhdFlipAxis_processButton = new QPushButton;
+	MhdFlipAxis_processButton->setText("Flip Mhd");
+	FeimosFlipAxis_processButton = new QPushButton;
+	FeimosFlipAxis_processButton->setText("Flip Feimos");
+	process_Layout = new QGridLayout;
+	process_Layout->addWidget(MhdFlipAxis_processButton, 0, 0);
+	process_Layout->addWidget(FeimosFlipAxis_processButton, 0, 1);
+
+	VolumeFlipAxis_Layoput->addLayout(VolumeFlipAxis_EditLayout);
+	VolumeFlipAxis_Layoput->addLayout(process_Layout);
+}
+QVolumeFlipAxis_Frame::~QVolumeFlipAxis_Frame() { }
+
+bool QVolumeFlipAxis_Frame::getFlipAxis(int flip[3]) {
+
+	if (VolumeFlipAxis_Radio_X->isChecked()) flip[0] = 1;
+	else  flip[0] = 0;
+	if (VolumeFlipAxis_Radio_Y->isChecked()) flip[1] = 1;
+	else  flip[1] = 0;
+	if (VolumeFlipAxis_Radio_Z->isChecked()) flip[2] = 1;
+	else  flip[2] = 0;
+
+	return true;
+}
+
+// QVolumeClip_Frame
+
+QVolumeClip_Frame::QVolumeClip_Frame(QWidget * parent) {
+	setTitle("MHD Clip");
+	setMinimumWidth(200);
+
+	VolumeClip_Layoput = new QVBoxLayout;
+	setLayout(VolumeClip_Layoput);
+
+	VolumeClip_Label_X = new QLabel;
+	VolumeClip_Label_X->setText("X:");
+	VolumeClip_Lower_X = new QLineEdit;
+	VolumeClip_Lower_X->setText("0.0");
+	VolumeClip_Upper_X = new QLineEdit;
+	VolumeClip_Upper_X->setText("1.0");
+	VolumeClip_Label_Y = new QLabel;
+	VolumeClip_Label_Y->setText("Y:");
+	VolumeClip_Lower_Y = new QLineEdit;
+	VolumeClip_Lower_Y->setText("0.0");
+	VolumeClip_Upper_Y = new QLineEdit;
+	VolumeClip_Upper_Y->setText("1.0");
+	VolumeClip_Label_Z = new QLabel;
+	VolumeClip_Label_Z->setText("Z:");
+	VolumeClip_Lower_Z = new QLineEdit;
+	VolumeClip_Lower_Z->setText("0.0");
+	VolumeClip_Upper_Z = new QLineEdit;
+	VolumeClip_Upper_Z->setText("1.0");
+	VolumeClip_EditLayout = new QGridLayout;
+	VolumeClip_EditLayout->addWidget(VolumeClip_Label_X, 0, 0);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Lower_X, 0, 1);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Upper_X, 0, 2);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Label_Y, 1, 0);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Lower_Y, 1, 1);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Upper_Y, 1, 2);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Label_Z, 2, 0);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Lower_Z, 2, 1);
+	VolumeClip_EditLayout->addWidget(VolumeClip_Upper_Z, 2, 2);
+	VolumeClip_EditLayout->setColumnMinimumWidth(0, 30);
+	VolumeClip_EditLayout->setColumnMinimumWidth(1, 50);
+	VolumeClip_EditLayout->setColumnMinimumWidth(2, 50);
+	VolumeClip_EditLayout->setColumnStretch(0, 1);
+	VolumeClip_EditLayout->setColumnStretch(1, 2);
+	VolumeClip_EditLayout->setColumnStretch(2, 2);
+
+	MhdClip_processButton = new QPushButton;
+	MhdClip_processButton->setText("Clip Mhd");
+	FeimosClip_processButton = new QPushButton;
+	FeimosClip_processButton->setText("Clip Feimos");
+	process_Layout = new QGridLayout;
+	process_Layout->addWidget(MhdClip_processButton, 0, 0);
+	process_Layout->addWidget(FeimosClip_processButton, 0, 1);
+
+	VolumeClip_Layoput->addLayout(VolumeClip_EditLayout);
+	VolumeClip_Layoput->addLayout(process_Layout);
+}
+QVolumeClip_Frame::~QVolumeClip_Frame() { }
+
+
 
 // test
 void ProcessDockWidget::setProcess() {

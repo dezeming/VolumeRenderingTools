@@ -81,42 +81,514 @@ ProcessVolumeData::~ProcessVolumeData() {
 }
 
 // ********************************************** //
-// *** Process input data *** //
+// *** Rotate Volume *** //
 // ********************************************** //
 
-bool ProcessVolumeData::RotateAxis(VolumeData& volumeData, int permute[3]) {
-	return false;
+template <typename T>
+bool ProcessVolumeData::__RotateAxis(T indicate, VolumeData& volumeData, int permute[3]) {
+
+	// Dimensional permutation
+	unsigned int dimM_origin[3] = { volumeData.xResolution, volumeData.yResolution, volumeData.zResolution };
+	unsigned int dimM_new[3];
+	double PixelSpace[3] = { volumeData.xPixelSpace, volumeData.yPixelSpace, volumeData.zPixelSpace};
+	double PixelSpace_new[3];
+
+	for (int i = 0; i < 3; i++) {
+		dimM_new[i] = dimM_origin[permute[i]];
+		PixelSpace_new[i] = PixelSpace[permute[i]];
+	}
+
+	unsigned int stride[3] = { 1, dimM_origin[0], dimM_origin[0] * dimM_origin[1] };
+	T * data_aim = new T[dimM_origin[0] * dimM_origin[1] * dimM_origin[2]];
+	if (!data_aim) {
+		return false;
+	}
+
+	T* data_origin = static_cast<T*>(volumeData.data);
+
+	for (unsigned int i = 0; i < dimM_new[0]; i++) {
+		for (unsigned int j = 0; j < dimM_new[1]; j++) {
+			for (unsigned int k = 0; k < dimM_new[2]; k++) {
+				unsigned int offsetnew = i + j * dimM_new[0] + k * dimM_new[0] * dimM_new[1];
+
+				unsigned int offset = i * stride[permute[0]] + j * stride[permute[1]] + k * stride[permute[2]];
+
+				data_aim[offsetnew] = data_origin[offset];
+			}
+		}
+	}
+
+	delete[] static_cast<T*>(volumeData.data);
+
+	volumeData.data = data_aim;
+
+	volumeData.xResolution = dimM_new[0];
+	volumeData.yResolution = dimM_new[1];
+	volumeData.zResolution = dimM_new[2];
+
+	volumeData.xPixelSpace = PixelSpace_new[0];
+	volumeData.yPixelSpace = PixelSpace_new[1];
+	volumeData.zPixelSpace = PixelSpace_new[2];
+
+	return true;
 }
-bool ProcessVolumeData::FlipAxis(VolumeData& volumeData, int flip[3]) {
-	return false;
+
+void ProcessVolumeData::RotateAxisMhdFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
+	const GenerateFormat& generateFormat, int permute[3]) {
+	// check input and output
+	if (!data_rw.isInputMhdFileExist(InputFilePath)) return;
+	if (!data_rw.checkOutputDir_Mhd(OutputDir, OutputFileName)) return;
+
+	VolumeData volumeData;
+
+	bool parseFlag = data_rw.GenerateInput_Mhd(InputFilePath, volumeData);
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
+	if (!volumeData.data) {
+		parseFlag = false;
+	}
+	if (parseFlag) {
+		switch (volumeData.format)
+		{
+		case Dez_Origin:
+			DebugTextPrintErrorString("Non compliant image data format");
+			parseFlag = false;
+			break;
+		case Dez_UnsignedLong:
+			parseFlag = __RotateAxis(static_cast<unsigned long>(1), volumeData, permute);
+			break;
+		case Dez_SignedLong:
+			parseFlag = __RotateAxis(static_cast<signed long>(1), volumeData, permute);
+			break;
+		case Dez_UnsignedShort:
+			parseFlag = __RotateAxis(static_cast<unsigned short>(1), volumeData, permute);
+			break;
+		case Dez_SignedShort:
+			parseFlag = __RotateAxis(static_cast<signed short>(1), volumeData, permute);
+			break;
+		case Dez_UnsignedChar:
+			parseFlag = __RotateAxis(static_cast<unsigned char>(1), volumeData, permute);
+			break;
+		case Dez_SignedChar:
+			parseFlag = __RotateAxis(static_cast<signed char>(1), volumeData, permute);
+			break;
+		case Dez_Float:
+			parseFlag = __RotateAxis(static_cast<float>(1), volumeData, permute);
+			break;
+		case Dez_Double:
+			parseFlag = __RotateAxis(static_cast<double>(1), volumeData, permute);
+			break;
+		default:
+			DebugTextPrintErrorString("Non compliant image data format");
+			parseFlag = false;
+			break;
+		}
+	}
+	if (parseFlag)
+		parseFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
+	else
+		DebugTextPrintErrorString("Rotate Axis failed");
+
+	volumeData.clear();
 }
-bool ProcessVolumeData::Clip(VolumeData& volumeData, double center[3], double bound[3]) {
-	return false;
+
+void ProcessVolumeData::RotateAxisFeimosFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
+	const GenerateFormat& generateFormat, int permute[3]) {
+	// check input and output
+	if (!data_rw.isInputFeimosFileExist(InputFilePath)) return;
+	if (!data_rw.checkOutputDir_Feimos(OutputDir, OutputFileName)) return;
+
+	VolumeData volumeData;
+
+	bool parseFlag = data_rw.GenerateInput_Feimos(InputFilePath, volumeData);
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
+	if (!volumeData.data) {
+		parseFlag = false;
+	}
+	if (parseFlag) {
+		switch (volumeData.format)
+		{
+		case Dez_Origin:
+			DebugTextPrintErrorString("Non compliant image data format");
+			parseFlag = false;
+			break;
+		case Dez_UnsignedLong:
+			parseFlag = __RotateAxis(static_cast<unsigned long>(1), volumeData, permute);
+			break;
+		case Dez_SignedLong:
+			parseFlag = __RotateAxis(static_cast<signed long>(1), volumeData, permute);
+			break;
+		case Dez_UnsignedShort:
+			parseFlag = __RotateAxis(static_cast<unsigned short>(1), volumeData, permute);
+			break;
+		case Dez_SignedShort:
+			parseFlag = __RotateAxis(static_cast<signed short>(1), volumeData, permute);
+			break;
+		case Dez_UnsignedChar:
+			parseFlag = __RotateAxis(static_cast<unsigned char>(1), volumeData, permute);
+			break;
+		case Dez_SignedChar:
+			parseFlag = __RotateAxis(static_cast<signed char>(1), volumeData, permute);
+			break;
+		case Dez_Float:
+			parseFlag = __RotateAxis(static_cast<float>(1), volumeData, permute);
+			break;
+		case Dez_Double:
+			parseFlag = __RotateAxis(static_cast<double>(1), volumeData, permute);
+			break;
+		default:
+			DebugTextPrintErrorString("Non compliant image data format");
+			parseFlag = false;
+			break;
+		}
+	}
+	if (parseFlag)
+		parseFlag = data_rw.GenerateOutput_Feimos(OutputDir, OutputFileName, generateFormat, volumeData);
+	else
+		DebugTextPrintErrorString("Rotate Axis failed");
+
+	volumeData.clear();
 }
-bool ProcessVolumeData::DownSamplingWithInterval(VolumeData& volumeData, int Interval) {
-	return false;
+
+// ********************************************** //
+// *** Flip Volume *** //
+// ********************************************** //
+
+template <typename T>
+bool ProcessVolumeData::__FlipAxis(T indicate, VolumeData& volumeData, int flip[3]) {
+	unsigned int width = volumeData.xResolution, 
+		height = volumeData.yResolution, 
+		imageNum = volumeData.zResolution;
+
+	T * data_m = static_cast<T*>(volumeData.data);
+	if (!data_m) {
+		return false;
+	}
+
+	if (flip[0] != 0) {
+		for (unsigned int i = 0; i < width / 2; i++) {
+			for (unsigned int j = 0; j < height; j++) {
+				for (unsigned int k = 0; k < imageNum; k++) {
+					T * p1 = (data_m) + i + j * width + k * width * height;
+					T * p2 = (data_m) + (width - i - 1) + j * width + k * width * height;
+					T a = *p1;
+					*p1 = *p2;
+					*p2 = a;
+				}
+			}
+		}
+	}
+	if (flip[1] != 0) {
+		for (unsigned int i = 0; i < width; i++) {
+			for (unsigned int j = 0; j < height / 2; j++) {
+				for (unsigned int k = 0; k < imageNum; k++) {
+					T * p1 = (data_m) + i + j * width + k * width * height;
+					T * p2 = (data_m) + i + (height - j - 1) * width + k * width * height;
+					T a = *p1;
+					*p1 = *p2;
+					*p2 = a;
+				}
+			}
+		}
+	}
+	if (flip[2] != 0) {
+		for (unsigned int i = 0; i < width; i++) {
+			for (unsigned int j = 0; j < height; j++) {
+				for (unsigned int k = 0; k < imageNum / 2; k++) {
+					T * p1 = (data_m) + i + j * width + k * width * height;
+					T * p2 = (data_m) + i + j * width + (imageNum - k - 1) * width * height;
+					T a = *p1;
+					*p1 = *p2;
+					*p2 = a;
+				}
+			}
+		}
+	}
+
+	return true;
 }
-bool ProcessVolumeData::Resize(VolumeData& volumeData, float scale) {
-	return false;
+
+void ProcessVolumeData::FlipAxisMhdFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
+	const GenerateFormat& generateFormat, int flip[3]) {
+	// check input and output
+	if (!data_rw.isInputMhdFileExist(InputFilePath)) return;
+	if (!data_rw.checkOutputDir_Mhd(OutputDir, OutputFileName)) return;
+
+	VolumeData volumeData;
+
+	bool parseFlag = data_rw.GenerateInput_Mhd(InputFilePath, volumeData);
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
+	if (!volumeData.data) {
+		parseFlag = false;
+	}
+	if (parseFlag) {
+		switch (volumeData.format)
+		{
+		case Dez_Origin:
+			DebugTextPrintErrorString("Non compliant image data format");
+			parseFlag = false;
+			break;
+		case Dez_UnsignedLong:
+			parseFlag = __FlipAxis(static_cast<unsigned long>(1), volumeData, flip);
+			break;
+		case Dez_SignedLong:
+			parseFlag = __FlipAxis(static_cast<signed long>(1), volumeData, flip);
+			break;
+		case Dez_UnsignedShort:
+			parseFlag = __FlipAxis(static_cast<unsigned short>(1), volumeData, flip);
+			break;
+		case Dez_SignedShort:
+			parseFlag = __FlipAxis(static_cast<signed short>(1), volumeData, flip);
+			break;
+		case Dez_UnsignedChar:
+			parseFlag = __FlipAxis(static_cast<unsigned char>(1), volumeData, flip);
+			break;
+		case Dez_SignedChar:
+			parseFlag = __FlipAxis(static_cast<signed char>(1), volumeData, flip);
+			break;
+		case Dez_Float:
+			parseFlag = __FlipAxis(static_cast<float>(1), volumeData, flip);
+			break;
+		case Dez_Double:
+			parseFlag = __FlipAxis(static_cast<double>(1), volumeData, flip);
+			break;
+		default:
+			DebugTextPrintErrorString("Non compliant image data format");
+			parseFlag = false;
+			break;
+		}
+	}
+	if (parseFlag)
+		parseFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
+	else
+		DebugTextPrintErrorString("Flip Axis failed");
+
+	volumeData.clear();
+
+}
+
+void ProcessVolumeData::FlipAxisFeimosFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
+	const GenerateFormat& generateFormat, int flip[3]) {
+	// check input and output
+	if (!data_rw.isInputFeimosFileExist(InputFilePath)) return;
+	if (!data_rw.checkOutputDir_Feimos(OutputDir, OutputFileName)) return;
+
+	VolumeData volumeData;
+
+	bool parseFlag = data_rw.GenerateInput_Feimos(InputFilePath, volumeData);
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
+	if (!volumeData.data) {
+		parseFlag = false;
+	}
+	if (parseFlag) {
+		switch (volumeData.format)
+		{
+		case Dez_Origin:
+			DebugTextPrintErrorString("Non compliant image data format");
+			parseFlag = false;
+			break;
+		case Dez_UnsignedLong:
+			parseFlag = __FlipAxis(static_cast<unsigned long>(1), volumeData, flip);
+			break;
+		case Dez_SignedLong:
+			parseFlag = __FlipAxis(static_cast<signed long>(1), volumeData, flip);
+			break;
+		case Dez_UnsignedShort:
+			parseFlag = __FlipAxis(static_cast<unsigned short>(1), volumeData, flip);
+			break;
+		case Dez_SignedShort:
+			parseFlag = __FlipAxis(static_cast<signed short>(1), volumeData, flip);
+			break;
+		case Dez_UnsignedChar:
+			parseFlag = __FlipAxis(static_cast<unsigned char>(1), volumeData, flip);
+			break;
+		case Dez_SignedChar:
+			parseFlag = __FlipAxis(static_cast<signed char>(1), volumeData, flip);
+			break;
+		case Dez_Float:
+			parseFlag = __FlipAxis(static_cast<float>(1), volumeData, flip);
+			break;
+		case Dez_Double:
+			parseFlag = __FlipAxis(static_cast<double>(1), volumeData, flip);
+			break;
+		default:
+			DebugTextPrintErrorString("Non compliant image data format");
+			parseFlag = false;
+			break;
+		}
+	}
+	if (parseFlag)
+		parseFlag = data_rw.GenerateOutput_Feimos(OutputDir, OutputFileName, generateFormat, volumeData);
+	else
+		DebugTextPrintErrorString("Flip Axis failed");
+
+	volumeData.clear();
+}
+
+// ********************************************** //
+// *** Clip Volume *** //
+// ********************************************** //
+
+template <typename T>
+bool ProcessVolumeData::__Clip(T indicate, VolumeData& volumeData, double begin[3], double end[3]) {
+	int xRange[2] = { (int)(begin[0] * volumeData.xResolution), (int)(end[0] * volumeData.xResolution) };
+	int yRange[2] = { (int)(begin[1] * volumeData.yResolution), (int)(end[1] * volumeData.yResolution) };
+	int zRange[2] = { (int)(begin[2] * volumeData.zResolution), (int)(end[2] * volumeData.zResolution) };
+
+	unsigned int dimOrigin[3] = { volumeData.xResolution, volumeData.yResolution, volumeData.zResolution };
+	unsigned int dimClipped[3] = { xRange[1] - xRange[0], yRange[1] - yRange[0], zRange[1] - zRange[0] };
+	
+	T * data_clipped = new T[dimClipped[0] * dimClipped[1] * dimClipped[2]];
+	if (!data_clipped) {
+		return false;
+	}
+	T * data_src = static_cast<T*>(volumeData.data);
+
+	for (unsigned int i = 0; i < dimClipped[0]; i++) {
+		for (unsigned int j = 0; j < dimClipped[1]; j++) {
+			for (unsigned int k = 0; k < dimClipped[2]; k++) {
+
+				unsigned int pos_origin[3] = { i + xRange[0],j + yRange[0],k + zRange[0] };
+				unsigned int pos_clipped[3] = { i,j,k };
+				
+				T dat = at_VolumeData(data_src, dimOrigin, pos_origin);
+				set_VolumeData(data_clipped, dat, dimClipped, pos_clipped);
+			}
+		}
+	}
+	delete[] static_cast<T*>(volumeData.data);
+
+	volumeData.data = data_clipped;
+
+	volumeData.xResolution = dimClipped[0];
+	volumeData.yResolution = dimClipped[1];
+	volumeData.zResolution = dimClipped[2];
+
+	return true;
+}
+
+void ProcessVolumeData::ClipMhdFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
+	const GenerateFormat& generateFormat, double begin[3], double end[3]) {
+
+	// check input and output
+	if (!data_rw.isInputMhdFileExist(InputFilePath)) return;
+	if (!data_rw.checkOutputDir_Mhd(OutputDir, OutputFileName)) return;
+
+	VolumeData volumeData;
+
+	bool parseFlag = data_rw.GenerateInput_Mhd(InputFilePath, volumeData);
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
+	if (!volumeData.data) {
+		parseFlag = false;
+	}
+	if (parseFlag) {
+		switch (volumeData.format)
+		{
+		case Dez_Origin:
+			DebugTextPrintErrorString("Non compliant image data format");
+			parseFlag = false;
+			break;
+		case Dez_UnsignedLong:
+			parseFlag = __Clip(static_cast<unsigned long>(1), volumeData, begin, end);
+			break;
+		case Dez_SignedLong:
+			parseFlag = __Clip(static_cast<signed long>(1), volumeData, begin, end);
+			break;
+		case Dez_UnsignedShort:
+			parseFlag = __Clip(static_cast<unsigned short>(1), volumeData, begin, end);
+			break;
+		case Dez_SignedShort:
+			parseFlag = __Clip(static_cast<signed short>(1), volumeData, begin, end);
+			break;
+		case Dez_UnsignedChar:
+			parseFlag = __Clip(static_cast<unsigned char>(1), volumeData, begin, end);
+			break;
+		case Dez_SignedChar:
+			parseFlag = __Clip(static_cast<signed char>(1), volumeData, begin, end);
+			break;
+		case Dez_Float:
+			parseFlag = __Clip(static_cast<float>(1), volumeData, begin, end);
+			break;
+		case Dez_Double:
+			parseFlag = __Clip(static_cast<double>(1), volumeData, begin, end);
+			break;
+		default:
+			DebugTextPrintErrorString("Non compliant image data format");
+			parseFlag = false;
+			break;
+		}
+	}
+	if (parseFlag)
+		parseFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
+	else
+		DebugTextPrintErrorString("Clip failed");
+
+	volumeData.clear();
+}
+
+void ProcessVolumeData::ClipFeimosFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
+	const GenerateFormat& generateFormat, double begin[3], double end[3]) {
+	// check input and output
+	if (!data_rw.isInputFeimosFileExist(InputFilePath)) return;
+	if (!data_rw.checkOutputDir_Feimos(OutputDir, OutputFileName)) return;
+
+	VolumeData volumeData;
+
+	bool parseFlag = data_rw.GenerateInput_Feimos(InputFilePath, volumeData);
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
+	if (!volumeData.data) {
+		parseFlag = false;
+	}
+	if (parseFlag) {
+		switch (volumeData.format)
+		{
+		case Dez_Origin:
+			DebugTextPrintErrorString("Non compliant image data format");
+			parseFlag = false;
+			break;
+		case Dez_UnsignedLong:
+			parseFlag = __Clip(static_cast<unsigned long>(1), volumeData, begin, end);
+			break;
+		case Dez_SignedLong:
+			parseFlag = __Clip(static_cast<signed long>(1), volumeData, begin, end);
+			break;
+		case Dez_UnsignedShort:
+			parseFlag = __Clip(static_cast<unsigned short>(1), volumeData, begin, end);
+			break;
+		case Dez_SignedShort:
+			parseFlag = __Clip(static_cast<signed short>(1), volumeData, begin, end);
+			break;
+		case Dez_UnsignedChar:
+			parseFlag = __Clip(static_cast<unsigned char>(1), volumeData, begin, end);
+			break;
+		case Dez_SignedChar:
+			parseFlag = __Clip(static_cast<signed char>(1), volumeData, begin, end);
+			break;
+		case Dez_Float:
+			parseFlag = __Clip(static_cast<float>(1), volumeData, begin, end);
+			break;
+		case Dez_Double:
+			parseFlag = __Clip(static_cast<double>(1), volumeData, begin, end);
+			break;
+		default:
+			DebugTextPrintErrorString("Non compliant image data format");
+			parseFlag = false;
+			break;
+		}
+	}
+	if (parseFlag)
+		parseFlag = data_rw.GenerateOutput_Feimos(OutputDir, OutputFileName, generateFormat, volumeData);
+	else
+		DebugTextPrintErrorString("Clip failed");
+
+	volumeData.clear();
 }
 
 // **********************************************//
-// *** Special functions that cannot be performed in steps *** //
+// *** Down sampling *** //
 // **********************************************//
 
 template <typename T>
-inline void set_Array(T* data, T dat, unsigned int dim[3], unsigned int pos[3]) {
-	unsigned int offset = pos[0] + dim[0] * pos[1] + dim[0] * dim[1] * pos[2];
-	data[offset] = dat;
-}
-template <typename T>
-inline T at_Array(T* data, unsigned int dim[3], unsigned int pos[3]) {
-	unsigned int offset = pos[0] + dim[0] * pos[1] + dim[0] * dim[1] * pos[2];
-	return data[offset];
-}
-
-template <typename T>
-bool downSampling(T* data, VolumeData& volumeData, unsigned int dimM[3], unsigned int dim_Down[3], unsigned int Interval) {
+bool ProcessVolumeData::__downSampling(T* data, VolumeData& volumeData, unsigned int dimM[3], unsigned int dim_Down[3], unsigned int Interval) {
 
 	T * data_aim = new T[dim_Down[0] * dim_Down[1] * dim_Down[2]];
 	if (!data_aim) return false;
@@ -125,8 +597,8 @@ bool downSampling(T* data, VolumeData& volumeData, unsigned int dimM[3], unsigne
 			for (unsigned int k = 0; k < dim_Down[2]; k++) {
 				unsigned int pos_aim[3] = { i,j,k };
 				unsigned int pos_m[3] = { i * Interval, j * Interval, k * Interval };
-				T dat = at_Array(data, dimM, pos_m);
-				set_Array(data_aim, dat, dim_Down, pos_aim);
+				T dat = at_VolumeData(data, dimM, pos_m);
+				set_VolumeData(data_aim, dat, dim_Down, pos_aim);
 			}
 		}
 	}
@@ -145,15 +617,15 @@ bool downSampling(T* data, VolumeData& volumeData, unsigned int dimM[3], unsigne
 	return true;
 }
 
-void ProcessVolumeData::DownSamplingMhdFile(const QString& inputFilePath, const QString& outputDir, const QString& outName, 
+void ProcessVolumeData::DownSamplingMhdFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName, 
 	const GenerateFormat& generateFormat, int Interval) {
 	// check input and output
-	if (!data_rw.isInputMhdFileExist(inputFilePath)) return;
-	if (!data_rw.checkOutputDir_Feimos(outputDir, outName)) return;
+	if (!data_rw.isInputMhdFileExist(InputFilePath)) return;
+	if (!data_rw.checkOutputDir_Mhd(OutputDir, OutputFileName)) return;
 
 	VolumeData volumeData;
 
-	bool parseFlag = data_rw.GenerateInput_Mhd(inputFilePath, volumeData);
+	bool parseFlag = data_rw.GenerateInput_Mhd(InputFilePath, volumeData);
 	DebugTextPrintString(volumeData.toString().toStdString().c_str());
 	if (!volumeData.data) {
 		parseFlag = false;
@@ -169,28 +641,28 @@ void ProcessVolumeData::DownSamplingMhdFile(const QString& inputFilePath, const 
 			parseFlag = false;
 			break;
 		case Dez_UnsignedLong:
-			parseFlag = downSampling(static_cast<unsigned long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<unsigned long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_SignedLong:
-			parseFlag = downSampling(static_cast<signed long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<signed long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_UnsignedShort:
-			parseFlag = downSampling(static_cast<unsigned short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<unsigned short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_SignedShort:
-			parseFlag = downSampling(static_cast<signed short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<signed short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_UnsignedChar:
-			parseFlag = downSampling(static_cast<unsigned char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<unsigned char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_SignedChar:
-			parseFlag = downSampling(static_cast<signed char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<signed char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_Float:
-			parseFlag = downSampling(static_cast<float*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<float*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_Double:
-			parseFlag = downSampling(static_cast<double*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<double*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		default:
 			DebugTextPrintErrorString("Non compliant image data format");
@@ -200,22 +672,22 @@ void ProcessVolumeData::DownSamplingMhdFile(const QString& inputFilePath, const 
 	}
 
 	if (parseFlag) 
-		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, outName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
 	else 
 		DebugTextPrintErrorString("Downsampling failed");
 	
 	volumeData.clear();
 }
 
-void ProcessVolumeData::DownSamplingFeimosFile(const QString& inputFilePath, const QString& outputDir, const QString& outName, 
+void ProcessVolumeData::DownSamplingFeimosFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat, int Interval) {
 	// check input and output
-	if (!data_rw.isInputFeimosFileExist(inputFilePath)) return;
-	if (!data_rw.checkOutputDir_Feimos(outputDir, outName)) return;
+	if (!data_rw.isInputFeimosFileExist(InputFilePath)) return;
+	if (!data_rw.checkOutputDir_Feimos(OutputDir, OutputFileName)) return;
 
 	VolumeData volumeData;
 
-	bool parseFlag = data_rw.GenerateInput_Feimos(inputFilePath, volumeData);
+	bool parseFlag = data_rw.GenerateInput_Feimos(InputFilePath, volumeData);
 	DebugTextPrintString(volumeData.toString().toStdString().c_str());
 	if (!volumeData.data) {
 		parseFlag = false;
@@ -231,28 +703,28 @@ void ProcessVolumeData::DownSamplingFeimosFile(const QString& inputFilePath, con
 			parseFlag = false;
 			break;
 		case Dez_UnsignedLong:
-			parseFlag = downSampling(static_cast<unsigned long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<unsigned long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_SignedLong:
-			parseFlag = downSampling(static_cast<signed long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<signed long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_UnsignedShort:
-			parseFlag = downSampling(static_cast<unsigned short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<unsigned short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_SignedShort:
-			parseFlag = downSampling(static_cast<signed short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<signed short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_UnsignedChar:
-			parseFlag = downSampling(static_cast<unsigned char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<unsigned char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_SignedChar:
-			parseFlag = downSampling(static_cast<signed char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<signed char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_Float:
-			parseFlag = downSampling(static_cast<float*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<float*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		case Dez_Double:
-			parseFlag = downSampling(static_cast<double*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<double*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
 			break;
 		default:
 			DebugTextPrintErrorString("Non compliant image data format");
@@ -262,7 +734,7 @@ void ProcessVolumeData::DownSamplingFeimosFile(const QString& inputFilePath, con
 	}
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, outName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Feimos(OutputDir, OutputFileName, generateFormat, volumeData);
 	}
 	else {
 		DebugTextPrintErrorString("Downsampling failed");
@@ -271,8 +743,12 @@ void ProcessVolumeData::DownSamplingFeimosFile(const QString& inputFilePath, con
 	volumeData.clear();
 }
 
+// **********************************************//
+// *** Special functions that cannot be performed in steps *** //
+// **********************************************//
+
 template <typename T>
-bool DownSamplingInOneImage(
+bool ProcessVolumeData::__DownSamplingInOneImage(
 	const T* data, const unsigned int width, const unsigned int height,
 	T* data_aim, const unsigned int resizedWidth, const unsigned int resizedHeight,
 	const unsigned int Interval) {
@@ -287,18 +763,18 @@ bool DownSamplingInOneImage(
 	return true;
 }
 
-bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath, const QString& outputDir, const QString& outName,
+bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
 	unsigned int Interval) {
 	// check input and output
-	if (!data_rw.isInputFeimosFileExist(inputFilePath)) return false;
-	if (!data_rw.checkOutputDir_Feimos(outputDir, outName)) return false;
+	if (!data_rw.isInputFeimosFileExist(InputFilePath)) return false;
+	if (!data_rw.checkOutputDir_Feimos(OutputDir, OutputFileName)) return false;
 
 	if (Interval <= 0) {
 		DebugTextPrintErrorString("Illegal value of Interval");
 		return false;
 	}
 
-	std::ifstream file(inputFilePath.toStdString());
+	std::ifstream file(InputFilePath.toStdString());
 	std::string name;
 	std::string rawDataFileName;
 
@@ -338,7 +814,7 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 		}
 	}
 
-	QFileInfo fileInfo(inputFilePath);
+	QFileInfo fileInfo(InputFilePath);
 	QString absoluteFilePath = fileInfo.absoluteFilePath();
 	QString absoluteDirPath = fileInfo.absolutePath();
 
@@ -367,7 +843,7 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 	bool downsamplingFlag = true;
 	{
 		std::ifstream inputFile((absoluteDirPath + "/" + rawDataFileName.c_str()).toStdString(), std::ios::binary);
-		std::ofstream outputFile((outputDir + "/" + outName + ".raw").toStdString(), std::ios::binary);
+		std::ofstream outputFile((OutputDir + "/" + OutputFileName + ".raw").toStdString(), std::ios::binary);
 		if (!inputFile.is_open() || !outputFile.is_open()) {
 			DebugTextPrintErrorString("Cannot open raw input and output file!");
 			return false;
@@ -392,49 +868,49 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 					downsamplingFlag = false;
 					break;
 				case Dez_UnsignedLong:
-					DownSamplingInOneImage(
+					__DownSamplingInOneImage(
 						static_cast<unsigned long*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<unsigned long*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_SignedLong:
-					DownSamplingInOneImage(
+					__DownSamplingInOneImage(
 						static_cast<signed long*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<signed long*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_UnsignedShort:
-					DownSamplingInOneImage(
+					__DownSamplingInOneImage(
 						static_cast<unsigned short*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<unsigned short*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_SignedShort:
-					DownSamplingInOneImage(
+					__DownSamplingInOneImage(
 						static_cast<signed short*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<signed short*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_UnsignedChar:
-					DownSamplingInOneImage(
+					__DownSamplingInOneImage(
 						static_cast<unsigned char*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<unsigned char*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_SignedChar:
-					DownSamplingInOneImage(
+					__DownSamplingInOneImage(
 						static_cast<char*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<char*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_Float:
-					DownSamplingInOneImage(
+					__DownSamplingInOneImage(
 						static_cast<float*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<float*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
 					break;
 				case Dez_Double:
-					DownSamplingInOneImage(
+					__DownSamplingInOneImage(
 						static_cast<double*>(readBuffer), volumeData.xResolution, volumeData.yResolution,
 						static_cast<double*>(writeBuffer), resizedWidth, resizedHeight,
 						Interval);
@@ -465,7 +941,7 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 
 	if (downsamplingFlag)
 	{
-		std::ofstream fileInfo((outputDir + "/" + outName + ".feimos").toStdString());
+		std::ofstream fileInfo((OutputDir + "/" + OutputFileName + ".feimos").toStdString());
 		if (!fileInfo.is_open()) {
 			DebugTextPrintErrorString("Fail to write to info file");
 			return false;
@@ -478,7 +954,7 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 		fileInfo << "yPixelSpace " << resizedPixelSpace_y << std::endl;
 		fileInfo << "zPixelSpace " << resizedPixelSpace_z << std::endl;
 		fileInfo << "format " << format << std::endl;
-		fileInfo << "Raw " << (outName.toStdString() + ".raw") << std::endl;
+		fileInfo << "Raw " << (OutputFileName.toStdString() + ".raw") << std::endl;
 		fileInfo.close();
 	}
 
@@ -487,15 +963,24 @@ bool ProcessVolumeData::DownSamplingLargeFeimosData(const QString& inputFilePath
 
 
 // **********************************************//
+// *** Resize Volume *** //
+// **********************************************//
+
+bool ProcessVolumeData::Resize(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
+	float scale) {
+	return false;
+}
+
+// **********************************************//
 // *** Call type function *** //
 // **********************************************//
 
-void ProcessVolumeData::DcmMakeMhdFile(const QString& inputDir, const QString& outputDir, const QString& OutputFileName,
+void ProcessVolumeData::DcmMakeMhdFile(const QString& inputDir, const QString& OutputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 
 	// check input and output
 	if (!data_rw.isInputDirExist(inputDir)) return;
-	if (!data_rw.checkOutputDir_Mhd(outputDir, OutputFileName)) return;
+	if (!data_rw.checkOutputDir_Mhd(OutputDir, OutputFileName)) return;
 
 	std::vector<QString> fileList;
 	bool parseFlag = data_rw.getInputDcmFileList(inputDir, fileList);
@@ -511,17 +996,17 @@ void ProcessVolumeData::DcmMakeMhdFile(const QString& inputDir, const QString& o
 	}
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, OutputFileName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
 	}
 	volumeData.clear();
 }
 
-void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString& outputDir, const QString& OutputFileName,
+void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString& OutputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 
 	// check input and output
 	if (!data_rw.isInputDirExist(inputDir)) return;
-	if (!data_rw.checkOutputDir_Feimos(outputDir, OutputFileName)) return;
+	if (!data_rw.checkOutputDir_Feimos(OutputDir, OutputFileName)) return;
 
 	std::vector<QString> fileList;
 	bool parseFlag = data_rw.getInputDcmFileList(inputDir, fileList);
@@ -537,17 +1022,17 @@ void ProcessVolumeData::DcmMakeFeimosFile(const QString& inputDir, const QString
 	}
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, OutputFileName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Feimos(OutputDir, OutputFileName, generateFormat, volumeData);
 	}
 	volumeData.clear();
 }
 
 void ProcessVolumeData::PngsMakeFeimosFile(
-	const QString& inputDir, const QString& outputDir, const QString& OutputFileName,
+	const QString& inputDir, const QString& OutputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 	// check input and output
 	if (!data_rw.isInputDirExist(inputDir)) return;
-	if (!data_rw.checkOutputDir_Feimos(outputDir, OutputFileName)) return;
+	if (!data_rw.checkOutputDir_Feimos(OutputDir, OutputFileName)) return;
 
 	std::vector<QString> fileList;
 	bool parseFlag = data_rw.getInputPngsFileList(inputDir, fileList);
@@ -558,17 +1043,17 @@ void ProcessVolumeData::PngsMakeFeimosFile(
 	parseFlag = data_rw.GenerateInput_PNGs(fileList, volumeData);
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, OutputFileName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Feimos(OutputDir, OutputFileName, generateFormat, volumeData);
 	}
 	volumeData.clear();
 }
 
 void ProcessVolumeData::PngsMakeMhdFile(
-	const QString& inputDir, const QString& outputDir, const QString& OutputFileName,
+	const QString& inputDir, const QString& OutputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 	// check input and output
 	if (!data_rw.isInputDirExist(inputDir)) return;
-	if (!data_rw.checkOutputDir_Mhd(outputDir, OutputFileName)) return;
+	if (!data_rw.checkOutputDir_Mhd(OutputDir, OutputFileName)) return;
 
 	std::vector<QString> fileList;
 	bool parseFlag = data_rw.getInputPngsFileList(inputDir, fileList);
@@ -578,17 +1063,17 @@ void ProcessVolumeData::PngsMakeMhdFile(
 	parseFlag = data_rw.GenerateInput_PNGs(fileList, volumeData);
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, OutputFileName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
 	}
 	volumeData.clear();
 }
 
 void ProcessVolumeData::JpgsMakeFeimosFile(
-	const QString& inputDir, const QString& outputDir, const QString& OutputFileName,
+	const QString& inputDir, const QString& OutputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 	// check input and output
 	if (!data_rw.isInputDirExist(inputDir)) return;
-	if (!data_rw.checkOutputDir_Feimos(outputDir, OutputFileName)) return;
+	if (!data_rw.checkOutputDir_Feimos(OutputDir, OutputFileName)) return;
 
 	std::vector<QString> fileList;
 	bool parseFlag = data_rw.getInputJpgsFileList(inputDir, fileList);
@@ -599,17 +1084,17 @@ void ProcessVolumeData::JpgsMakeFeimosFile(
 	parseFlag = data_rw.GenerateInput_JPGs(fileList, volumeData);
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, OutputFileName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Feimos(OutputDir, OutputFileName, generateFormat, volumeData);
 	}
 	volumeData.clear();
 }
 
 void ProcessVolumeData::JpgsMakeMhdFile(
-	const QString& inputDir, const QString& outputDir, const QString& OutputFileName,
+	const QString& inputDir, const QString& OutputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 	// check input and output
 	if (!data_rw.isInputDirExist(inputDir)) return;
-	if (!data_rw.checkOutputDir_Mhd(outputDir, OutputFileName)) return;
+	if (!data_rw.checkOutputDir_Mhd(OutputDir, OutputFileName)) return;
 
 	std::vector<QString> fileList;
 	bool parseFlag = data_rw.getInputJpgsFileList(inputDir, fileList);
@@ -619,42 +1104,41 @@ void ProcessVolumeData::JpgsMakeMhdFile(
 	parseFlag = data_rw.GenerateInput_JPGs(fileList, volumeData);
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, OutputFileName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
 	}
 	volumeData.clear();
 }
 
-
-void ProcessVolumeData::MhdMakeFeimosFile(const QString& inputFilePath, const QString& outputDir, const QString& OutputFileName,
+void ProcessVolumeData::MhdMakeFeimosFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 	// check input and output
-	if (!data_rw.isInputMhdFileExist(inputFilePath)) return;
-	if (!data_rw.checkOutputDir_Feimos(outputDir, OutputFileName)) return;
+	if (!data_rw.isInputMhdFileExist(InputFilePath)) return;
+	if (!data_rw.checkOutputDir_Feimos(OutputDir, OutputFileName)) return;
 
 	VolumeData volumeData;
 
-	bool parseFlag = data_rw.GenerateInput_Mhd(inputFilePath, volumeData);
+	bool parseFlag = data_rw.GenerateInput_Mhd(InputFilePath, volumeData);
 	DebugTextPrintString(volumeData.toString().toStdString().c_str());
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Feimos(outputDir, OutputFileName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Feimos(OutputDir, OutputFileName, generateFormat, volumeData);
 	}
 	volumeData.clear();
 }
 
-void ProcessVolumeData::FeimosMakeMhdFile(const QString& inputFilePath, const QString& outputDir, const QString& OutputFileName,
+void ProcessVolumeData::FeimosMakeMhdFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 	// check input and output
-	if (!data_rw.isInputFeimosFileExist(inputFilePath)) return;
-	if (!data_rw.checkOutputDir_Mhd(outputDir, OutputFileName)) return;
+	if (!data_rw.isInputFeimosFileExist(InputFilePath)) return;
+	if (!data_rw.checkOutputDir_Mhd(OutputDir, OutputFileName)) return;
 
 	VolumeData volumeData;
 
-	bool parseFlag = data_rw.GenerateInput_Feimos(inputFilePath, volumeData);
+	bool parseFlag = data_rw.GenerateInput_Feimos(InputFilePath, volumeData);
 	DebugTextPrintString(volumeData.toString().toStdString().c_str());
 
 	if (parseFlag) {
-		parseFlag = data_rw.GenerateOutput_Mhd(outputDir, OutputFileName, generateFormat, volumeData);
+		parseFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
 	}
 	volumeData.clear();
 }
@@ -664,7 +1148,6 @@ void ProcessVolumeData::FeimosMakeMhdFile(const QString& inputFilePath, const QS
 // *** Old Functions *** //
 // **********************************************//
 
-
 struct DcmFile {
 	Uint16 *pixData16 = nullptr;
 	float position = 0.0f;
@@ -673,7 +1156,7 @@ bool DataUpSort(const DcmFile &f1, const DcmFile &f2) {
 	if (f1.position < f2.position) return true;
 	else return false;
 }
-void ProcessVolumeData::DcmMakeMhdFile_DCMTK_OldFunc(const QString& dirPath, const QString& outputDir, const QString& outName) {
+void ProcessVolumeData::DcmMakeMhdFile_DCMTK_OldFunc(const QString& dirPath, const QString& OutputDir, const QString& OutputFileName) {
 	DebugTextPrintString("Convert .dcm files into (.mhd)-(.raw) format using DCMTK lib.");
 
 	QDir dir(dirPath);
@@ -824,8 +1307,8 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK_OldFunc(const QString& dirPath, con
 				}
 			}
 			else {
-				if (data->findAndGetUint16(DCM_BitsAllocated, bitsAllocated).good() &&
-					data->findAndGetUint16(DCM_BitsStored, bitsStored).good()) {
+				if (data->findAndGetUint16(DCM_BitsAllocated, bitsAllocated_temp).good() &&
+					data->findAndGetUint16(DCM_BitsStored, bitsStored_temp).good()) {
 					if (bitsAllocated_temp != bitsAllocated || bitsStored_temp != bitsStored) {
 						DebugTextPrintErrorString(("The bits allocated or stored is inconsistent in File" + file_Path).toStdString().c_str());
 						continue;
@@ -997,14 +1480,13 @@ void ProcessVolumeData::DcmMakeMhdFile_DCMTK_OldFunc(const QString& dirPath, con
 	vtkSmartPointer<vtkMetaImageWriter> writer =
 		vtkSmartPointer<vtkMetaImageWriter>::New();
 	writer->SetInputConnection(imageImport->GetOutputPort());
-	writer->SetFileName((outputDir + "/" + outName + ".mhd").toStdString().c_str());
-	writer->SetRAWFileName((outputDir + "/" + outName + ".raw").toStdString().c_str());
+	writer->SetFileName((OutputDir + "/" + OutputFileName + ".mhd").toStdString().c_str());
+	writer->SetRAWFileName((OutputDir + "/" + OutputFileName + ".raw").toStdString().c_str());
 	writer->Write();
 	DebugTextPrintNum("Write Finished! ", 0);
 	delete[] m_data;
 	delete[] aim_data;
 }
-
 bool compareInstance(gdcm::DataSet const & ds1, gdcm::DataSet const & ds2)
 {
 	// Study Instance UID
@@ -1014,7 +1496,7 @@ bool compareInstance(gdcm::DataSet const & ds1, gdcm::DataSet const & ds2)
 	at2.Set(ds2);
 	return at1 < at2;
 }
-void ProcessVolumeData::DcmMakeMhdFile_GDCM_OldFunc(const QString& dirPath, const QString& outputDir, const QString& outName) {
+void ProcessVolumeData::DcmMakeMhdFile_GDCM_OldFunc(const QString& dirPath, const QString& OutputDir, const QString& OutputFileName) {
 	DebugTextPrintString("Convert .dcm files into (.mhd)-(.raw) format using GDCM lib.");
 	QDir dir(dirPath);
 	if (!dir.exists()) {
@@ -1166,14 +1648,13 @@ void ProcessVolumeData::DcmMakeMhdFile_GDCM_OldFunc(const QString& dirPath, cons
 	vtkSmartPointer<vtkMetaImageWriter> writer =
 		vtkSmartPointer<vtkMetaImageWriter>::New();
 	writer->SetInputConnection(imageImport->GetOutputPort());
-	writer->SetFileName((outputDir + "/" + outName + ".mhd").toStdString().c_str());
-	writer->SetRAWFileName((outputDir + "/" + outName + ".raw").toStdString().c_str());
+	writer->SetFileName((OutputDir + "/" + OutputFileName + ".mhd").toStdString().c_str());
+	writer->SetRAWFileName((OutputDir + "/" + OutputFileName + ".raw").toStdString().c_str());
 	writer->Write();
 	DebugTextPrintNum("Write Finished! ", 0);
 	delete[] aim_data;
 }
-
-void ProcessVolumeData::MhdRotateAxis_OldFunc(const QString& filePath, const QString& outputDir, const QString& outName, int permute[3]) {
+void ProcessVolumeData::MhdRotateAxis_OldFunc(const QString& filePath, const QString& OutputDir, const QString& OutputFileName, int permute[3]) {
 	DebugTextPrintString("Permute axis of (.mhd)-(.raw) file.");
 	if (permute[0] == permute[1] || permute[0] == permute[2] || permute[2] == permute[1]) {
 		DebugTextPrintErrorString("Error in MHDRotateAxis: (permute[0] == permute[1] || permute[0] == permute[2] || permute[2] == flip[1])");
@@ -1245,15 +1726,14 @@ void ProcessVolumeData::MhdRotateAxis_OldFunc(const QString& filePath, const QSt
 	vtkSmartPointer<vtkMetaImageWriter> writer =
 		vtkSmartPointer<vtkMetaImageWriter>::New();
 	writer->SetInputConnection(imageImport->GetOutputPort());
-	writer->SetFileName((outputDir + "/" + outName + ".mhd").toStdString().c_str());
-	writer->SetRAWFileName((outputDir + "/" + outName + ".raw").toStdString().c_str());
+	writer->SetFileName((OutputDir + "/" + OutputFileName + ".mhd").toStdString().c_str());
+	writer->SetRAWFileName((OutputDir + "/" + OutputFileName + ".raw").toStdString().c_str());
 	writer->Write();
 	DebugTextPrintNum("Write Finished! ", 0);
 	delete[] data_aim;
 	delete[] data_m;
 }
-
-void ProcessVolumeData::MhdFlipAxis_OldFunc(const QString& filePath, const QString& outputDir, const QString& outName, int flip[3]) {
+void ProcessVolumeData::MhdFlipAxis_OldFunc(const QString& filePath, const QString& OutputDir, const QString& OutputFileName, int flip[3]) {
 	DebugTextPrintString("Flip axis of (.mhd)-(.raw) file.");
 	vtkSmartPointer<vtkMetaImageReader> reader =
 		vtkSmartPointer<vtkMetaImageReader>::New();
@@ -1331,14 +1811,13 @@ void ProcessVolumeData::MhdFlipAxis_OldFunc(const QString& filePath, const QStri
 	vtkSmartPointer<vtkMetaImageWriter> writer =
 		vtkSmartPointer<vtkMetaImageWriter>::New();
 	writer->SetInputConnection(imageImport->GetOutputPort());
-	writer->SetFileName((outputDir + "/" + outName + ".mhd").toStdString().c_str());
-	writer->SetRAWFileName((outputDir + "/" + outName + ".raw").toStdString().c_str());
+	writer->SetFileName((OutputDir + "/" + OutputFileName + ".mhd").toStdString().c_str());
+	writer->SetRAWFileName((OutputDir + "/" + OutputFileName + ".raw").toStdString().c_str());
 	writer->Write();
 	DebugTextPrintNum("Write Finished! ", 0);
 	delete[] data_m;
 }
-
-void ProcessVolumeData::MhdClip_OldFunc(const QString& filePath, const QString& outputDir, const QString& outName, double center[3], double bound[3]) {
+void ProcessVolumeData::MhdClip_OldFunc(const QString& filePath, const QString& OutputDir, const QString& OutputFileName, double center[3], double bound[3]) {
 	DebugTextPrintString("Clip (.mhd)-(.raw) file.");
 	vtkSmartPointer<vtkMetaImageReader> reader =
 		vtkSmartPointer<vtkMetaImageReader>::New();
@@ -1374,8 +1853,8 @@ void ProcessVolumeData::MhdClip_OldFunc(const QString& filePath, const QString& 
 			for (unsigned int k = 0; k < dimLength[2]; k++) {
 				unsigned int pos_aim[3] = { i,j,k };
 				unsigned int pos_m[3] = { i + xRange[0],j + yRange[0],k + zRange[0] };
-				short dat = at_Array(data_m, dimM, pos_m);
-				set_Array(data_aim, dat, dimLength, pos_aim);
+				short dat = at_VolumeData(data_m, dimM, pos_m);
+				set_VolumeData(data_aim, dat, dimLength, pos_aim);
 			}
 		}
 	}
@@ -1392,16 +1871,15 @@ void ProcessVolumeData::MhdClip_OldFunc(const QString& filePath, const QString& 
 	vtkSmartPointer<vtkMetaImageWriter> writer =
 		vtkSmartPointer<vtkMetaImageWriter>::New();
 	writer->SetInputConnection(imageImport->GetOutputPort());
-	writer->SetFileName((outputDir + "/" + outName + ".mhd").toStdString().c_str());
-	writer->SetRAWFileName((outputDir + "/" + outName + ".raw").toStdString().c_str());
+	writer->SetFileName((OutputDir + "/" + OutputFileName + ".mhd").toStdString().c_str());
+	writer->SetRAWFileName((OutputDir + "/" + OutputFileName + ".raw").toStdString().c_str());
 	writer->Write();
 
 	DebugTextPrintNum("Write Finished! ", 0);
 	delete[] data_aim;
 	delete[] data_m;
 }
-
-void ProcessVolumeData::DownSamplingMhdWithInterval_OldFunc(const QString& filePath, const QString& outputDir, const QString& outName, int Interval) {
+void ProcessVolumeData::DownSamplingMhdWithInterval_OldFunc(const QString& filePath, const QString& OutputDir, const QString& OutputFileName, int Interval) {
 	DebugTextPrintString("Resize (.mhd)-(.raw) file.");
 
 	vtkSmartPointer<vtkMetaImageReader> reader =
@@ -1435,8 +1913,8 @@ void ProcessVolumeData::DownSamplingMhdWithInterval_OldFunc(const QString& fileP
 			for (unsigned int k = 0; k < dimLength[2]; k++) {
 				unsigned int pos_aim[3] = { i,j,k };
 				unsigned int pos_m[3] = { i * Interval, j * Interval, k * Interval };
-				short dat = at_Array(data_m, dimM, pos_m);
-				set_Array(data_aim, dat, dimLength, pos_aim);
+				short dat = at_VolumeData(data_m, dimM, pos_m);
+				set_VolumeData(data_aim, dat, dimLength, pos_aim);
 			}
 		}
 	}
@@ -1453,8 +1931,8 @@ void ProcessVolumeData::DownSamplingMhdWithInterval_OldFunc(const QString& fileP
 	vtkSmartPointer<vtkMetaImageWriter> writer =
 		vtkSmartPointer<vtkMetaImageWriter>::New();
 	writer->SetInputConnection(imageImport->GetOutputPort());
-	writer->SetFileName((outputDir + "/" + outName + ".mhd").toStdString().c_str());
-	writer->SetRAWFileName((outputDir + "/" + outName + ".raw").toStdString().c_str());
+	writer->SetFileName((OutputDir + "/" + OutputFileName + ".mhd").toStdString().c_str());
+	writer->SetRAWFileName((OutputDir + "/" + OutputFileName + ".raw").toStdString().c_str());
 	writer->Write();
 	DebugTextPrintNum("Write Finished! ", 0);
 	delete[] data_aim;
@@ -1462,8 +1940,7 @@ void ProcessVolumeData::DownSamplingMhdWithInterval_OldFunc(const QString& fileP
 
 
 }
-
-void ProcessVolumeData::MhdGenerateFeimosData_OldFunc(const QString& filePath, const QString& outputDir, const QString& outName,
+void ProcessVolumeData::MhdGenerateFeimosData_OldFunc(const QString& filePath, const QString& OutputDir, const QString& OutputFileName,
 	const GenerateFormat& generateFormat) {
 	DebugTextPrintString("Convert (.mhd)-(.raw) file into Feimos file format.");
 	vtkSmartPointer<vtkMetaImageReader> reader =
@@ -1490,7 +1967,7 @@ void ProcessVolumeData::MhdGenerateFeimosData_OldFunc(const QString& filePath, c
 		memcpy(data_m + i * width * height, (short*)ImageCast->GetOutput()->GetScalarPointer() + i * width * height, width * height * sizeof(short));
 	}
 
-	std::ofstream fileInfo((outputDir + "/" + outName + ".Info" ).toStdString());
+	std::ofstream fileInfo((OutputDir + "/" + OutputFileName + ".Info" ).toStdString());
 	{
 		fileInfo << "X_Length " << width << std::endl;
 		fileInfo << "Y_Length " << height << std::endl;
@@ -1501,7 +1978,7 @@ void ProcessVolumeData::MhdGenerateFeimosData_OldFunc(const QString& filePath, c
 	}
 	fileInfo.close();
 
-	std::ofstream file((outputDir + "/" + outName + ".data").toStdString(), std::ios::binary);
+	std::ofstream file((OutputDir + "/" + OutputFileName + ".data").toStdString(), std::ios::binary);
 	for (int i = 0; i < imageNum; i++) {
 		file.write((char*)((short *)data_m + i * width * height), sizeof(short) * width * height);
 	}
@@ -1527,12 +2004,10 @@ void ProcessVolumeData::MhdGenerateFeimosData_OldFunc(const QString& filePath, c
 	delete[] data_m;
 
 }
-
-void ProcessVolumeData::MhdGeneratePbrtVolume_OldFunc(const QString& filePath, const QString& outputDir, const QString& outName) {
+void ProcessVolumeData::MhdGeneratePbrtVolume_OldFunc(const QString& filePath, const QString& OutputDir, const QString& OutputFileName) {
 
 	DebugTextPrintErrorString("This function has not been implemented yet.");
 }
-
 
 // **********************************************//
 // *** Some simple test code *** //

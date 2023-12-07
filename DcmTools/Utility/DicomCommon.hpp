@@ -300,6 +300,17 @@ public:
 	}
 };
 
+template <typename T>
+inline void set_VolumeData(T* data, T dat, unsigned int dim[3], unsigned int pos[3]) {
+	unsigned int offset = pos[0] + dim[0] * pos[1] + dim[0] * dim[1] * pos[2];
+	data[offset] = dat;
+}
+template <typename T>
+inline T at_VolumeData(T* data, unsigned int dim[3], unsigned int pos[3]) {
+	unsigned int offset = pos[0] + dim[0] * pos[1] + dim[0] * dim[1] * pos[2];
+	return data[offset];
+}
+
 struct VolumeDataToWrite {
 public:
 	VolumeDataToWrite() {

@@ -1994,6 +1994,7 @@ bool DataReaderAndWriter::GenerateInput_JPGs(const std::vector<QString>& fileLis
 
 		delete[] dataPoints[k];
 	}
+	return true;
 }
 
 #undef STB_IMAGE_IMPLEMENTATION
