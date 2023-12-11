@@ -1,5 +1,9 @@
+InputFolder E:/Datasets/Volume-Fudan-dcm/aneurysm/test/
 InputFolder E:/Datasets/Volume-Fudan-dcm/5AN/11765270
+
 InputFilePath E:/Datasets/DcmToolsTest/Output/Sample.feimos
+
 OutputFolder E:/Datasets/DcmToolsTest/Output/
+
 OutputFileName Sample
 

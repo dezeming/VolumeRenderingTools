@@ -353,7 +353,7 @@ void ProcessDockWidget::process_FeimosRotateAxis() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
-	DebugTextPrintString("Permute axis of .mhd-.raw file.");
+	DebugTextPrintString("Permute axis of .feimos-.raw file.");
 	getPredefinedInfo();
 
 	bool ok = VolumeRotateAxis_Frame->getRotateAxis(permute);
@@ -388,7 +388,7 @@ void ProcessDockWidget::process_FeimosFlipAxis() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
-	DebugTextPrintString("Flip axis of .mhd-.raw file.");
+	DebugTextPrintString("Flip axis of .feimos-.raw file.");
 	getPredefinedInfo();
 
 	bool ok = VolumeFlipAxis_Frame->getFlipAxis(flip);
@@ -406,7 +406,7 @@ void ProcessDockWidget::process_MhdClip() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
-	DebugTextPrintString("Clip.mhd - .raw file.");
+	DebugTextPrintString("Clip .mhd-.raw file.");
 	getPredefinedInfo();
 
 	bool isOk = VolumeClip_Frame->getClipRange(clipBegin, clipEnd);
@@ -423,7 +423,7 @@ void ProcessDockWidget::process_FeimosClip() {
 	DebugTextPrintLineBreak();
 	DebugTextPrintString("........................  New Task   ................................");
 
-	DebugTextPrintString("Clip.mhd - .raw file.");
+	DebugTextPrintString("Clip .feimos-.raw file.");
 	getPredefinedInfo();
 	
 	bool isOk = VolumeClip_Frame->getClipRange(clipBegin, clipEnd);

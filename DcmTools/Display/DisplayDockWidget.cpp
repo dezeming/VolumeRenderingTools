@@ -82,6 +82,8 @@ DisplayDockWidget::~DisplayDockWidget() {
 
 	disconnect(m_QVolumeDisplayRange_Widget,
 		SIGNAL(dataRangeChanged()), this, SLOT(setCurrentDisplay()));
+	disconnect(m_QVolumeDisplayRange_Widget->writeToDataButton,
+		SIGNAL(clicked()), this, SLOT(saveChangeToFile()));
 }
 
 void DisplayDockWidget::setpuWidgets()
@@ -122,6 +124,11 @@ void DisplayDockWidget::setpuWidgets()
 		SIGNAL(dataRangeChanged()), this, SLOT(setCurrentDisplay()));
 	connect(m_QVolumeDisplayRange_Widget,
 		SIGNAL(dataDisplayChanged()), this, SLOT(setCurrentDisplay()));
+	connect(m_QVolumeDisplayRange_Widget->writeToDataButton,
+		SIGNAL(clicked()), this, SLOT(saveChangeToFile()));
+	
+
+
 }
 
 void showMemoryInfo(void);
@@ -312,6 +319,7 @@ void DisplayDockWidget::getStatistics() {
 	bool flag = volumeData.getVolumeStatistics();
 	if (!flag) {
 		DebugTextPrintErrorString("Failed to generate statistical data");
+		NoStatisticsDisableWidgets();
 		return;
 	}
 
@@ -371,6 +379,9 @@ void DisplayDockWidget::clearVolumeStatistics() {
 inline float FloatDataClampped(const float&min, const float&max, const float& data) {
 	return std::fmin(max, std::fmax(min, data));
 }
+inline float FloatDataClampped_Upper2Min(const float&min, const float&max, const float& data) {
+		return (std::fmax(min, data) > max) ? min : std::fmax(min, data);
+}
 void DisplayDockWidget::setCurrentDisplay() {
 
 	if (volumeData.format != Dez_Float) {
@@ -396,7 +407,7 @@ void DisplayDockWidget::setCurrentDisplay() {
 
 		for (unsigned int i = 0;i < width; i++) {
 			for (unsigned int j = 0;j < height; j++) {
-				float voxel = FloatDataClampped(min, max, volumeData.__getPixel(static_cast<float>(1), i, j, imageNum));
+				float voxel = FloatDataClampped_Upper2Min(min, max, volumeData.__getPixel(static_cast<float>(1), i, j, imageNum));
 				unsigned char pixelValue = static_cast<unsigned char>((voxel - min) * rangeInv * 255.9f);
 
 				framebuffer.fast_set_uc(i, j, 0, pixelValue);
@@ -412,7 +423,7 @@ void DisplayDockWidget::setCurrentDisplay() {
 
 		for (unsigned int i = 0; i < width; i++) {
 			for (unsigned int j = 0; j < height; j++) {
-				float voxel = FloatDataClampped(min, max, volumeData.__getPixel(static_cast<float>(1), imageNum, i, j));
+				float voxel = FloatDataClampped_Upper2Min(min, max, volumeData.__getPixel(static_cast<float>(1), imageNum, i, j));
 				unsigned char pixelValue = static_cast<unsigned char>((voxel - min) * rangeInv * 255.9f);
 
 				framebuffer.fast_set_uc(i, j, 0, pixelValue);
@@ -428,7 +439,7 @@ void DisplayDockWidget::setCurrentDisplay() {
 
 		for (unsigned int i = 0; i < width; i++) {
 			for (unsigned int j = 0; j < height; j++) {
-				float voxel = FloatDataClampped(min, max, volumeData.__getPixel(static_cast<float>(1), i, imageNum, j));
+				float voxel = FloatDataClampped_Upper2Min(min, max, volumeData.__getPixel(static_cast<float>(1), i, imageNum, j));
 				unsigned char pixelValue = static_cast<unsigned char>((voxel - min) * rangeInv * 255.9f);
 
 				framebuffer.fast_set_uc(i, j, 0, pixelValue);
@@ -443,6 +454,37 @@ void DisplayDockWidget::setCurrentDisplay() {
 		return;
 	}
 	emit m_GuiStatus.PaintBuffer_signal(framebuffer.ubuffer, framebuffer.width, framebuffer.height, framebuffer.channals);
+}
+inline float FloatDataOuter2Aim(const float&min, const float&max, const float& aim, const float& data) {
+	float data_t = data;
+	if (data > max || data < min) data_t = aim;
+	return data_t;
+}
+void DisplayDockWidget::saveChangeToFile() {
+
+	if (volumeData.format != Dez_Float) {
+		DebugTextPrintErrorString("Only Float format data is supported to process.");
+		return;
+	}
+
+	float min, max, aim = volumeData.statistics.min;
+	m_QVolumeDisplayRange_Widget->getDataMinMax(min, max);
+
+	float *data = static_cast<float *>(volumeData.data);
+	unsigned int width = volumeData.xResolution;
+	unsigned int height = volumeData.yResolution;
+	unsigned int imageNum = volumeData.zResolution;
+
+	for (unsigned int k = 0; k < imageNum; k++) {
+		for (unsigned int i = 0; i < width; i++) {
+			for (unsigned int j = 0; j < height; j++) {
+				float voxel = FloatDataOuter2Aim(min, max, aim, volumeData.__getPixel(static_cast<float>(1), i, j, k));
+				volumeData.__setPixel(i, j, k, voxel);
+			}
+		}
+	}
+
+	getStatistics();
 }
 
 #include <QFileInfo>
@@ -651,10 +693,14 @@ QVolumeDisplayRange_Widget::QVolumeDisplayRange_Widget(QWidget * parent) {
 	axis_Layout = new QGridLayout;
 	setupAxis_Widgets();
 
+	changedataLayout = new QGridLayout;
+	setupChangeDataWidgets();
+
 	setLayout(centerLayout);
 	centerLayout->addLayout(WWWL_Layout);
 	centerLayout->addLayout(DataRange_Layout);
 	centerLayout->addLayout(axis_Layout);
+	centerLayout->addLayout(changedataLayout);
 
 	NoDataDisableWidgets();
 }
@@ -800,6 +846,13 @@ void QVolumeDisplayRange_Widget::setupAxis_Widgets() {
 	connect(display_axis_xy_radio, SIGNAL(clicked()), this, SLOT(setDataDisplayChanged()));
 	connect(display_axis_xz_radio, SIGNAL(clicked()), this, SLOT(setDataDisplayChanged()));
 	connect(display_axis_yz_radio, SIGNAL(clicked()), this, SLOT(setDataDisplayChanged()));
+
+}
+void QVolumeDisplayRange_Widget::setupChangeDataWidgets() {
+	
+	writeToDataButton = new QPushButton;
+	writeToDataButton->setText("save to source");
+	changedataLayout->addWidget(writeToDataButton, 0, 0);
 
 }
 

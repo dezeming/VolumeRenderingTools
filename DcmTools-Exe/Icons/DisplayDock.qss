@@ -1,0 +1,37 @@
+
+QSlider:disabled{
+	color: gray;
+}
+QSpinBox:disabled{
+	color: gray;
+}
+QDoubleSpinBox:disabled{
+	color: gray;
+}
+QWidget:disabled {
+    color: gray;
+}
+QPushButton:disabled {
+    color: gray;
+    background-color: lightgray;
+}
+QLabel:disabled {
+    color: gray;
+}
+QLineEdit:disabled {
+    color: gray;
+    background-color: lightgray;
+}
+QCheckBox:disabled {
+    color: gray;
+}
+QRadioButton:disabled {
+    color: gray;
+}
+QComboBox:disabled {
+    color: gray;
+    background-color: lightgray;
+}
+QScrollBar:disabled {
+    background-color: lightgray;
+}

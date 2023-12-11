@@ -57,6 +57,7 @@ VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2);
 #include <vtkImageActor.h>
 #include <vtkDataArray.h>
 #include <vtkImageImport.h>
+#include <vtkPointData.h>
 
 // Qt
 #include <QDir>
@@ -110,6 +111,7 @@ bool DataReaderAndWriter::isInputMhdFileExist(const QString& inputFilePath) {
 bool DataReaderAndWriter::isInputFeimosFileExist(const QString& inputFilePath) {
 	return isInputFileExist(inputFilePath, ".feimos");
 }
+
 bool DataReaderAndWriter::checkOutputDir_Mhd(const QString& outputDir, const QString& OutputFileName) {
 	QDir dir;
 	if (!dir.exists(outputDir)) {
@@ -154,6 +156,7 @@ bool DataReaderAndWriter::checkOutputDir_Feimos(const QString& outputDir, const 
 
 	return true;
 }
+
 bool DataReaderAndWriter::getInputDcmFileList(const QString& inputDir, std::vector<QString>& fileList) {
 	QDir dir(inputDir);
 	unsigned int file_count = 0;
@@ -191,7 +194,6 @@ bool DataReaderAndWriter::getInputDcmFileList(const QString& inputDir, std::vect
 	}
 	return true;
 }
-
 bool DataReaderAndWriter::getInputPngsFileList(const QString& inputDir, std::vector<QString>& fileList) {
 	QDir dir(inputDir);
 	unsigned int file_count = 0;
@@ -230,7 +232,6 @@ bool DataReaderAndWriter::getInputPngsFileList(const QString& inputDir, std::vec
 	return true;
 
 }
-
 bool DataReaderAndWriter::getInputJpgsFileList(const QString& inputDir, std::vector<QString>& fileList) {
 	QDir dir(inputDir);
 	unsigned int file_count = 0;
@@ -1212,6 +1213,8 @@ bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, Volume
 	volumeData.yPixelSpace = spacing[1];
 	volumeData.zPixelSpace = spacing[2];
 
+	vtkDataArray* dataArray = imageData->GetPointData()->GetScalars();
+
 	bool flag = true;
 	const bool DebugCopyInfo = true;
 	switch (dataType)
@@ -1219,15 +1222,15 @@ bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, Volume
 	case VTK_UNSIGNED_CHAR:
 		volumeData.format = Dez_UnsignedChar;
 		flag = flag && CopyUncompressedRawData(
-			static_cast<unsigned char*>(ImageCast->GetOutput()->GetScalarPointer()),
+			static_cast<unsigned char*>(dataArray->GetVoidPointer(0)),
 			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy unsigned char data from Mhd to array");
 		break;
-	case VTK_SIGNED_CHAR:
+	case VTK_CHAR:
 		volumeData.format = Dez_SignedChar;
 		flag = flag && CopyUncompressedRawData(
-			static_cast<signed char*>(ImageCast->GetOutput()->GetScalarPointer()),
+			static_cast<signed char*>(dataArray->GetVoidPointer(0)),
 			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy signed char data from Mhd to array");
@@ -1235,7 +1238,7 @@ bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, Volume
 	case VTK_UNSIGNED_SHORT:
 		volumeData.format = Dez_UnsignedShort;
 		flag = flag && CopyUncompressedRawData(
-			static_cast<unsigned short*>(ImageCast->GetOutput()->GetScalarPointer()),
+			static_cast<unsigned short*>(dataArray->GetVoidPointer(0)),
 			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy unsigned short data from Mhd to array");
@@ -1243,7 +1246,7 @@ bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, Volume
 	case VTK_SHORT:
 		volumeData.format = Dez_SignedShort;
 		flag = flag && CopyUncompressedRawData(
-			static_cast<signed short*>(ImageCast->GetOutput()->GetScalarPointer()),
+			static_cast<signed short*>(dataArray->GetVoidPointer(0)),
 			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy signed short data from Mhd to array");
@@ -1251,7 +1254,7 @@ bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, Volume
 	case VTK_UNSIGNED_INT:
 		volumeData.format = Dez_UnsignedLong;
 		flag = flag && CopyUncompressedRawData(
-			static_cast<unsigned int*>(ImageCast->GetOutput()->GetScalarPointer()),
+			static_cast<unsigned int*>(dataArray->GetVoidPointer(0)),
 			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy unsigned long data from Mhd to array");
@@ -1259,7 +1262,7 @@ bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, Volume
 	case VTK_INT:
 		volumeData.format = Dez_SignedLong;
 		flag = flag && CopyUncompressedRawData(
-			static_cast<signed int*>(ImageCast->GetOutput()->GetScalarPointer()),
+			static_cast<signed int*>(dataArray->GetVoidPointer(0)),
 			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy signed long data from Mhd to array");
@@ -1267,7 +1270,7 @@ bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, Volume
 	case VTK_FLOAT:
 		volumeData.format = Dez_Float;
 		flag = flag && CopyUncompressedRawData(
-			static_cast<float*>(ImageCast->GetOutput()->GetScalarPointer()),
+			static_cast<float*>(dataArray->GetVoidPointer(0)),
 			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy [float] data from Mhd to array");
@@ -1275,7 +1278,7 @@ bool DataReaderAndWriter::GenerateInput_Mhd(const QString& inputFilePath, Volume
 	case VTK_DOUBLE:
 		volumeData.format = Dez_Double;
 		flag = flag && CopyUncompressedRawData(
-			static_cast<double*>(ImageCast->GetOutput()->GetScalarPointer()),
+			static_cast<double*>(dataArray->GetVoidPointer(0)),
 			volumeData);
 		if (DebugCopyInfo)
 			DebugTextPrintString("Copy [double] data from Mhd to array");
@@ -1661,16 +1664,10 @@ bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QSt
 		return false;
 	}
 
-
 	int dimM[3] = { volumeData.xResolution, volumeData.yResolution, volumeData.zResolution };
 	double PixelSpace[3] = { volumeData.xPixelSpace, volumeData.yPixelSpace, volumeData.zPixelSpace};
 
 	vtkSmartPointer<vtkImageImport> imageImport = vtkSmartPointer<vtkImageImport>::New();
-	imageImport->SetDataSpacing(PixelSpace[0], PixelSpace[1], PixelSpace[2]);
-	imageImport->SetDataOrigin(0, 0, 0);
-	imageImport->SetWholeExtent(0, dimM[0] - 1, 0, dimM[1] - 1, 0, dimM[2] - 1);
-	imageImport->SetDataExtentToWholeExtent();
-
 	switch (volumeToWrite.format_toWrite)
 	{
 	case Dez_Origin:
@@ -1710,8 +1707,15 @@ bool DataReaderAndWriter::GenerateOutput_Mhd(const QString& outputDir, const QSt
 	}
 	
 	imageImport->SetNumberOfScalarComponents(1); // channel
+
+	imageImport->SetDataSpacing(PixelSpace[0], PixelSpace[1], PixelSpace[2]);
+	imageImport->SetDataOrigin(0, 0, 0);
+	imageImport->SetDataExtent(0, dimM[0] - 1, 0, dimM[1] - 1, 0, dimM[2] - 1);
+	imageImport->SetWholeExtent(0, dimM[0] - 1, 0, dimM[1] - 1, 0, dimM[2] - 1);
+	//imageImport->SetDataExtentToWholeExtent();
 	imageImport->SetImportVoidPointer(volumeToWrite.data_toWrite);
 	imageImport->Update();
+
 	vtkSmartPointer<vtkMetaImageWriter> writer =
 		vtkSmartPointer<vtkMetaImageWriter>::New();
 	writer->SetInputConnection(imageImport->GetOutputPort());

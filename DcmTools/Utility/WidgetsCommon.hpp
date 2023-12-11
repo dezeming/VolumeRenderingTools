@@ -78,13 +78,14 @@ private:
 	QGridLayout * openLayout;
 	QPushButton *OpenInputDirButton, *OpenOutputDirButton,
 		*OpenInputFileDirButton, *OpenIconsDirButton;
+	QPushButton *reloadPathButton;
 
 private slots:
 	void OpenInputDir();
 	void OpenInputFileDir();
 	void OpenOutputDir();
 	void OpenIconsDir();
-
+	void ReloadPath();
 
 };
 

@@ -214,10 +214,15 @@ public:
 	void * data;
 	DataFormat format;
 	template <typename T>
-	T __getPixel(T indicateSrc, unsigned int x, unsigned int y, unsigned int z) {
+	T __getPixel(T indicateSrc, unsigned int x, unsigned int y, unsigned int z) const {
 		T* data_t = static_cast<T*>(data);
 		size_t offset = x + y * xResolution + z * xResolution * yResolution;
 		return data_t[offset];
+	}
+	template <typename T>
+	void __setPixel(unsigned int x, unsigned int y, unsigned int z, T data_ta) {
+		size_t offset = x + y * xResolution + z * xResolution * yResolution;
+		(static_cast<T*>(data))[offset] = data_ta;
 	}
 
 	// Info used for .dcm image

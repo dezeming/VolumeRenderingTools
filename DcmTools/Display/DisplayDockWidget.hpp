@@ -150,6 +150,11 @@ public:
 	unsigned int getDisplayedAxis();
 	unsigned int getDisplayedImageNum();
 
+	// widgets: change source data
+	QGridLayout * changedataLayout;
+	QPushButton *writeToDataButton;
+	void setupChangeDataWidgets();
+
 	void NoDataDisableWidgets();
 	void NoStatisticsDisableWidgets();
 	void HaveDataEnableWidgets();
@@ -209,6 +214,7 @@ private slots:
 	void getStatistics();
 
 	void setCurrentDisplay();
+	void saveChangeToFile();
 
 private:
 	VolumeData volumeData;

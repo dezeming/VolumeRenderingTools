@@ -183,10 +183,14 @@ void ProcessVolumeData::RotateAxisMhdFile(const QString& InputFilePath, const QS
 			break;
 		}
 	}
-	if (parseFlag)
-		parseFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
-	else
+	
+	if (parseFlag) {
+		bool writeFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
+	}
+	else {
 		DebugTextPrintErrorString("Rotate Axis failed");
+	}
+		
 
 	volumeData.clear();
 }
@@ -212,28 +216,28 @@ void ProcessVolumeData::RotateAxisFeimosFile(const QString& InputFilePath, const
 			parseFlag = false;
 			break;
 		case Dez_UnsignedLong:
-			parseFlag = __RotateAxis(static_cast<unsigned long>(1), volumeData, permute);
+			parseFlag = parseFlag && __RotateAxis(static_cast<unsigned long>(1), volumeData, permute);
 			break;
 		case Dez_SignedLong:
-			parseFlag = __RotateAxis(static_cast<signed long>(1), volumeData, permute);
+			parseFlag = parseFlag && __RotateAxis(static_cast<signed long>(1), volumeData, permute);
 			break;
 		case Dez_UnsignedShort:
-			parseFlag = __RotateAxis(static_cast<unsigned short>(1), volumeData, permute);
+			parseFlag = parseFlag && __RotateAxis(static_cast<unsigned short>(1), volumeData, permute);
 			break;
 		case Dez_SignedShort:
-			parseFlag = __RotateAxis(static_cast<signed short>(1), volumeData, permute);
+			parseFlag = parseFlag && __RotateAxis(static_cast<signed short>(1), volumeData, permute);
 			break;
 		case Dez_UnsignedChar:
-			parseFlag = __RotateAxis(static_cast<unsigned char>(1), volumeData, permute);
+			parseFlag = parseFlag && __RotateAxis(static_cast<unsigned char>(1), volumeData, permute);
 			break;
 		case Dez_SignedChar:
-			parseFlag = __RotateAxis(static_cast<signed char>(1), volumeData, permute);
+			parseFlag = parseFlag && __RotateAxis(static_cast<signed char>(1), volumeData, permute);
 			break;
 		case Dez_Float:
-			parseFlag = __RotateAxis(static_cast<float>(1), volumeData, permute);
+			parseFlag = parseFlag && __RotateAxis(static_cast<float>(1), volumeData, permute);
 			break;
 		case Dez_Double:
-			parseFlag = __RotateAxis(static_cast<double>(1), volumeData, permute);
+			parseFlag = parseFlag && __RotateAxis(static_cast<double>(1), volumeData, permute);
 			break;
 		default:
 			DebugTextPrintErrorString("Non compliant image data format");
@@ -241,10 +245,13 @@ void ProcessVolumeData::RotateAxisFeimosFile(const QString& InputFilePath, const
 			break;
 		}
 	}
-	if (parseFlag)
-		parseFlag = data_rw.GenerateOutput_Feimos(OutputDir, OutputFileName, generateFormat, volumeData);
-	else
+
+	if (parseFlag) {
+		bool writeFlag = data_rw.GenerateOutput_Feimos(OutputDir, OutputFileName, generateFormat, volumeData);
+	}
+	else {
 		DebugTextPrintErrorString("Rotate Axis failed");
+	}
 
 	volumeData.clear();
 }
@@ -359,8 +366,9 @@ void ProcessVolumeData::FlipAxisMhdFile(const QString& InputFilePath, const QStr
 	}
 	if (parseFlag)
 		parseFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
-	else
+	else {
 		DebugTextPrintErrorString("Flip Axis failed");
+	}
 
 	volumeData.clear();
 
@@ -418,8 +426,9 @@ void ProcessVolumeData::FlipAxisFeimosFile(const QString& InputFilePath, const Q
 	}
 	if (parseFlag)
 		parseFlag = data_rw.GenerateOutput_Feimos(OutputDir, OutputFileName, generateFormat, volumeData);
-	else
+	else {
 		DebugTextPrintErrorString("Flip Axis failed");
+	}
 
 	volumeData.clear();
 }
@@ -480,6 +489,18 @@ void ProcessVolumeData::ClipMhdFile(const QString& InputFilePath, const QString&
 	if (!volumeData.data) {
 		parseFlag = false;
 	}
+
+	if (parseFlag) {
+		// Check if the number of image layers between intervals is less than 1
+		if (end[0] * volumeData.xResolution - begin[0] * volumeData.xResolution < 1.0) parseFlag = false;
+		if (end[1] * volumeData.yResolution - begin[1] * volumeData.yResolution < 1.0) parseFlag = false;
+		if (end[2] * volumeData.zResolution - begin[2] * volumeData.zResolution < 1.0) parseFlag = false;
+
+		if (!parseFlag) {
+			DebugTextPrintErrorString("At least one layer of images must be included within the scope!");
+		}
+	}
+
 	if (parseFlag) {
 		switch (volumeData.format)
 		{
@@ -519,8 +540,9 @@ void ProcessVolumeData::ClipMhdFile(const QString& InputFilePath, const QString&
 	}
 	if (parseFlag)
 		parseFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
-	else
+	else {
 		DebugTextPrintErrorString("Clip failed");
+	}	
 
 	volumeData.clear();
 }
@@ -590,8 +612,9 @@ void ProcessVolumeData::ClipFeimosFile(const QString& InputFilePath, const QStri
 	}
 	if (parseFlag)
 		parseFlag = data_rw.GenerateOutput_Feimos(OutputDir, OutputFileName, generateFormat, volumeData);
-	else
+	else {
 		DebugTextPrintErrorString("Clip failed");
+	}
 
 	volumeData.clear();
 }

@@ -51,6 +51,7 @@ FileDirSet_Widget::~FileDirSet_Widget()
 void FileDirSet_Widget::updataDirFromPresetFile(QString filename) {
 	QFile file_input(filename);
 	if (!file_input.exists()) {
+		DebugTextPrintErrorString("Icons File does not exist.");
 		return;
 	}
 
@@ -149,16 +150,19 @@ void FileDirSet_Widget::setupWidgets()
 	OpenOutputDirButton = new QPushButton;
 	OpenInputFileDirButton = new QPushButton;
 	OpenIconsDirButton = new QPushButton;
+	reloadPathButton = new QPushButton;
 
 	OpenInputDirButton->setText("Open InputDir");
 	OpenInputFileDirButton->setText("Open InputFile Dir");
 	OpenOutputDirButton->setText("Open OutputDir");
 	OpenIconsDirButton->setText("Open IconsDir");
+	reloadPathButton->setText("Reload Path");
 
 	openLayout->addWidget(OpenInputDirButton, 0, 0);
 	openLayout->addWidget(OpenInputFileDirButton, 0, 1);
 	openLayout->addWidget(OpenOutputDirButton, 0, 2);
 	openLayout->addWidget(OpenIconsDirButton, 0, 3);
+	openLayout->addWidget(reloadPathButton, 0, 4);
 
 	mainLayout->addLayout(openLayout);
 
@@ -167,6 +171,7 @@ void FileDirSet_Widget::setupWidgets()
 	connect(OpenInputFileDirButton, SIGNAL(clicked()), this, SLOT(OpenInputFileDir()));
 	connect(OpenOutputDirButton, SIGNAL(clicked()), this, SLOT(OpenOutputDir()));
 	connect(OpenIconsDirButton, SIGNAL(clicked()), this, SLOT(OpenIconsDir()));
+	connect(reloadPathButton, SIGNAL(clicked()), this, SLOT(ReloadPath()));
 }
 
 void FileDirSet_Widget::OpenInputDir() {
@@ -174,6 +179,12 @@ void FileDirSet_Widget::OpenInputDir() {
 
 	QDir absoluteDir(QCoreApplication::applicationDirPath());
 	QString absolutePath = absoluteDir.absoluteFilePath(inputDir);
+
+	QDir dir;
+	if (!dir.exists(absolutePath)) {
+		DebugTextPrintErrorString("Input Folder does not exist.");
+		return;
+	}
 
 	QDesktopServices::openUrl(absolutePath);
 }
@@ -185,6 +196,12 @@ void FileDirSet_Widget::OpenInputFileDir() {
 	QString absoluteFilePath = fileInfo.absoluteFilePath();
 	QString absoluteDirPath = fileInfo.absolutePath();
 
+	QDir dir;
+	if (!dir.exists(absoluteDirPath)) {
+		DebugTextPrintErrorString("Input File Folder does not exist.");
+		return;
+	}
+
 	QDesktopServices::openUrl(absoluteDirPath);
 }
 
@@ -193,13 +210,30 @@ void FileDirSet_Widget::OpenOutputDir() {
 	QDir absoluteDir(QCoreApplication::applicationDirPath());
 	QString absolutePath = absoluteDir.absoluteFilePath(outputDir);
 
-	DebugTextPrintString(outputDir);
+	QDir dir;
+	if (!dir.exists(absolutePath)) {
+		DebugTextPrintErrorString("Output Folder does not exist.");
+		return;
+	}
 
 	QDesktopServices::openUrl(absolutePath);
 }
 
 void FileDirSet_Widget::OpenIconsDir() {
+	QString IconDir = "./Icons";
+	QDir absoluteDir(QCoreApplication::applicationDirPath());
+	QString absolutePath = absoluteDir.absoluteFilePath(IconDir);
+	QDir dir;
+	if (!dir.exists(absolutePath)) {
+		DebugTextPrintErrorString("Icons Folder does not exist.");
+		return;
+	}
+
 	QDesktopServices::openUrl(QUrl::fromLocalFile("./Icons"));
+}
+
+void FileDirSet_Widget::ReloadPath() {
+	updataDirFromPresetFile("./Icons/DirPreset.txt");
 }
 
 // QSetFormat_Widget
