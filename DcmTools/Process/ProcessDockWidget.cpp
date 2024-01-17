@@ -96,6 +96,9 @@ void ProcessDockWidget::setupProcessFunc() {
 		SIGNAL(clicked()), this, SLOT(process_MhdToFeimos()));
 	connect(VolumeConvert_Frame->FeimosToMhd_processButton,
 		SIGNAL(clicked()), this, SLOT(process_FeimosToMhd()));
+	connect(VolumeConvert_Frame->PbrtToMhd_processButton,
+		SIGNAL(clicked()), this, SLOT(process_PbrtToMhd()));
+	
 
 	connect(VolumeConvert_Frame->PngToFeimos_processButton,
 		SIGNAL(clicked()), this, SLOT(process_PngsToFeimos()));
@@ -219,6 +222,21 @@ void ProcessDockWidget::process_FeimosToMhd() {
 	getPredefinedInfo();
 
 	processVolumeData.FeimosMakeMhdFile(
+		InputFilePath, OutputFolder, OutputFileName,
+		generateFormat);
+
+	DebugTextPrintString(".................  Process finished   ....................");
+	showMemoryInfo();
+}
+void ProcessDockWidget::process_PbrtToMhd() {
+	DebugTextPrintLineBreak();
+	DebugTextPrintString("........................  New Task   ................................");
+
+	DebugTextPrintString("Convert (.pbrt) file into (.mhd-.raw) file format.");
+
+	getPredefinedInfo();
+
+	processVolumeData.PbrtMakeMhdFile(
 		InputFilePath, OutputFolder, OutputFileName,
 		generateFormat);
 
@@ -468,6 +486,9 @@ QVolumeConvert_Frame::QVolumeConvert_Frame(QWidget * parent) {
 	JpgToFeimos_processButton = new QPushButton;
 	JpgToFeimos_processButton->setText("JPGs To Feimos format");
 
+	PbrtToMhd_processButton = new QPushButton;
+	PbrtToMhd_processButton->setText("Pbrt To Mhd format");
+
 	VolumeConvert_Layoput->addWidget(DcmToMhd_processButton, 0, 0);
 	VolumeConvert_Layoput->addWidget(DcmToFeimos_processButton, 0, 1);
 	VolumeConvert_Layoput->addWidget(MhdToFeimos_processButton, 1, 0);
@@ -476,6 +497,7 @@ QVolumeConvert_Frame::QVolumeConvert_Frame(QWidget * parent) {
 	VolumeConvert_Layoput->addWidget(PngToFeimos_processButton, 2, 1);
 	VolumeConvert_Layoput->addWidget(JpgToMhd_processButton, 3, 0);
 	VolumeConvert_Layoput->addWidget(JpgToFeimos_processButton, 3, 1);
+	VolumeConvert_Layoput->addWidget(PbrtToMhd_processButton, 4, 0);
 }
 QVolumeConvert_Frame::~QVolumeConvert_Frame() { }
 

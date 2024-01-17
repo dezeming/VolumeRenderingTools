@@ -61,6 +61,11 @@ public:
 	bool isInputFeimosFileExist(const QString& inputFilePath);
 
 	/**
+	* Check if the input (.feimos-.raw) file path exists.
+	*/
+	bool isInputPbrtFileExist(const QString& inputFilePath);
+
+	/**
 	* Check if the output directory exists.
 	*/
 	bool checkOutputDir_Mhd(const QString& outputDir, const QString& outName);
@@ -69,6 +74,11 @@ public:
 	* Check if the output directory exists.
 	*/
 	bool checkOutputDir_Feimos(const QString& outputDir, const QString& outName);
+
+	/**
+	* Check if the output directory exists.
+	*/
+	bool checkOutputDir_Pbrt(const QString& outputDir, const QString& outName);
 
 	/**
 	* Obtain the sequence of dcm files in the specified directory
@@ -133,6 +143,10 @@ public:
 	*/
 	bool GenerateInput_Feimos(const QString& inputFilePath, VolumeData& volumeData);
 
+	/**
+	* Generate VolumeData Object From (.pbrt) file
+	*/
+	bool GenerateInput_Pbrt(const QString& inputFilePath, VolumeData& volumeData);
 
 	/*******************************************************/
 	/* Generate output data

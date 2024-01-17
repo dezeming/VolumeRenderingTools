@@ -60,6 +60,8 @@ public:
 	QPushButton * JpgToMhd_processButton;
 	QPushButton * JpgToFeimos_processButton;
 
+	QPushButton *PbrtToMhd_processButton;
+
 	QGridLayout *VolumeConvert_Layoput;
 };
 
@@ -227,6 +229,7 @@ private slots:
 	void process_DcmToFeimos();
 	void process_MhdToFeimos();
 	void process_FeimosToMhd();
+	void process_PbrtToMhd();
 
 	void process_PngsToFeimos();
 	void process_PngsToMhd();

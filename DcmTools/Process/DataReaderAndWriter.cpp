@@ -111,7 +111,9 @@ bool DataReaderAndWriter::isInputMhdFileExist(const QString& inputFilePath) {
 bool DataReaderAndWriter::isInputFeimosFileExist(const QString& inputFilePath) {
 	return isInputFileExist(inputFilePath, ".feimos");
 }
-
+bool DataReaderAndWriter::isInputPbrtFileExist(const QString& inputFilePath) {
+	return isInputFileExist(inputFilePath, ".pbrt");
+}
 bool DataReaderAndWriter::checkOutputDir_Mhd(const QString& outputDir, const QString& OutputFileName) {
 	QDir dir;
 	if (!dir.exists(outputDir)) {
@@ -155,6 +157,10 @@ bool DataReaderAndWriter::checkOutputDir_Feimos(const QString& outputDir, const 
 	}
 
 	return true;
+}
+bool DataReaderAndWriter::checkOutputDir_Pbrt(const QString& outputDir, const QString& outName) {
+
+	return false;
 }
 
 bool DataReaderAndWriter::getInputDcmFileList(const QString& inputDir, std::vector<QString>& fileList) {
@@ -1300,7 +1306,10 @@ bool ReadUncompressedRawData(std::string filename, unsigned int bytesOneScalar, 
 	unsigned int width = volumeData.xResolution, height = volumeData.yResolution, imageNUm = volumeData.zResolution;
 
 	volumeData.data = new char[volumeData.xResolution * volumeData.yResolution * volumeData.zResolution * bytesOneScalar];
-	if (!volumeData.data) return false;
+	if (!volumeData.data) {
+		DebugTextPrintErrorString("Unable to request sufficient amount of memory!");
+		return false;
+	}
 
 	std::ifstream file(filename, std::ios::binary);
 	if (!file.is_open()) return false;
@@ -1432,6 +1441,91 @@ bool DataReaderAndWriter::GenerateInput_Feimos(const QString& inputFilePath, Vol
 	return true;
 }
 
+bool DataReaderAndWriter::GenerateInput_Pbrt(const QString& inputFilePath, VolumeData& volumeData) {
+	std::ifstream file(inputFilePath.toStdString());
+	std::string name;
+	unsigned int i = 0;
+
+	bool dataFlag = true;
+	while (file >> name) {
+		name.erase(std::remove_if(name.begin(), name.end(), [](char c) {
+			return c == '\"';
+		}), name.end());
+
+		//DebugTextPrintString(name.c_str());
+
+		if ("nx" == name) {
+			file >> name;
+			if ("[" != name) {
+				dataFlag = false;
+				break;
+			}
+			file >> name;
+			volumeData.xResolution = atoi(name.c_str());
+		}
+		if ("ny" == name) {
+			file >> name;
+			if ("[" != name) {
+				dataFlag = false;
+				break;
+			}
+			file >> name;
+			volumeData.yResolution = atoi(name.c_str());
+		}
+		if ("nz" == name) {
+			file >> name;
+			if ("[" != name) {
+				dataFlag = false;
+				break;
+			}
+			file >> name;
+			volumeData.zResolution = atoi(name.c_str());
+		}
+
+		if ("density" == name) {
+			file >> name;
+			if ("[" != name) {
+				dataFlag = false;
+			}
+			break;
+			
+		}
+
+		// Avoid loops that cannot be stopped
+		i++;
+		if (i == 300) {
+			break;
+		}
+	}
+
+	if (dataFlag) {
+		volumeData.format = Dez_Float;
+		volumeData.data = new char[volumeData.xResolution * volumeData.yResolution * volumeData.zResolution * sizeof(float)];
+		if (!volumeData.data) {
+			DebugTextPrintErrorString("Unable to request sufficient amount of memory!");
+			return false;
+		}
+
+		float* data = static_cast<float *> (volumeData.data);
+		for (unsigned int i = 0; i < volumeData.xResolution * volumeData.yResolution * volumeData.zResolution; i++) 
+		{
+			file >> name;
+			data[i] = 2000.0f * atof(name.c_str());
+		}
+
+		volumeData.xPixelSpace = 1.0f;
+		volumeData.yPixelSpace = 1.0f;
+		volumeData.zPixelSpace = 1.0f;
+	}
+	else {
+
+		DebugTextPrintErrorString("found some errors while reading data. Please check the pbrt data file!");
+	}
+
+
+
+	return dataFlag;
+}
 
 // ********************************************** //
 // *** Generate output data *** //

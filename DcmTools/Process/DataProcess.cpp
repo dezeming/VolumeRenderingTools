@@ -1179,6 +1179,23 @@ void ProcessVolumeData::FeimosMakeMhdFile(const QString& InputFilePath, const QS
 	volumeData.clear();
 }
 
+void ProcessVolumeData::PbrtMakeMhdFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName, 
+	const GenerateFormat& generateFormat) {
+
+	// check input and output
+	if (!data_rw.isInputPbrtFileExist(InputFilePath)) return;
+	if (!data_rw.checkOutputDir_Mhd(OutputDir, OutputFileName)) return;
+
+	VolumeData volumeData;
+	bool parseFlag = data_rw.GenerateInput_Pbrt(InputFilePath, volumeData);
+	DebugTextPrintString(volumeData.toString().toStdString().c_str());
+
+	if (parseFlag) {
+		parseFlag = data_rw.GenerateOutput_Mhd(OutputDir, OutputFileName, generateFormat, volumeData);
+	}
+	volumeData.clear();
+}
+
 
 // **********************************************//
 // *** Old Functions *** //

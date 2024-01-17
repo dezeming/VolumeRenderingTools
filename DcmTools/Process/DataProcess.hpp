@@ -185,6 +185,12 @@ public:
 	*/
 	void JpgsMakeMhdFile(const QString& inputDir, const QString& OutputDir, const QString& OutputFileName, const GenerateFormat& generateFormat);
 
+	/**
+	* Make (.mhd,.raw) file from (.pbrt) file
+	*/
+	void PbrtMakeMhdFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName, const GenerateFormat& generateFormat);
+
+
 
 	/*******************************************************/
 	/******** Old functions *******/
