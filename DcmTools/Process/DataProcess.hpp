@@ -103,13 +103,14 @@ public:
 	/*******************************************************/
 
 	template <typename T>
-	bool __downSampling(T* data, VolumeData& volumeData, unsigned int dimM[3], unsigned int dim_Down[3], unsigned int Interval);
+	bool __downSampling(T* data, VolumeData& volumeData, unsigned int dimM[3], unsigned int dim_Down[3], 
+		unsigned int Interval_x, unsigned int Interval_y, unsigned int Interval_z);
 
 	void DownSamplingMhdFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
-		const GenerateFormat& generateFormat, int Interval = 2);
+		const GenerateFormat& generateFormat, int Interval_x = 2, int Interval_y = 2, int Interval_z = 2);
 
 	void DownSamplingFeimosFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
-		const GenerateFormat& generateFormat, int Interval = 2);
+		const GenerateFormat& generateFormat, int Interval_x = 2, int Interval_y = 2, int Interval_z = 2);
 
 	/**
 	* Special functions: cannot be performed in steps

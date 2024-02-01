@@ -89,8 +89,9 @@ bool ProcessVolumeData::__RotateAxis(T indicate, VolumeData& volumeData, int per
 
 	// Dimensional permutation
 	unsigned int dimM_origin[3] = { volumeData.xResolution, volumeData.yResolution, volumeData.zResolution };
-	unsigned int dimM_new[3];
 	double PixelSpace[3] = { volumeData.xPixelSpace, volumeData.yPixelSpace, volumeData.zPixelSpace};
+
+	unsigned int dimM_new[3];
 	double PixelSpace_new[3];
 
 	for (int i = 0; i < 3; i++) {
@@ -624,7 +625,8 @@ void ProcessVolumeData::ClipFeimosFile(const QString& InputFilePath, const QStri
 // **********************************************//
 
 template <typename T>
-bool ProcessVolumeData::__downSampling(T* data, VolumeData& volumeData, unsigned int dimM[3], unsigned int dim_Down[3], unsigned int Interval) {
+bool ProcessVolumeData::__downSampling(T* data, VolumeData& volumeData, unsigned int dimM[3], unsigned int dim_Down[3], 
+	unsigned int Interval_x, unsigned int Interval_y, unsigned int Interval_z) {
 
 	T * data_aim = new T[dim_Down[0] * dim_Down[1] * dim_Down[2]];
 	if (!data_aim) return false;
@@ -632,7 +634,7 @@ bool ProcessVolumeData::__downSampling(T* data, VolumeData& volumeData, unsigned
 		for (unsigned int j = 0; j < dim_Down[1]; j++) {
 			for (unsigned int k = 0; k < dim_Down[2]; k++) {
 				unsigned int pos_aim[3] = { i,j,k };
-				unsigned int pos_m[3] = { i * Interval, j * Interval, k * Interval };
+				unsigned int pos_m[3] = { i * Interval_x, j * Interval_y, k * Interval_z };
 				T dat = at_VolumeData(data, dimM, pos_m);
 				set_VolumeData(data_aim, dat, dim_Down, pos_aim);
 			}
@@ -647,14 +649,14 @@ bool ProcessVolumeData::__downSampling(T* data, VolumeData& volumeData, unsigned
 	volumeData.yResolution = dim_Down[1];
 	volumeData.zResolution = dim_Down[2];
 
-	volumeData.xPixelSpace = volumeData.xPixelSpace * Interval;
-	volumeData.yPixelSpace = volumeData.yPixelSpace * Interval;
-	volumeData.zPixelSpace = volumeData.zPixelSpace * Interval;
+	volumeData.xPixelSpace = volumeData.xPixelSpace * Interval_x;
+	volumeData.yPixelSpace = volumeData.yPixelSpace * Interval_y;
+	volumeData.zPixelSpace = volumeData.zPixelSpace * Interval_z;
 	return true;
 }
 
 void ProcessVolumeData::DownSamplingMhdFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName, 
-	const GenerateFormat& generateFormat, int Interval) {
+	const GenerateFormat& generateFormat, int Interval_x, int Interval_y, int Interval_z) {
 	// check input and output
 	if (!data_rw.isInputMhdFileExist(InputFilePath)) return;
 	if (!data_rw.checkOutputDir_Mhd(OutputDir, OutputFileName)) return;
@@ -668,7 +670,7 @@ void ProcessVolumeData::DownSamplingMhdFile(const QString& InputFilePath, const 
 	}
 	if (parseFlag) {
 		unsigned int dimM[3] = { volumeData.xResolution, volumeData.yResolution, volumeData.zResolution };
-		unsigned int dim_Down[3] = { volumeData.xResolution / Interval, volumeData.yResolution / Interval, volumeData.zResolution / Interval };
+		unsigned int dim_Down[3] = { volumeData.xResolution / Interval_x, volumeData.yResolution / Interval_y, volumeData.zResolution / Interval_z };
 
 		switch (volumeData.format)
 		{
@@ -677,28 +679,36 @@ void ProcessVolumeData::DownSamplingMhdFile(const QString& InputFilePath, const 
 			parseFlag = false;
 			break;
 		case Dez_UnsignedLong:
-			parseFlag = __downSampling(static_cast<unsigned long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<unsigned long*>(volumeData.data), volumeData, dimM, dim_Down, 
+				Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_SignedLong:
-			parseFlag = __downSampling(static_cast<signed long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<signed long*>(volumeData.data), volumeData, dimM, dim_Down, 
+				Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_UnsignedShort:
-			parseFlag = __downSampling(static_cast<unsigned short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<unsigned short*>(volumeData.data), volumeData, dimM, dim_Down, 
+				Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_SignedShort:
-			parseFlag = __downSampling(static_cast<signed short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<signed short*>(volumeData.data), volumeData, dimM, dim_Down, 
+				Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_UnsignedChar:
-			parseFlag = __downSampling(static_cast<unsigned char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<unsigned char*>(volumeData.data), volumeData, dimM, dim_Down, 
+				Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_SignedChar:
-			parseFlag = __downSampling(static_cast<signed char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<signed char*>(volumeData.data), volumeData, dimM, dim_Down, 
+				Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_Float:
-			parseFlag = __downSampling(static_cast<float*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<float*>(volumeData.data), volumeData, dimM, dim_Down, 
+				Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_Double:
-			parseFlag = __downSampling(static_cast<double*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<double*>(volumeData.data), volumeData, dimM, dim_Down, 
+				Interval_x, Interval_z, Interval_z);
 			break;
 		default:
 			DebugTextPrintErrorString("Non compliant image data format");
@@ -716,7 +726,7 @@ void ProcessVolumeData::DownSamplingMhdFile(const QString& InputFilePath, const 
 }
 
 void ProcessVolumeData::DownSamplingFeimosFile(const QString& InputFilePath, const QString& OutputDir, const QString& OutputFileName,
-	const GenerateFormat& generateFormat, int Interval) {
+	const GenerateFormat& generateFormat, int Interval_x, int Interval_y, int Interval_z) {
 	// check input and output
 	if (!data_rw.isInputFeimosFileExist(InputFilePath)) return;
 	if (!data_rw.checkOutputDir_Feimos(OutputDir, OutputFileName)) return;
@@ -730,7 +740,7 @@ void ProcessVolumeData::DownSamplingFeimosFile(const QString& InputFilePath, con
 	}
 	if (parseFlag) {
 		unsigned int dimM[3] = { volumeData.xResolution, volumeData.yResolution, volumeData.zResolution };
-		unsigned int dim_Down[3] = { volumeData.xResolution / Interval, volumeData.yResolution / Interval, volumeData.zResolution / Interval };
+		unsigned int dim_Down[3] = { volumeData.xResolution / Interval_x, volumeData.yResolution / Interval_y, volumeData.zResolution / Interval_z };
 
 		switch (volumeData.format)
 		{
@@ -739,28 +749,28 @@ void ProcessVolumeData::DownSamplingFeimosFile(const QString& InputFilePath, con
 			parseFlag = false;
 			break;
 		case Dez_UnsignedLong:
-			parseFlag = __downSampling(static_cast<unsigned long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<unsigned long*>(volumeData.data), volumeData, dimM, dim_Down, Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_SignedLong:
-			parseFlag = __downSampling(static_cast<signed long*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<signed long*>(volumeData.data), volumeData, dimM, dim_Down, Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_UnsignedShort:
-			parseFlag = __downSampling(static_cast<unsigned short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<unsigned short*>(volumeData.data), volumeData, dimM, dim_Down, Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_SignedShort:
-			parseFlag = __downSampling(static_cast<signed short*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<signed short*>(volumeData.data), volumeData, dimM, dim_Down, Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_UnsignedChar:
-			parseFlag = __downSampling(static_cast<unsigned char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<unsigned char*>(volumeData.data), volumeData, dimM, dim_Down, Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_SignedChar:
-			parseFlag = __downSampling(static_cast<signed char*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<signed char*>(volumeData.data), volumeData, dimM, dim_Down, Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_Float:
-			parseFlag = __downSampling(static_cast<float*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<float*>(volumeData.data), volumeData, dimM, dim_Down, Interval_x, Interval_z, Interval_z);
 			break;
 		case Dez_Double:
-			parseFlag = __downSampling(static_cast<double*>(volumeData.data), volumeData, dimM, dim_Down, Interval);
+			parseFlag = __downSampling(static_cast<double*>(volumeData.data), volumeData, dimM, dim_Down, Interval_x, Interval_z, Interval_z);
 			break;
 		default:
 			DebugTextPrintErrorString("Non compliant image data format");

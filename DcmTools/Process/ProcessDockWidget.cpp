@@ -165,7 +165,9 @@ void ProcessDockWidget::getPredefinedInfo() {
 	generateFormat.format = getGenerateDataFormat();
 
 	// down sampling
-	interval = VolumeDownSampling_Frame->getIntervalValue();
+	interval_x = VolumeDownSampling_Frame->getInterval_x_Value();
+	interval_y = VolumeDownSampling_Frame->getInterval_y_Value();
+	interval_z = VolumeDownSampling_Frame->getInterval_z_Value();
 }
 
 void showMemoryInfo(void);
@@ -315,7 +317,7 @@ void ProcessDockWidget::process_MhdDownSampling() {
 
 	processVolumeData.DownSamplingMhdFile(
 		InputFilePath, OutputFolder, OutputFileName,
-		generateFormat, interval);
+		generateFormat, interval_x, interval_y, interval_z);
 
 	DebugTextPrintString(".................  Process finished   ....................");
 	showMemoryInfo();
@@ -329,7 +331,7 @@ void ProcessDockWidget::process_FeimosDownSampling() {
 
 	processVolumeData.DownSamplingFeimosFile(
 		InputFilePath, OutputFolder, OutputFileName,
-		generateFormat, interval);
+		generateFormat, interval_x, interval_y, interval_z);
 
 	DebugTextPrintString(".................  Process finished   ....................");
 	showMemoryInfo();
@@ -343,7 +345,7 @@ void ProcessDockWidget::process_LargeFeimosDownSampling() {
 
 	processVolumeData.DownSamplingLargeFeimosData(
 		InputFilePath, OutputFolder, OutputFileName, 
-		interval);
+		interval_x);
 
 	DebugTextPrintString(".................  Process finished   ....................");
 	showMemoryInfo();
@@ -510,16 +512,39 @@ QVolumeDownSampling_Frame::QVolumeDownSampling_Frame(QWidget * parent) {
 	DownSampling_Layoput = new QVBoxLayout;
 	setLayout(DownSampling_Layoput);
 
-	Interval_Label = new QLabel;
-	Interval_Label->setText("Interval:");
-	Interval_Slider = new QSlider(Qt::Horizontal);
-	Interval_Slider->setRange(1, 100);
-	Interval_SpinBox = new QSpinBox;
-	Interval_SpinBox->setRange(1, 100);
+	Interval_x_Label = new QLabel;
+	Interval_x_Label->setText("Interval x:");
+	Interval_x_Slider = new QSlider(Qt::Horizontal);
+	Interval_x_Slider->setRange(1, 100);
+	Interval_x_SpinBox = new QSpinBox;
+	Interval_x_SpinBox->setRange(1, 100);
+
+	Interval_y_Label = new QLabel;
+	Interval_y_Label->setText("Interval y:");
+	Interval_y_Slider = new QSlider(Qt::Horizontal);
+	Interval_y_Slider->setRange(1, 100);
+	Interval_y_SpinBox = new QSpinBox;
+	Interval_y_SpinBox->setRange(1, 100);
+
+	Interval_z_Label = new QLabel;
+	Interval_z_Label->setText("Interval z:");
+	Interval_z_Slider = new QSlider(Qt::Horizontal);
+	Interval_z_Slider->setRange(1, 100);
+	Interval_z_SpinBox = new QSpinBox;
+	Interval_z_SpinBox->setRange(1, 100);
+
 	Interval_Layout = new QGridLayout;
-	Interval_Layout->addWidget(Interval_Label, 0, 0);
-	Interval_Layout->addWidget(Interval_Slider, 0, 1);
-	Interval_Layout->addWidget(Interval_SpinBox, 0, 2);
+	Interval_Layout->addWidget(Interval_x_Label, 0, 0);
+	Interval_Layout->addWidget(Interval_x_Slider, 0, 1);
+	Interval_Layout->addWidget(Interval_x_SpinBox, 0, 2);
+
+	Interval_Layout->addWidget(Interval_y_Label, 1, 0);
+	Interval_Layout->addWidget(Interval_y_Slider, 1, 1);
+	Interval_Layout->addWidget(Interval_y_SpinBox, 1, 2);
+
+	Interval_Layout->addWidget(Interval_z_Label, 2, 0);
+	Interval_Layout->addWidget(Interval_z_Slider, 2, 1);
+	Interval_Layout->addWidget(Interval_z_SpinBox, 2, 2);
 
 	MhdDownSampling_processButton = new QPushButton;
 	MhdDownSampling_processButton->setText("DownSampling .mhd");
@@ -535,13 +560,21 @@ QVolumeDownSampling_Frame::QVolumeDownSampling_Frame(QWidget * parent) {
 	DownSampling_Layoput->addWidget(FeimosDownSampling_processButton);
 	DownSampling_Layoput->addWidget(LargeFeimosDownSampling_processButton);
 
-	connect(Interval_Slider, SIGNAL(valueChanged(int)), Interval_SpinBox, SLOT(setValue(int)));
-	connect(Interval_SpinBox, SIGNAL(valueChanged(int)), Interval_Slider, SLOT(setValue(int)));
-	Interval_Slider->setValue(2);
+	connect(Interval_x_Slider, SIGNAL(valueChanged(int)), Interval_x_SpinBox, SLOT(setValue(int)));
+	connect(Interval_x_SpinBox, SIGNAL(valueChanged(int)), Interval_x_Slider, SLOT(setValue(int)));
+
+	connect(Interval_y_Slider, SIGNAL(valueChanged(int)), Interval_y_SpinBox, SLOT(setValue(int)));
+	connect(Interval_y_SpinBox, SIGNAL(valueChanged(int)), Interval_y_Slider, SLOT(setValue(int)));
+
+	connect(Interval_z_Slider, SIGNAL(valueChanged(int)), Interval_z_SpinBox, SLOT(setValue(int)));
+	connect(Interval_z_SpinBox, SIGNAL(valueChanged(int)), Interval_z_Slider, SLOT(setValue(int)));
+	Interval_x_Slider->setValue(2);
+	Interval_y_Slider->setValue(2);
+	Interval_z_Slider->setValue(2);
 }
 QVolumeDownSampling_Frame::~QVolumeDownSampling_Frame() {
-	disconnect(Interval_Slider, SIGNAL(valueChanged(int)), Interval_SpinBox, SLOT(setValue(int)));
-	disconnect(Interval_SpinBox, SIGNAL(valueChanged(int)), Interval_Slider, SLOT(setValue(int)));
+	disconnect(Interval_x_Slider, SIGNAL(valueChanged(int)), Interval_x_SpinBox, SLOT(setValue(int)));
+	disconnect(Interval_x_SpinBox, SIGNAL(valueChanged(int)), Interval_x_Slider, SLOT(setValue(int)));
 }
 
 // QVolumeRotateAxis_Frame
@@ -909,7 +942,7 @@ void ProcessDockWidget::setProcess() {
 	
 		//processVolumeData.MhdClip_OldFunc(InputFilePath, OutputFolder, OutputFileName, , );
 	
-		processVolumeData.DownSamplingMhdWithInterval_OldFunc(InputFilePath, OutputFolder, OutputFileName, interval);
+		processVolumeData.DownSamplingMhdWithInterval_OldFunc(InputFilePath, OutputFolder, OutputFileName, interval_x);
 	}
 
 	DebugTextPrintString(".................  Process finished   ....................");

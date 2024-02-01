@@ -73,14 +73,25 @@ public:
 	QVolumeDownSampling_Frame(QWidget * parent = Q_NULLPTR);
 	~QVolumeDownSampling_Frame();
 
-	int getIntervalValue() {
-		return Interval_Slider->value();
+	int getInterval_x_Value() {
+		return Interval_x_Slider->value();
+	}
+	int getInterval_y_Value() {
+		return Interval_x_Slider->value();
+	}
+	int getInterval_z_Value() {
+		return Interval_x_Slider->value();
 	}
 
-
-	QLabel * Interval_Label;
-	QSlider * Interval_Slider;
-	QSpinBox * Interval_SpinBox;
+	QLabel * Interval_x_Label;
+	QSlider * Interval_x_Slider;
+	QSpinBox * Interval_x_SpinBox;
+	QLabel * Interval_y_Label;
+	QSlider * Interval_y_Slider;
+	QSpinBox * Interval_y_SpinBox;
+	QLabel * Interval_z_Label;
+	QSlider * Interval_z_Slider;
+	QSpinBox * Interval_z_SpinBox;
 	QGridLayout * Interval_Layout;
 
 	QPushButton *MhdDownSampling_processButton;
@@ -185,7 +196,7 @@ public:
 	int permute[3];
 	int flip[3];
 	double clipBegin[3], clipEnd[3];
-	int interval;
+	int interval_x, interval_y, interval_z;
 
 private:
 	void setupWidget();

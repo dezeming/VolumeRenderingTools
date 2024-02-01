@@ -1366,7 +1366,7 @@ bool DataReaderAndWriter::GenerateInput_Feimos(const QString& inputFilePath, Vol
 	}
 
 	size_t dataSize = (size_t)volumeData.xResolution * (size_t)volumeData.yResolution * (size_t)volumeData.zResolution;
-	if (dataSize > (size_t)1024 * (size_t)1024 * (size_t)1024) {
+	if (dataSize > (size_t)3024 * (size_t)3024 * (size_t)3024) {
 		DebugTextPrintErrorString("The image size read in is too large and currently not supported. Please use other reading functions.");
 		return false;
 	}
